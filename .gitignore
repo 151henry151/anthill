@@ -3,12 +3,5 @@ node_modules/
 dist/
 *.log
 
-# Vendored Luanti source (fetched by engine/build.sh)
-third_party/luanti-src/
-
-# CMake build tree for the Anthill engine
-engine/out/
-engine/last-build.log
-
 # Local agent diagnostics (do not commit)
 .cursor_manual_shell_probe.txt

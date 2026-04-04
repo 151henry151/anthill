@@ -1,0 +1,8 @@
+; Anthill — Godot voxel prototype
+config_version=5
+
+[application]
+config/name="Anthill"
+config/description="Grain-scale voxel world: procedural sand/stone, falling sand, ants that move grains."
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.2", "Forward Plus")

@@ -1,6 +1,0 @@
-# Anthill — advanced settings (Games category in the settings UI).
-
-# Default fits the stock client viewing_range (~190 nodes → ~12 mapblocks); the engine
-# sends mapblocks within that Chebyshev radius. User minetest.conf overrides the game’s
-# viewing_range — if you raise viewing_range to ~1200, you can increase this toward 520.
-anthill_observer_clearance (Spectator height above terrain) int 176 80 600

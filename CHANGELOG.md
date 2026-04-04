@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-04
+
+### Removed
+
+- **Luanti / Minetest engine workflow**: delete **`anthill_game/`** (subgame), **`engine/`** (build scripts, patch, branding, CMake presets), **`luanti_menu_patch/`**, **`scripts/install-menu-patch.sh`**, and **`docs/building-from-source.md`**.
+
+### Updated
+
+- **Root `README.md`**: Godot-only project overview; drop engine/subgame instructions.
+- **`game/anthill/README.md`**: remove references to the old subgame tree.
+- **`.gitignore`**: remove paths that only applied to the Luanti build.
+
+## [0.1.0] - 2026-04-04
+
+### Added
+
+- **`game/anthill/`**: standalone **Godot 4.2+** prototype — chunked **voxel** world (32×48×32 per chunk, 3×3 chunks), **2D noise** terrain (sand / stone / air), **Minecraft-style falling sand** each physics frame, **greedy-style** exposed-face meshing with vertex colors, **ant** CharacterBody3D (**WASD**, mouse look, **E** grab one sand block, **Q** place), floor **StaticBody3D** placeholder (voxel mesh collision not yet implemented).
+- **`game/anthill/README.md`**: document running from Godot or `--path`, layout, prototype limits.
+- **Root `README.md`**: describe the Godot game as primary; move Luanti subgame under a collapsible **legacy** section.
+
 ## [2.1.12] - 2026-04-04
 
 ### Added
