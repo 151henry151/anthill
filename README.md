@@ -2,7 +2,7 @@
 
 A **Luanti** ([Minetest engine](https://www.luanti.org/)) **subgame**: a desert “grain world” and **giant ant** simulation built **only on the engine**—no Minetest Game, no default mod.
 
-- **Scale**: Each **node** is a **grain of sand** in the fiction; **ants** are **~80-node** cubes (smaller collision) so they read as huge relative to the sand. You **spectate** from a fixed minimum height (~520 nodes above local terrain), with **zoom disabled**, so several ants usually fit on screen at once. Use **`/observer_reset`** if the camera ends up wrong.
+- **Scale**: Each **node** is a **grain of sand** in the fiction; **ants** are **~80-node** cubes (smaller collision) so they read as huge relative to the sand. You **spectate** from a fixed minimum height above local terrain (default **~176** nodes so the stock client draw distance still loads the ground; optional **~520** if you raise `viewing_range`), with **zoom disabled**. Use **`/observer_reset`** if the camera ends up wrong.
 - **World**: Procedural **dunes** from 2D Perlin noise over **sand** and **stone**, with a **nest** at the origin.
 - **Simulation**: **Trail** and **home** pheromone fields on a coarse grid, **wander + trail following + weak nest bias + separation** between ants. An initial **colony** spawns once per world; use **`/spawn_ants`** for more.
 
@@ -77,7 +77,7 @@ With **stock Luanti**, the window title stays **Luanti**. With the **`anthill`**
 - **`/ant_count`** — print how many ant entities are active.
 - **`/observer_reset`** — move to the default high camera above the nest (helps worlds created before observer tuning).
 
-The subgame raises the **cloud deck** and **fog** for the high spectator and bumps **server block/object send ranges**. **Mapblock loading** follows the **client’s** `viewing_range` (sent in player position packets); the default ~190 nodes is far too small vertically from the spectator height. **`anthill_game/minetest.conf`** sets a high **`viewing_range`** via the engine **game settings layer** (same keys in user `minetest.conf` **override** the game file — remove or raise `viewing_range` there if the ground stays invisible). Restart the client or re-open the world after changing files.
+The subgame raises the **cloud deck** and **fog**, bumps **server block/object send ranges**, and defaults **`anthill_observer_clearance`** (in **Settings → Games → Anthill**) so the camera stays within the **client’s** mapblock send radius at the stock **`viewing_range`** (~190 nodes). Your **user** `~/.minetest/minetest.conf` **overrides** `anthill_game/minetest.conf`; if it contains `viewing_range`, remove it or set it to **1200**, then you can raise **`anthill_observer_clearance`** toward **520** for a higher view. Restart the client after editing config.
 
 ## Layout
 
@@ -85,6 +85,7 @@ The subgame raises the **cloud deck** and **fog** for the high spectator and bum
 |------|------|
 | `anthill_game/game.conf` | Subgame metadata, menu/mapgen restrictions |
 | `anthill_game/minetest.conf` | Game-layer defaults (`viewing_range`, block/object send distances) |
+| `anthill_game/settingtypes.txt` | **`anthill_observer_clearance`** (default height; raise with `viewing_range`) |
 | `anthill_game/menu/` | Main-menu background and icon |
 | `engine/` | `build.sh`, unified Luanti patch → **`anthill`** binary |
 | `luanti_menu_patch/` | Same menu Lua as in the engine patch (for stock `luanti` installs) |

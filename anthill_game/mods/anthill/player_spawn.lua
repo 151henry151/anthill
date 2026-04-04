@@ -2,14 +2,31 @@
 
 anthill = anthill or {}
 
--- Nodes above *local* terrain height. Ants are ~80 nodes across; ~500+ keeps several to many ants
--- in a typical downward FOV without filling the screen with one ant.
-local OBSERVER_CLEARANCE = 520
+-- Vertical offset above local terrain (nodes). Default 176 keeps the camera within ~11 mapblocks
+-- vertically so the stock client viewing_range (~190 → ~12 mapblocks of server send radius) still
+-- loads ground mapblocks. User ~/.minetest/minetest.conf overrides game minetest.conf for
+-- viewing_range; raising viewing_range to ~1200 lets you set anthill_observer_clearance toward 520.
+local OBSERVER_CLEARANCE = 176
+
+local function refresh_observer_clearance()
+	local s = minetest.settings:get("anthill_observer_clearance")
+	local v = tonumber(s)
+	if v and v >= 80 and v <= 600 then
+		OBSERVER_CLEARANCE = math.floor(v)
+	else
+		OBSERVER_CLEARANCE = 176
+	end
+	anthill.observer_clearance = OBSERVER_CLEARANCE
+end
+
+minetest.register_on_mods_loaded(function()
+	refresh_observer_clearance()
+end)
 
 anthill.observer_clearance = OBSERVER_CLEARANCE
 
--- Default engine clouds sit near y≈120; spectator is ~surface+520, so we sit *above* the cloud layer
--- and only see sky. Put the cloud deck far above the camera instead.
+-- Default engine clouds sit near y≈120; spectator is usually well above that. Put the cloud deck
+-- high so we can look up at clouds from the lowered default clearance.
 local CLOUD_BASE_Y = 1180
 
 local function min_observer_y_at(x, z)

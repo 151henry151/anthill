@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.11] - 2026-04-04
+
+### Added
+
+- `anthill_game/settingtypes.txt`: **`anthill_observer_clearance`** (default **176**) so the spectator stays within the stock client **viewing_range** mapblock radius; document that **user** `minetest.conf` overrides game-layer **`viewing_range`**.
+
+### Changed
+
+- `anthill_game/mods/anthill/player_spawn.lua`: apply **`anthill_observer_clearance`** instead of a fixed **520**-node offset so terrain mapblocks load when **`~/.minetest/minetest.conf`** keeps **`viewing_range`** at the engine default.
+
+### Updated
+
+- `README.md`: describe default vs high clearance and config override order.
+
 ## [2.1.10] - 2026-04-04
 
 ### Added
