@@ -27,6 +27,10 @@ Common configure failures:
 - **Could NOT find JPEG** — install `libjpeg-dev` (or your distro’s equivalent).
 - **Missing OpenGL / X11** — install `libgl1-mesa-dev`, `libxi-dev`, etc.
 
+### “New version available” dialog
+
+Anthill builds from a pinned Luanti tag (e.g. 5.10.0). The stock engine can check an **upstream** JSON feed and compare **Luanti** release versions; that is not a separate Anthill release channel. The Anthill patch sets the default **update information URL** to empty so this check stays off. To re-enable upstream notices, set **`update_information_url`** in your config to the URL you want (not recommended for a renamed fork unless you host your own feed).
+
 ## Build and install (recommended)
 
 From the **repository root**:

@@ -69,6 +69,18 @@ else
 	cmake --install .
 fi
 
+BRAND_DIR="$ROOT/engine/branding"
+TEXTURE_PACK="$INSTALL_PREFIX/share/luanti/textures/base/pack"
+if [ -d "$BRAND_DIR" ]; then
+	for f in menu_header.png logo.png; do
+		if [ -f "$BRAND_DIR/$f" ]; then
+			mkdir -p "$TEXTURE_PACK"
+			cp -f "$BRAND_DIR/$f" "$TEXTURE_PACK/$f"
+			echo "Installed branding texture: $TEXTURE_PACK/$f"
+		fi
+	done
+fi
+
 GAMES_DIR="$INSTALL_PREFIX/share/luanti/games"
 mkdir -p "$GAMES_DIR"
 ln -sfn "$ROOT/anthill_game" "$GAMES_DIR/anthill_game"

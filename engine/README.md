@@ -6,7 +6,11 @@ This directory contains a **unified patch** (`patches/0001-anthill-engine.patch`
 
 - **Display name** `PROJECT_NAME_CAPITALIZED` → **Anthill** (window title, in-game branding strings that use `PROJECT_NAME_C`, etc.). The CMake project name stays `luanti` so install paths remain `share/luanti` and compatibility is preserved.
 - **Client binary** output name → **`anthill`** (server → **`anthillserver`** if you enable `BUILD_SERVER`).
+- **Update check**: default **`update_information_url`** is empty so the engine does not fetch upstream Luanti release metadata (your Anthill build is not “behind” a separate Anthill release feed).
+- **Main menu copy** (e.g. Start Game empty-state, About homepage link, ContentDB/cURL message): user-visible “Luanti” strings are replaced with **Anthill** or neutral wording where history would be misleading.
 - **`builtin/mainmenu/dlg_create_world.lua`**: same “single mapgen → hide dropdown” behavior as `luanti_menu_patch/` in the repo (the patch embeds it so a stock clone + `git apply` is enough).
+
+After install, **`build.sh`** copies **`engine/branding/`** textures (`menu_header.png`, `logo.png`) over the stock menu header and About logo so the large center wordmark matches Anthill. See **`engine/branding/README.md`**.
 
 ## Build dependencies (Debian / Ubuntu)
 

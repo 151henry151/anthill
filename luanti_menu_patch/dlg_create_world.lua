@@ -167,7 +167,7 @@ local function create_world_formspec(dialogdata)
 	end
 
 	-- If the selected game only permits one mapgen (e.g. allowed_mapgens = flat), hide the
-	-- mapgen dropdown and force that mapgen. Vanilla Luanti always shows the dropdown.
+	-- mapgen dropdown and force that mapgen. The stock engine always shows the dropdown.
 	local hide_mapgen_dropdown = false
 	if mglist ~= "" then
 		local _, comma_count = mglist:gsub(",", "")

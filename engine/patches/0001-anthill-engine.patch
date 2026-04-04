@@ -12,8 +12,21 @@ index a238284..6032f77 100644
  
  set(CMAKE_CXX_STANDARD 17)
  set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+diff --git a/builtin/mainmenu/content/dlg_contentdb.lua b/builtin/mainmenu/content/dlg_contentdb.lua
+index 3c3f798..e28fa9b 100644
+--- a/builtin/mainmenu/content/dlg_contentdb.lua
++++ b/builtin/mainmenu/content/dlg_contentdb.lua
+@@ -18,7 +18,7 @@
+ if not core.get_http_api then
+ 	function create_contentdb_dlg()
+ 		return messagebox("contentdb",
+-				fgettext("ContentDB is not available when Luanti was compiled without cURL"))
++				fgettext("ContentDB is not available when Anthill was compiled without cURL"))
+ 	end
+ 	return
+ end
 diff --git a/builtin/mainmenu/dlg_create_world.lua b/builtin/mainmenu/dlg_create_world.lua
-index 4844c85..3235cad 100644
+index 4844c85..0697945 100644
 --- a/builtin/mainmenu/dlg_create_world.lua
 +++ b/builtin/mainmenu/dlg_create_world.lua
 @@ -1,6 +1,9 @@
@@ -31,7 +44,7 @@ index 4844c85..3235cad 100644
  	end
  
 +	-- If the selected game only permits one mapgen (e.g. allowed_mapgens = flat), hide the
-+	-- mapgen dropdown and force that mapgen. Vanilla Luanti always shows the dropdown.
++	-- mapgen dropdown and force that mapgen. The stock engine always shows the dropdown.
 +	local hide_mapgen_dropdown = false
 +	if mglist ~= "" then
 +		local _, comma_count = mglist:gsub(",", "")
@@ -80,6 +93,74 @@ index 4844c85..3235cad 100644
  
  			-- actual names as used by engine
  			local settings = {
+diff --git a/builtin/mainmenu/dlg_reinstall_mtg.lua b/builtin/mainmenu/dlg_reinstall_mtg.lua
+index 85bdedf..8c971a7 100644
+--- a/builtin/mainmenu/dlg_reinstall_mtg.lua
++++ b/builtin/mainmenu/dlg_reinstall_mtg.lua
+@@ -68,8 +68,8 @@ end
+ local function get_formspec(dialogdata)
+ 	local markup = table.concat({
+ 		"<big>", fgettext("Minetest Game is no longer installed by default"), "</big>\n",
+-		fgettext("For a long time, Luanti shipped with a default game called \"Minetest Game\". " ..
+-				"Since version 5.8.0, Luanti ships without a default game."), "\n",
++		fgettext("For a long time, this engine shipped with a default game called \"Minetest Game\". " ..
++				"Since version 5.8.0, it ships without a default game."), "\n",
+ 		fgettext("If you want to continue playing in your Minetest Game worlds, you need to reinstall Minetest Game."),
+ 	})
+ 
+@@ -114,7 +114,7 @@ local function eventhandler(event)
+ 		return true
+ 	elseif event == "MenuQuit" then
+ 		-- Don't allow closing the dialog with ESC, but still allow exiting
+-		-- Luanti
++		-- Anthill
+ 		core.close()
+ 		return true
+ 	end
+diff --git a/builtin/mainmenu/tab_about.lua b/builtin/mainmenu/tab_about.lua
+index a038db9..4d7d139 100644
+--- a/builtin/mainmenu/tab_about.lua
++++ b/builtin/mainmenu/tab_about.lua
+@@ -78,7 +78,7 @@ return {
+ 			"style[label_button;border=false]" ..
+ 			"button[0.1,3.4;5.3,0.5;label_button;" ..
+ 			core.formspec_escape(version.project .. " " .. version.string) .. "]" ..
+-			"button_url[1.5,4.1;2.5,0.8;homepage;luanti.org;https://www.luanti.org/]" ..
++			"button_url[1.5,4.1;2.5,0.8;homepage;Anthill;https://github.com/151henry151/anthill]" ..
+ 			"hypertext[5.5,0.25;9.75,6.6;credits;" .. core.formspec_escape(hypertext) .. "]"
+ 
+ 		-- Render information
+diff --git a/builtin/mainmenu/tab_local.lua b/builtin/mainmenu/tab_local.lua
+index 083f9a5..4cb8c57 100644
+--- a/builtin/mainmenu/tab_local.lua
++++ b/builtin/mainmenu/tab_local.lua
+@@ -166,8 +166,8 @@ local function get_formspec(tabview, name, tabdata)
+ 		local H = tabview.height
+ 
+ 		local hypertext = "<global valign=middle halign=center size=18>" ..
+-				fgettext_ne("Luanti is a game-creation platform that allows you to play many different games.") .. "\n" ..
+-				fgettext_ne("Luanti doesn't come with a game by default.") .. " " ..
++				fgettext_ne("Anthill is a game-creation platform that allows you to play many different games.") .. "\n" ..
++				fgettext_ne("Anthill doesn't come with a game by default.") .. " " ..
+ 				fgettext_ne("You need to install a game before you can create a world.")
+ 
+ 		local button_y = H * 2/3 - 0.6
+diff --git a/builtin/settingtypes.txt b/builtin/settingtypes.txt
+index 728eaf4..fb07faf 100644
+--- a/builtin/settingtypes.txt
++++ b/builtin/settingtypes.txt
+@@ -795,9 +795,9 @@ serverlist_url (Serverlist URL) string servers.luanti.org
+ #    If disabled, new accounts will be registered automatically when logging in.
+ enable_split_login_register (Enable split login/register) bool true
+ 
+-#    URL to JSON file which provides information about the newest Luanti release.
++#    URL to JSON file which provides information about the newest release (Anthill: disabled by default).
+ #    If this is empty the engine will never check for updates.
+-update_information_url (Update information URL) string https://www.minetest.net/release_info.json
++update_information_url (Update information URL) string
+ 
+ [*Server]
+ 
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
 index 65e5ab6..93c456d 100644
 --- a/src/CMakeLists.txt
@@ -101,3 +182,20 @@ index 65e5ab6..93c456d 100644
  	list(SORT server_SRCS)
  	target_sources(${PROJECT_NAME}server PRIVATE
  		$<TARGET_OBJECTS:EngineCommon>
+diff --git a/src/defaultsettings.cpp b/src/defaultsettings.cpp
+index 7758c96..0e762ea 100644
+--- a/src/defaultsettings.cpp
++++ b/src/defaultsettings.cpp
+@@ -407,11 +407,8 @@ void set_default_settings()
+ 	settings->setDefault("contentdb_flag_blacklist", "nonfree, desktop_default");
+ #endif
+ 
+-#if ENABLE_UPDATE_CHECKER
+-	settings->setDefault("update_information_url", "https://www.minetest.net/release_info.json");
+-#else
++	// Anthill fork: do not phone home to upstream release_info.json (versions/branding differ).
+ 	settings->setDefault("update_information_url", "");
+-#endif
+ 
+ 	// Server
+ 	settings->setDefault("disable_escape_sequences", "false");

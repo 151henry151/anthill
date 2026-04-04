@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.4] - 2026-04-04
+
+### Added
+
+- `engine/branding/`: `menu_header.png` and `logo.png` text wordmarks; `engine/branding/README.md` documents sizes and replacement.
+
+### Changed
+
+- `engine/patches/0001-anthill-engine.patch`: disable default **`update_information_url`**; reword main-menu strings that referred to Luanti; About tab homepage button points at the Anthill GitHub repo; **`settingtypes.txt`** default for the update URL is empty.
+- `engine/build.sh`: install branding textures into **`$PREFIX/share/luanti/textures/base/pack/`** after CMake install.
+- `engine/README.md`: describe branding and update-check behavior.
+- `docs/building-from-source.md`: explain the upstream “new version” dialog vs Anthill releases.
+- `luanti_menu_patch/dlg_create_world.lua`: align comment with the engine patch wording.
+
 ## [2.1.3] - 2026-04-04
 
 ### Added
