@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.12] - 2026-04-04
+
+### Added
+
+- `anthill_game/mods/anthill/textures/blank.png`: **1×1** base texture for **`blank.png^[colorize:...`** on nodes, the spectator cube, and ant entities (missing file previously showed engine “no texture” / checkerboard placeholders).
+
 ## [2.1.11] - 2026-04-04
 
 ### Added

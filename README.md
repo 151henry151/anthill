@@ -91,5 +91,6 @@ The subgame raises the **cloud deck** and **fog**, bumps **server block/object s
 | `luanti_menu_patch/` | Same menu Lua as in the engine patch (for stock `luanti` installs) |
 | `scripts/install-menu-patch.sh` | Copy menu Lua into system Luanti only |
 | `anthill_game/mods/anthill/` | Nodes, dunes mapgen, pheromones, `anthill:ant` entities, player spawn, chat commands |
+| `anthill_game/mods/anthill/textures/blank.png` | Base image for colorized sand/stone/nest, player, and ants |
 
 Tune dunes (`SURFACE_BASE`, `DUNE_AMP`, `SAND_DEPTH`) and ant size (`VIS`, `COLL_HALF` in `ant_entity.lua`) as needed.
