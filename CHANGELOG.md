@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.7] - 2026-04-04
+
+### Changed
+
+- `anthill_game/mods/anthill/player_spawn.lua`: raise the **cloud layer** (`set_clouds` height ~1180) above the spectator camera; set **sky fog** (`fog_distance` / `fog_start`) and client **`viewing_range`** so ground and ants render far below.
+- `anthill_game/mods/anthill/init.lua`: increase **`max_block_send_distance`** and **`active_object_send_range_blocks`** so the server sends mapblocks and entities within the long vertical view.
+
+### Updated
+
+- `README.md`: note clouds/render tuning and optional world restart for send distance.
+
 ## [2.1.6] - 2026-04-04
 
 ### Changed

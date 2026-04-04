@@ -6,6 +6,12 @@ anthill = {
 	ant_list = {},
 }
 
+-- Mapblocks (16³ nodes): default engine limits are too small for a ~520-node-high spectator.
+minetest.register_on_mods_loaded(function()
+	minetest.settings:set("max_block_send_distance", "72")
+	minetest.settings:set("active_object_send_range_blocks", "64")
+end)
+
 local mp = minetest.get_modpath("anthill")
 dofile(mp .. "/nodes.lua")
 dofile(mp .. "/pheromone.lua")

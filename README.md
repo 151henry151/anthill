@@ -77,6 +77,8 @@ With **stock Luanti**, the window title stays **Luanti**. With the **`anthill`**
 - **`/ant_count`** — print how many ant entities are active.
 - **`/observer_reset`** — move to the default high camera above the nest (helps worlds created before observer tuning).
 
+The subgame raises the **cloud deck** and **viewing distance / fog** for the high spectator; it also bumps **server block/object send ranges**. If a world still looks foggy or empty below, **exit and open the world again** so engine send-distance settings apply cleanly.
+
 ## Layout
 
 | Path | Role |

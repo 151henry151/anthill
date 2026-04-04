@@ -8,6 +8,10 @@ local OBSERVER_CLEARANCE = 520
 
 anthill.observer_clearance = OBSERVER_CLEARANCE
 
+-- Default engine clouds sit near y≈120; spectator is ~surface+520, so we sit *above* the cloud layer
+-- and only see sky. Put the cloud deck far above the camera instead.
+local CLOUD_BASE_Y = 1180
+
 local function min_observer_y_at(x, z)
 	return anthill.get_surface_y(x, z) + OBSERVER_CLEARANCE
 end
@@ -27,6 +31,31 @@ local function place_observer(player)
 end
 
 anthill.place_observer = place_observer
+
+function anthill.apply_observer_visibility(player)
+	if not player then
+		return
+	end
+	if player.set_clouds then
+		player:set_clouds({
+			height = CLOUD_BASE_Y,
+			thickness = 24,
+			density = 0.4,
+		})
+	end
+	-- Raise client viewing cap and push fog out so terrain + entities far below stay visible.
+	if player.set_sky then
+		player:set_sky({
+			fog = {
+				fog_distance = 1600,
+				fog_start = 0.42,
+			},
+		})
+	end
+	if minetest.settings then
+		minetest.settings:set("viewing_range", "1200")
+	end
+end
 
 local function enforce_observer_altitude(player)
 	local pos = player:get_pos()
@@ -53,6 +82,7 @@ minetest.register_chatcommand("observer_reset", {
 		end
 		player:get_meta():set_string("anthill_observer_setup", "1")
 		place_observer(player)
+		anthill.apply_observer_visibility(player)
 		return true, "Observer position updated."
 	end,
 })
@@ -76,6 +106,12 @@ minetest.register_on_joinplayer(function(player)
 	player:set_physics_override({ speed = 0.35, jump = 0, gravity = 1 })
 
 	local meta = player:get_meta()
+	minetest.after(0.35, function()
+		local p = minetest.get_player_by_name(name)
+		if p then
+			anthill.apply_observer_visibility(p)
+		end
+	end)
 	if meta:get_string("anthill_observer_setup") == "" then
 		minetest.after(0.15, function()
 			local p = minetest.get_player_by_name(name)
