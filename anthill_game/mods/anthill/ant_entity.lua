@@ -1,4 +1,5 @@
 -- Giant ants: ~80-node visual cube, smaller collision; wander + trail + nest bias + separation.
+-- Scale matches “one node = one grain”; observer camera stays far above (see player_spawn.lua).
 
 anthill = anthill or {}
 anthill.ant_list = anthill.ant_list or {}

@@ -2,7 +2,7 @@ anthill = anthill or {}
 
 minetest.register_chatcommand("spawn_ants", {
 	params = "[count]",
-	description = "Spawn giant ants near the nest (default 8)",
+	description = "Spawn large ants near the nest (default 8)",
 	privs = { server = true },
 	func = function(name, param)
 		local n = tonumber(param) or 8

@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.6] - 2026-04-04
+
+### Changed
+
+- `anthill_game/mods/anthill/ant_entity.lua`: restore **~80-node** ant scale (large vs grains).
+- `anthill_game/mods/anthill/player_spawn.lua`: spectator-style camera — **minimum ~520 nodes** above local terrain (so many ants fit in frame), **`zoom_fov = 0`** (no engine zoom), **fly** + **noclip**, slow pan speed; **globalstep** enforces minimum altitude; steep downward look and default FOV ~72.
+
+### Updated
+
+- `README.md` and `anthill_game/game.conf`: describe large ants vs grains and spectator rules.
+
+## [2.1.5] - 2026-04-04
+
+### Changed
+
+- `anthill_game/mods/anthill/ant_entity.lua`: shrink ant visual/collision scale so ants read as small from the default camera; tune speed, separation, and spawn drop height.
+- `anthill_game/mods/anthill/player_spawn.lua`: spawn first join high above the nest (~260 nodes over surface), point view downward, grant **fly**, optional wider FOV; add **`/observer_reset`**; remove duplicate `on_newplayer` spawn in favor of player-meta-gated setup.
+
+### Updated
+
+- `README.md` and `anthill_game/game.conf`: describe observer scale and `/observer_reset`.
+
 ## [2.1.4] - 2026-04-04
 
 ### Added

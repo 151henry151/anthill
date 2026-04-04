@@ -2,7 +2,7 @@
 
 A **Luanti** ([Minetest engine](https://www.luanti.org/)) **subgame**: a desert “grain world” and **giant ant** simulation built **only on the engine**—no Minetest Game, no default mod.
 
-- **Scale**: Each **node** is a **grain of sand** in the fiction; **ants** are **~80-node** cubes (smaller collision) so they dominate the landscape.
+- **Scale**: Each **node** is a **grain of sand** in the fiction; **ants** are **~80-node** cubes (smaller collision) so they read as huge relative to the sand. You **spectate** from a fixed minimum height (~520 nodes above local terrain), with **zoom disabled**, so several ants usually fit on screen at once. Use **`/observer_reset`** if the camera ends up wrong.
 - **World**: Procedural **dunes** from 2D Perlin noise over **sand** and **stone**, with a **nest** at the origin.
 - **Simulation**: **Trail** and **home** pheromone fields on a coarse grid, **wander + trail following + weak nest bias + separation** between ants. An initial **colony** spawns once per world; use **`/spawn_ants`** for more.
 
@@ -75,6 +75,7 @@ With **stock Luanti**, the window title stays **Luanti**. With the **`anthill`**
 
 - **`/spawn_ants [count]`** — spawn up to 48 extra ants near the nest (default 8).
 - **`/ant_count`** — print how many ant entities are active.
+- **`/observer_reset`** — move to the default high camera above the nest (helps worlds created before observer tuning).
 
 ## Layout
 
