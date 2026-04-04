@@ -1,12 +1,16 @@
 import {
-  ANGLE_NOISE,
   ANT_COUNT,
   ANT_SPEED,
+  CARRIER_HOME_GAIN,
+  DIG_CARVE_DEPTH,
+  DIG_CARVE_RADIUS,
   DIG_PROBABILITY,
   EXPLORATION_DEPOSIT,
   FOOD_SENSITIVITY,
   FOOD_TRAIL_DEPOSIT,
   GRID_SIZE,
+  GRAINS_PER_DIG,
+  MAX_LOOSE_GRAINS,
   MAX_TUNNEL_DEPTH,
   NEST_EMISSION,
   NEST_IX,
@@ -16,13 +20,17 @@ import {
   SENSOR_DISTANCE,
   SENSOR_SPREAD,
   SIM_STEP,
+  WANDER_ANG_ACCEL,
+  WANDER_ANG_DAMP,
+  WANDER_MAX_OMEGA,
 } from './constants';
 import { PheromoneField } from './pheromones';
-import type { Ant, FoodSource } from './types';
+import { carveCrater, createTerrainHeights, sampleHeightBilinear } from './terrain';
+import type { Ant, FoodSource, LooseGrain } from './types';
 
-function nestDist(ix: number, iz: number): number {
-  const dx = ix - NEST_IX;
-  const dz = iz - NEST_IZ;
+function nestDist(x: number, z: number): number {
+  const dx = x - NEST_IX;
+  const dz = z - NEST_IZ;
   return Math.sqrt(dx * dx + dz * dz);
 }
 
@@ -42,36 +50,44 @@ export interface WorldSnapshot {
   tunnelKeys: string[];
   tick: number;
   foodDelivered: number;
+  looseGrainCount: number;
+  terrainVersion: number;
 }
 
 export class World {
   readonly home = new PheromoneField();
   readonly foodTrail = new PheromoneField();
+  readonly terrainHeight: Float32Array;
+  terrainVersion = 0;
   ants: Ant[] = [];
   foodSources: FoodSource[] = [];
   readonly tunnels = new Set<string>();
+  /** Excavated sand grains (surface height samples + small offset for drawing). */
+  grains: LooseGrain[] = [];
   tick = 0;
   foodDelivered = 0;
 
   constructor() {
+    this.terrainHeight = createTerrainHeights();
     this.seedFood();
     this.seedTunnels();
     this.seedAnts();
   }
 
   private seedFood(): void {
-    const margin = 18;
+    const margin = Math.floor(GRID_SIZE * 0.12);
+    const r = 6;
     this.foodSources = [
-      { ix: margin, iz: margin, radius: 5, remaining: 5000 },
-      { ix: GRID_SIZE - margin, iz: margin, radius: 5, remaining: 5000 },
-      { ix: GRID_SIZE - margin, iz: GRID_SIZE - margin, radius: 5, remaining: 5000 },
-      { ix: margin, iz: GRID_SIZE - margin, radius: 5, remaining: 5000 },
+      { ix: margin, iz: margin, radius: r, remaining: 8000 },
+      { ix: GRID_SIZE - margin, iz: margin, radius: r, remaining: 8000 },
+      { ix: GRID_SIZE - margin, iz: GRID_SIZE - margin, radius: r, remaining: 8000 },
+      { ix: margin, iz: GRID_SIZE - margin, radius: r, remaining: 8000 },
     ];
   }
 
   private seedTunnels(): void {
-    this.tunnels.add(tunnelKey(NEST_IX, NEST_IZ, 1));
-    for (let k = 0; k < 24; k++) {
+    this.tunnels.add(tunnelKey(Math.floor(NEST_IX), Math.floor(NEST_IZ), 1));
+    for (let k = 0; k < 18; k++) {
       const keys = [...this.tunnels];
       const pick = keys[Math.floor(Math.random() * keys.length)];
       const [sx, sz, sd] = pick.split(',').map(Number);
@@ -105,20 +121,22 @@ export class World {
         x: NEST_IX + Math.cos(a) * r,
         z: NEST_IZ + Math.sin(a) * r,
         theta: Math.random() * Math.PI * 2,
+        omega: (Math.random() - 0.5) * 0.8,
         role: 'forage',
       });
     }
   }
 
-  private emitNest(): void {
-    const r = NEST_RADIUS + 1.2;
-    this.home.addDeposit(NEST_IX, NEST_IZ, NEST_EMISSION, r);
+  /** Abstract surface height at fractional grid coords (same units as terrainHeight). */
+  heightAt(x: number, z: number): number {
+    return sampleHeightBilinear(this.terrainHeight, x, z);
   }
 
-  private sampleSensors(
-    ant: Ant,
-    field: PheromoneField
-  ): [number, number, number] {
+  private emitNest(): void {
+    this.home.addDeposit(NEST_IX, NEST_IZ, NEST_EMISSION, NEST_RADIUS + 0.8);
+  }
+
+  private sampleSensors(ant: Ant, field: PheromoneField): [number, number, number] {
     const d = SENSOR_DISTANCE;
     const s = SENSOR_SPREAD;
     const angles = [ant.theta - s, ant.theta, ant.theta + s];
@@ -133,11 +151,11 @@ export class World {
     left: number,
     center: number,
     right: number,
+    gain: number,
     noise: number
   ): number {
-    /** Turn toward the side with stronger scent (bilateral antennae comparison). */
-    const g = PHEROMONE_TURN_GAIN * (left - right);
-    const centerBias = (center - (left + right) * 0.5) * 0.12;
+    const g = PHEROMONE_TURN_GAIN * gain * (left - right);
+    const centerBias = (center - (left + right) * 0.5) * 0.08 * gain;
     return g + centerBias + noise;
   }
 
@@ -157,10 +175,54 @@ export class World {
     return nestDist(ant.x, ant.z) < NEST_RADIUS * 0.85;
   }
 
+  private reflectAtBounds(ant: Ant): void {
+    const m = 2.2;
+    const max = GRID_SIZE - m;
+    const jitter = () => (Math.random() - 0.5) * 0.9;
+
+    if (ant.x < m) {
+      ant.x = m;
+      ant.theta = Math.PI - ant.theta + jitter();
+      ant.omega *= -0.5;
+    } else if (ant.x > max) {
+      ant.x = max;
+      ant.theta = Math.PI - ant.theta + jitter();
+      ant.omega *= -0.5;
+    }
+    if (ant.z < m) {
+      ant.z = m;
+      ant.theta = -ant.theta + jitter();
+      ant.omega *= -0.5;
+    } else if (ant.z > max) {
+      ant.z = max;
+      ant.theta = -ant.theta + jitter();
+      ant.omega *= -0.5;
+    }
+    ant.theta = wrapAngle(ant.theta);
+  }
+
   private maybeDig(ant: Ant): void {
     if (ant.role !== 'forage') return;
-    if (nestDist(ant.x, ant.z) > NEST_RADIUS + 3) return;
+    if (nestDist(ant.x, ant.z) > NEST_RADIUS + 8) return;
     if (Math.random() > DIG_PROBABILITY) return;
+
+    const ix = Math.floor(ant.x);
+    const iz = Math.floor(ant.z);
+    carveCrater(this.terrainHeight, ix, iz, DIG_CARVE_DEPTH, DIG_CARVE_RADIUS);
+    this.terrainVersion += 1;
+
+    for (let g = 0; g < GRAINS_PER_DIG; g++) {
+      if (this.grains.length >= MAX_LOOSE_GRAINS) this.grains.shift();
+      const gx = ant.x + (Math.random() - 0.5) * 2.8;
+      const gz = ant.z + (Math.random() - 0.5) * 2.8;
+      const base = sampleHeightBilinear(this.terrainHeight, gx, gz);
+      this.grains.push({
+        x: gx,
+        z: gz,
+        y: base + 0.03 + Math.random() * 0.04,
+      });
+    }
+
     const keys = [...this.tunnels];
     const pick = keys[Math.floor(Math.random() * keys.length)];
     const [sx, sz, sd] = pick.split(',').map(Number);
@@ -175,66 +237,64 @@ export class World {
     const nx = sx + dx;
     const nz = sz + dz;
     const nd = Math.min(MAX_TUNNEL_DEPTH, Math.max(1, sd + dd));
-    if (
-      nx < 1 ||
-      nx >= GRID_SIZE - 1 ||
-      nz < 1 ||
-      nz >= GRID_SIZE - 1
-    ) {
-      return;
+    if (nx >= 1 && nx < GRID_SIZE - 1 && nz >= 1 && nz < GRID_SIZE - 1) {
+      this.tunnels.add(tunnelKey(nx, nz, nd));
     }
-    this.tunnels.add(tunnelKey(nx, nz, nd));
   }
 
   step(dt: number): void {
     const steps = Math.min(15, Math.max(1, Math.floor(dt / SIM_STEP)));
     const h = SIM_STEP * ANT_SPEED;
+    const noiseAccel = WANDER_ANG_ACCEL * SIM_STEP;
 
     for (let s = 0; s < steps; s++) {
       this.home.step();
       this.foodTrail.step();
       this.emitNest();
 
-      const noiseScale = ANGLE_NOISE * Math.sqrt(SIM_STEP);
-
       for (const ant of this.ants) {
         const homeS = this.sampleSensors(ant, this.home);
         const foodS = this.sampleSensors(ant, this.foodTrail);
 
-        let dTheta = (Math.random() - 0.5) * 2 * noiseScale;
+        /** Correlated random walk — primary motion for exploration. */
+        ant.omega += (Math.random() - 0.5) * 2 * noiseAccel;
+        ant.omega *= WANDER_ANG_DAMP;
+        ant.omega = Math.max(-WANDER_MAX_OMEGA, Math.min(WANDER_MAX_OMEGA, ant.omega));
+
+        let steer = ant.omega;
 
         if (ant.role === 'carry') {
-          dTheta += this.steerTowardGradient(
+          steer += this.steerTowardGradient(
             homeS[0],
             homeS[1],
             homeS[2],
-            (Math.random() - 0.5) * noiseScale * 0.5
+            CARRIER_HOME_GAIN,
+            (Math.random() - 0.5) * 0.08
           );
           const cx = Math.floor(ant.x);
           const cz = Math.floor(ant.z);
-          this.foodTrail.addDeposit(cx, cz, FOOD_TRAIL_DEPOSIT, 1.2);
+          this.foodTrail.addDeposit(cx, cz, FOOD_TRAIL_DEPOSIT, 1.0);
         } else {
           const maxTrail = Math.max(foodS[0], foodS[1], foodS[2]);
           if (maxTrail > FOOD_SENSITIVITY) {
-            dTheta += this.steerTowardGradient(
+            steer += this.steerTowardGradient(
               foodS[0],
               foodS[1],
               foodS[2],
-              (Math.random() - 0.5) * noiseScale * 0.4
+              0.55,
+              (Math.random() - 0.5) * 0.06
             );
           }
-          dTheta += (Math.random() - 0.5) * noiseScale * 1.2;
           const cx = Math.floor(ant.x);
           const cz = Math.floor(ant.z);
-          this.home.addDeposit(cx, cz, EXPLORATION_DEPOSIT, 0.9);
+          this.home.addDeposit(cx, cz, EXPLORATION_DEPOSIT, 0.7);
         }
 
-        ant.theta = wrapAngle(ant.theta + dTheta * SIM_STEP);
+        ant.theta = wrapAngle(ant.theta + steer * SIM_STEP);
         ant.x += Math.cos(ant.theta) * h;
         ant.z += Math.sin(ant.theta) * h;
 
-        ant.x = Math.min(GRID_SIZE - 1.5, Math.max(1.5, ant.x));
-        ant.z = Math.min(GRID_SIZE - 1.5, Math.max(1.5, ant.z));
+        this.reflectAtBounds(ant);
 
         if (ant.role === 'forage') {
           if (this.tryHarvest(ant)) {
@@ -260,6 +320,8 @@ export class World {
       tunnelKeys: [...this.tunnels],
       tick: this.tick,
       foodDelivered: this.foodDelivered,
+      looseGrainCount: this.grains.length,
+      terrainVersion: this.terrainVersion,
     };
   }
 }

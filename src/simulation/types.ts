@@ -5,7 +5,16 @@ export interface Ant {
   z: number;
   /** Heading in XZ plane; 0 = +X, π/2 = +Z. */
   theta: number;
+  /** Angular velocity for correlated random walk (rad/s). */
+  omega: number;
   role: AntRole;
+}
+
+/** Single excavated grain sitting on the surface (world grid coords + height). */
+export interface LooseGrain {
+  x: number;
+  z: number;
+  y: number;
 }
 
 export interface FoodSource {

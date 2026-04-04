@@ -1,56 +1,61 @@
-/** World grid resolution (square). */
-export const GRID_SIZE = 128;
+/** World grid resolution (square). Larger play area for wandering. */
+export const GRID_SIZE = 240;
 
 /** World extent in simulation units; maps to 3D via CELL_SIZE. */
-export const CELL_SIZE = 0.35;
+export const CELL_SIZE = 0.22;
 
 /** Fixed physics step (seconds). Multiple may run per frame. */
 export const SIM_STEP = 1 / 30;
 
 /** Number of worker ants in the colony. */
-export const ANT_COUNT = 120;
+export const ANT_COUNT = 140;
 
 /** Nest center in grid coordinates. */
 export const NEST_IX = GRID_SIZE / 2;
 export const NEST_IZ = GRID_SIZE / 2;
-export const NEST_RADIUS = 4;
+export const NEST_RADIUS = 5;
 
 /**
- * Pheromone dynamics (discrete diffusion + evaporation).
- * Tuned so trails remain local but persist long enough to recruit.
+ * Pheromone dynamics — kept weak so foragers rely on random walk unless tuned up later.
  */
-export const PHEROMONE_EVAPORATION = 0.012;
-export const PHEROMONE_DIFFUSION = 0.22;
+export const PHEROMONE_EVAPORATION = 0.018;
+export const PHEROMONE_DIFFUSION = 0.2;
 
-/** Emitted at the nest each step (creates a home-gradient for homing). */
-export const NEST_EMISSION = 2.4;
+/** Emitted at the nest (subtle homing cue for carriers only). */
+export const NEST_EMISSION = 0.08;
 
-/** Laid per step by food-carrying ants (recruitment / stigmergy). */
-export const FOOD_TRAIL_DEPOSIT = 0.85;
+export const FOOD_TRAIL_DEPOSIT = 0.35;
+export const EXPLORATION_DEPOSIT = 0.01;
 
-/** Weak trail laid by foragers (exploratory marking). */
-export const EXPLORATION_DEPOSIT = 0.08;
+export const ANT_SPEED = 2.8;
 
-/** Ant movement speed in grid cells per second. */
-export const ANT_SPEED = 3.2;
+export const SENSOR_DISTANCE = 1.0;
+export const SENSOR_SPREAD = 0.5;
 
-/** Distance (cells) at which antennae sample the field. */
-export const SENSOR_DISTANCE = 1.1;
+/** Correlated random walk: angular acceleration noise (rad/s^2 scale). */
+export const WANDER_ANG_ACCEL = 14;
+export const WANDER_ANG_DAMP = 0.965;
+export const WANDER_MAX_OMEGA = 2.8;
 
-/** Angle between left/center/right sensors (radians). */
-export const SENSOR_SPREAD = 0.55;
+/** Carriers get a weak bias toward nest scent (still mostly wandering). */
+export const CARRIER_HOME_GAIN = 0.35;
 
-/** Noise on heading (radians per sqrt(second)) — exploration. */
-export const ANGLE_NOISE = 1.15;
+export const FOOD_SENSITIVITY = 0.35;
+export const PHEROMONE_TURN_GAIN = 0.45;
 
-/** How strongly ants steer toward pheromone gradients. */
-export const PHEROMONE_TURN_GAIN = 2.1;
+export const DIG_PROBABILITY = 0.0012;
+export const MAX_TUNNEL_DEPTH = 5;
 
-/** Minimum food scent before a forager treats it as a cue. */
-export const FOOD_SENSITIVITY = 0.02;
+/** Sand removed from surface per dig (grid units height). */
+export const DIG_CARVE_DEPTH = 0.28;
+export const DIG_CARVE_RADIUS = 1.8;
 
-/** Probability per step for a nearby forager to excavate (stochastic digging). */
-export const DIG_PROBABILITY = 0.0008;
+/** Loose grains spawned per dig (capped in world). */
+export const GRAINS_PER_DIG = 8;
+export const MAX_LOOSE_GRAINS = 3500;
 
-/** Max underground depth (layers below surface). */
-export const MAX_TUNNEL_DEPTH = 4;
+/** Scale terrain height samples to world Y (meters in Three.js). */
+export const TERRAIN_VISUAL_SCALE = 0.48;
+
+/** Lift ants slightly above the sand surface. */
+export const ANT_FOOT_CLEARANCE = 0.05;

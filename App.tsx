@@ -2,7 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
-import { AnthillScene, type ViewMode } from './src/components/AnthillScene';
+import { AnthillScene, type SimStats, type ViewMode } from './src/components/AnthillScene';
 import { World } from './src/simulation/world';
 
 export default function App() {
@@ -12,18 +12,16 @@ export default function App() {
   }
 
   const [viewMode, setViewMode] = useState<ViewMode>('surface');
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<SimStats>({
     tick: 0,
     foodDelivered: 0,
     antsForaging: 0,
+    looseGrains: 0,
   });
 
-  const onStats = useCallback(
-    (s: { tick: number; foodDelivered: number; antsForaging: number }) => {
-      setStats(s);
-    },
-    []
-  );
+  const onStats = useCallback((s: SimStats) => {
+    setStats(s);
+  }, []);
 
   const toggleView = useCallback(() => {
     setViewMode((v) => (v === 'surface' ? 'underground' : 'surface'));
@@ -38,10 +36,11 @@ export default function App() {
           <Text style={styles.line}>Ticks: {stats.tick}</Text>
           <Text style={styles.line}>Food delivered to nest: {stats.foodDelivered}</Text>
           <Text style={styles.line}>Foragers (active): {stats.antsForaging}</Text>
-          <Text style={styles.hint}>
-            Stigmergy: nest odor + food-trail pheromone fields diffuse and evaporate on a grid; ants compare
-            left/center/right samples (bilateral sensing).
-          </Text>
+          <Text style={styles.line}>Loose sand grains (excavated): {stats.looseGrains}</Text>
+        <Text style={styles.hint}>
+          Tan discs: food patches. Center mound: nest. Ants use a correlated random walk; carriers get a weak
+          scent bias toward the nest. Digging carves the sand heightfield and drops loose grains.
+        </Text>
           <Pressable style={styles.btn} onPress={toggleView}>
             <Text style={styles.btnText}>
               {viewMode === 'surface' ? 'Show underground (X-ray)' : 'Show surface'}
