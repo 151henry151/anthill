@@ -25,7 +25,12 @@ import {
   WANDER_MAX_OMEGA,
 } from './constants';
 import { PheromoneField } from './pheromones';
-import { carveCrater, createTerrainHeights, sampleHeightBilinear } from './terrain';
+import {
+  carveCrater,
+  createTerrainHeights,
+  depositSpoilMound,
+  sampleHeightBilinear,
+} from './terrain';
 import type { Ant, FoodSource, LooseGrain } from './types';
 
 function nestDist(x: number, z: number): number {
@@ -208,18 +213,26 @@ export class World {
 
     const ix = Math.floor(ant.x);
     const iz = Math.floor(ant.z);
-    carveCrater(this.terrainHeight, ix, iz, DIG_CARVE_DEPTH, DIG_CARVE_RADIUS);
+    const removed = carveCrater(this.terrainHeight, ix, iz, DIG_CARVE_DEPTH, DIG_CARVE_RADIUS);
+    const { cx, cz } = depositSpoilMound(
+      this.terrainHeight,
+      ix,
+      iz,
+      removed,
+      NEST_IX,
+      NEST_IZ
+    );
     this.terrainVersion += 1;
 
     for (let g = 0; g < GRAINS_PER_DIG; g++) {
       if (this.grains.length >= MAX_LOOSE_GRAINS) this.grains.shift();
-      const gx = ant.x + (Math.random() - 0.5) * 2.8;
-      const gz = ant.z + (Math.random() - 0.5) * 2.8;
+      const gx = cx + (Math.random() - 0.5) * 2.5;
+      const gz = cz + (Math.random() - 0.5) * 2.5;
       const base = sampleHeightBilinear(this.terrainHeight, gx, gz);
       this.grains.push({
         x: gx,
         z: gz,
-        y: base + 0.03 + Math.random() * 0.04,
+        y: base + 0.02 + Math.random() * 0.05,
       });
     }
 

@@ -54,6 +54,15 @@ export const DIG_CARVE_RADIUS = 1.8;
 export const GRAINS_PER_DIG = 8;
 export const MAX_LOOSE_GRAINS = 3500;
 
+/** Spoil heap: offset from dig cell along outward-from-nest direction (grid cells). */
+export const SPOIL_OFFSET_CELLS = 2.35;
+/** Gaussian mound radius for deposited spoil (grid cells). */
+export const SPOIL_MOUND_RADIUS = 2.85;
+/** Scale excavated volume to peak height added on the spoil heap. */
+export const SPOIL_VOLUME_TO_HEIGHT = 0.062;
+/** Cap added height from a single spoil deposit (terrain units). */
+export const SPOIL_MAX_PEAK_ADD = 0.52;
+
 /** Scale terrain height samples to world Y (meters in Three.js). */
 export const TERRAIN_VISUAL_SCALE = 0.48;
 

@@ -1,4 +1,10 @@
-import { GRID_SIZE } from './constants';
+import {
+  GRID_SIZE,
+  SPOIL_MAX_PEAK_ADD,
+  SPOIL_MOUND_RADIUS,
+  SPOIL_OFFSET_CELLS,
+  SPOIL_VOLUME_TO_HEIGHT,
+} from './constants';
 
 function fract(x: number): number {
   return x - Math.floor(x);
@@ -108,4 +114,83 @@ export function carveCrater(
     }
   }
   return removed;
+}
+
+function addGaussianHeight(
+  heights: Float32Array,
+  centerX: number,
+  centerZ: number,
+  peak: number,
+  radius: number
+): void {
+  if (peak <= 0) return;
+  const r = Math.ceil(radius + 2);
+  const i0 = Math.floor(centerX - r - 1);
+  const i1 = Math.ceil(centerX + r + 1);
+  const j0 = Math.floor(centerZ - r - 1);
+  const j1 = Math.ceil(centerZ + r + 1);
+  const sigma = radius * 0.42;
+  const sigma2 = 2 * sigma * sigma;
+  for (let iz = Math.max(0, j0); iz <= Math.min(GRID_SIZE - 1, j1); iz++) {
+    for (let ix = Math.max(0, i0); ix <= Math.min(GRID_SIZE - 1, i1); ix++) {
+      const dx = ix - centerX;
+      const dz = iz - centerZ;
+      const d2 = dx * dx + dz * dz;
+      if (d2 > (radius + 0.6) * (radius + 0.6)) continue;
+      const falloff = Math.exp(-d2 / sigma2);
+      const i = ix + iz * GRID_SIZE;
+      heights[i] = Math.min(3.2, heights[i] + peak * falloff);
+    }
+  }
+}
+
+/**
+ * Deposit excavated volume as spoil heaps beside the pit (outward from nest), shaping topography.
+ * Returns the primary mound center for placing loose grains on the pile.
+ */
+export function depositSpoilMound(
+  heights: Float32Array,
+  pitIx: number,
+  pitIz: number,
+  volumeRemoved: number,
+  nestIx: number,
+  nestIz: number
+): { cx: number; cz: number } {
+  let vx = pitIx - nestIx;
+  let vz = pitIz - nestIz;
+  const L = Math.hypot(vx, vz) || 1;
+  vx /= L;
+  vz /= L;
+
+  const peak = Math.min(
+    SPOIL_MAX_PEAK_ADD,
+    0.1 + volumeRemoved * SPOIL_VOLUME_TO_HEIGHT
+  );
+
+  const cx = pitIx + vx * SPOIL_OFFSET_CELLS;
+  const cz = pitIz + vz * SPOIL_OFFSET_CELLS;
+  addGaussianHeight(heights, cx, cz, peak, SPOIL_MOUND_RADIUS);
+
+  /** Smaller side cast where ants kick sand sideways. */
+  const px = -vz;
+  const pz = vx;
+  const side = Math.random() > 0.5 ? 1 : -1;
+  addGaussianHeight(
+    heights,
+    pitIx + px * 1.9 * side,
+    pitIz + pz * 1.9 * side,
+    peak * 0.38,
+    SPOIL_MOUND_RADIUS * 0.55
+  );
+
+  /** Small scatter along the arc between pit and mound (kick trail). */
+  addGaussianHeight(
+    heights,
+    pitIx + vx * (SPOIL_OFFSET_CELLS * 0.45),
+    pitIz + vz * (SPOIL_OFFSET_CELLS * 0.45),
+    peak * 0.18,
+    SPOIL_MOUND_RADIUS * 0.45
+  );
+
+  return { cx, cz };
 }

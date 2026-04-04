@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-04-04
+
+### Added
+
+- `depositSpoilMound` to raise terrain where excavated sand is dumped: primary mound outward from the nest, a smaller side cast, and a shallow trail between pit and mound.
+- Constants for spoil offset, mound radius, and volume-to-height scaling.
+
+### Changed
+
+- Pass removed volume from `carveCrater` into spoil deposition so dig volume shapes mound height.
+- Spawn loose grains on the spoil heap center so spheres sit on accumulated topography.
+
 ## [0.2.0] - 2026-04-04
 
 ### Added
