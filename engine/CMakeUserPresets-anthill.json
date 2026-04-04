@@ -9,17 +9,16 @@
 		{
 			"name": "anthill-engine",
 			"displayName": "Anthill engine (Luanti 5.10 + patch)",
-			"description": "Out-of-tree build of patched Luanti; source in third_party/luanti-src (created by engine/build.sh). Set ANTHILL_INSTALL_PREFIX before configure (build.sh exports it).",
+			"description": "Out-of-tree binaryDir under the Anthill repo; set ANTHILL_INSTALL_PREFIX before configure (build.sh exports it).",
+			"inherits": "RelWithDebInfo",
 			"generator": "Unix Makefiles",
-			"binaryDir": "${sourceDir}/engine/out/build",
+			"binaryDir": "${fileDir}/../../engine/out/build",
 			"cacheVariables": {
-				"CMAKE_BUILD_TYPE": "RelWithDebInfo",
 				"CMAKE_INSTALL_PREFIX": "$env{ANTHILL_INSTALL_PREFIX}",
 				"BUILD_CLIENT": "ON",
 				"BUILD_SERVER": "OFF",
 				"RUN_IN_PLACE": "FALSE"
-			},
-			"sourceDir": "${sourceDir}/third_party/luanti-src"
+			}
 		}
 	],
 	"buildPresets": [
@@ -27,12 +26,6 @@
 			"name": "anthill-engine",
 			"configurePreset": "anthill-engine",
 			"jobs": 0
-		}
-	],
-	"installPresets": [
-		{
-			"name": "anthill-engine",
-			"configurePreset": "anthill-engine"
 		}
 	]
 }

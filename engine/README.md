@@ -19,7 +19,7 @@ sudo apt install build-essential cmake git libgmp-dev libpng-dev \
   libjsoncpp-dev libzstd-dev liblzma-dev
 ```
 
-(Adjust for your distro; see upstream `doc/compiling/*.md`.)
+(Adjust for your distro; see upstream `doc/compiling/*.md` and **`docs/building-from-source.md`**.)
 
 ## Build and install
 
@@ -35,13 +35,17 @@ Defaults:
 - Install prefix: `$HOME/.local` (override with `ANTHILL_INSTALL_PREFIX=/usr/local`).
 - Tag: `5.10.0` (override with `LUANTI_TAG=...`).
 
-`build.sh` uses **`CMakePresets.json`** at the repo root (preset **`anthill-engine`**) when CMake ≥ **3.22** is available. You can also run the same steps manually:
+`build.sh` copies **`CMakeUserPresets-anthill.json`** to **`third_party/luanti-src/CMakeUserPresets.json`** (CMake loads presets from the **Luanti source** directory, not the Anthill repo root). It then runs the **`anthill-engine`** configure/build preset when `cmake --list-presets` shows it; otherwise it uses a manual `cmake` invocation. Install uses **`cmake --install ../../engine/out/build`** from the preset layout.
+
+Manual steps (after clone + patch + copy of the user presets file):
 
 ```bash
 export ANTHILL_INSTALL_PREFIX="$HOME/.local"
+cp engine/CMakeUserPresets-anthill.json third_party/luanti-src/CMakeUserPresets.json
+cd third_party/luanti-src
 cmake --preset anthill-engine
 cmake --build --preset anthill-engine
-cmake --install --preset anthill-engine
+cmake --install ../../engine/out/build
 ```
 
 The **`anthill`** executable is installed to `$PREFIX/bin/anthill`. The script also symlinks **`anthill_game`** into `$PREFIX/share/luanti/games/` and appends **`~/.local/bin`** to **`~/.bashrc`** once if needed for `PATH`.

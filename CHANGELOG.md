@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.3] - 2026-04-04
+
+### Added
+
+- `docs/building-from-source.md`: developer-oriented build steps, Debian-style dependencies, troubleshooting, and how CMake presets relate to the Luanti tree.
+- `engine/CMakeUserPresets-anthill.json`: **`anthill-engine`** configure/build preset (inherits Luanti’s **`RelWithDebInfo`**), intended to be copied into `third_party/luanti-src/CMakeUserPresets.json`.
+
+### Changed
+
+- Remove root `CMakePresets.json` (invalid fields for CMake 3.31; presets must be loaded from the Luanti source directory).
+- `engine/build.sh`: copy `CMakeUserPresets-anthill.json` into the clone; run `cmake --preset` / `cmake --build` from `third_party/luanti-src`; detect preset availability with `cmake --list-presets`; install with `cmake --install` on `engine/out/build`.
+- `README.md` and `engine/README.md`: document the user-preset path and link **`docs/building-from-source.md`**.
+
 ## [2.1.2] - 2026-04-04
 
 ### Added

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build the Anthill-patched Luanti engine and install the `anthill` binary.
-# Uses CMake Presets (CMake 3.22+): see ../CMakePresets.json, preset "anthill-engine".
+# Uses CMake Presets (CMake 3.22+): see CMakeUserPresets-anthill.json, preset "anthill-engine".
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -32,17 +32,31 @@ git submodule update --init --recursive
 echo "Applying Anthill patch..."
 git apply "$PATCH"
 
+USER_PRESETS_SRC="$ROOT/engine/CMakeUserPresets-anthill.json"
+USER_PRESETS_DST="$SRC/CMakeUserPresets.json"
+if [ ! -f "$USER_PRESETS_SRC" ]; then
+	echo "Missing $USER_PRESETS_SRC" >&2
+	exit 1
+fi
+cp -f "$USER_PRESETS_SRC" "$USER_PRESETS_DST"
+
 cd "$ROOT"
 
-if cmake --help 2>/dev/null | grep -q "preset"; then
-	echo "Configuring with CMake preset 'anthill-engine'..."
+anthill_engine_preset_available() {
+	# Presets are read from the Luanti source tree (upstream ships CMakePresets.json there).
+	cd "$SRC" && cmake --list-presets 2>/dev/null | grep -q 'anthill-engine'
+}
+
+if anthill_engine_preset_available; then
+	echo "Configuring with CMake preset 'anthill-engine' (see engine/CMakeUserPresets-anthill.json)..."
+	cd "$SRC"
 	cmake --preset anthill-engine
 	echo "Building..."
 	cmake --build --preset anthill-engine
 	echo "Installing to $INSTALL_PREFIX ..."
-	cmake --install --preset anthill-engine
+	cmake --install "$ROOT/engine/out/build"
 else
-	echo "CMake presets not available; using manual configure (install CMake 3.22+ for presets)."
+	echo "Anthill CMake preset unavailable; using manual configure (need CMake 3.22+ with preset support)."
 	mkdir -p "$ROOT/engine/out/build"
 	cd "$ROOT/engine/out/build"
 	cmake "$SRC" \

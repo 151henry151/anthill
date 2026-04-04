@@ -18,7 +18,7 @@ This repo ships a **patched Luanti 5.10.0** build that installs a client binary 
 ./engine/build.sh
 ```
 
-That clones Luanti, applies `engine/patches/0001-anthill-engine.patch`, configures with **`cmake --preset anthill-engine`** (see root **`CMakePresets.json`**), installs, links **`anthill_game`** into `$PREFIX/share/luanti/games/`, and may append **`~/.local/bin`** to **`~/.bashrc`** once.
+That clones Luanti, applies `engine/patches/0001-anthill-engine.patch`, configures with the **`anthill-engine`** CMake user preset (see **`engine/CMakeUserPresets-anthill.json`**, copied into the Luanti tree by the script), installs, links **`anthill_game`** into `$PREFIX/share/luanti/games/`, and may append **`~/.local/bin`** to **`~/.bashrc`** once.
 
 Installs to `$HOME/.local` by default (`ANTHILL_INSTALL_PREFIX` to change). Then ensure **`~/.local/bin`** is on your `PATH` and run:
 
@@ -32,7 +32,7 @@ Register the subgame for that install:
 ln -sfn /path/to/anthill/anthill_game ~/.local/share/luanti/games/anthill_game
 ```
 
-Details and build dependencies: **`engine/README.md`**. Engine license: **LGPL 2.1+** (same as Luanti).
+Developer build details, dependencies, and troubleshooting: **`docs/building-from-source.md`** and **`engine/README.md`**. Engine license: **LGPL 2.1+** (same as Luanti).
 
 ## Requirements (using system Luanti instead)
 
