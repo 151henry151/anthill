@@ -20,9 +20,9 @@ local function place_observer(player)
 	local sy = anthill.get_surface_y(0, 0)
 	player:set_pos({ x = 0, y = min_observer_y_at(0, 0), z = 0 })
 	player:set_look_horizontal(0)
-	-- API: positive look_vertical = look downward; ~1.1 rad looks steeply at the ground.
+	-- Horizontal default; look freely (up at clouds, down at ground). Mapblock reach uses viewing_range.
 	if player.set_look_vertical then
-		player:set_look_vertical(1.1)
+		player:set_look_vertical(0)
 	end
 	-- Moderate FOV; engine zoom is disabled via zoom_fov = 0 in set_properties.
 	if player.set_fov then
@@ -43,17 +43,15 @@ function anthill.apply_observer_visibility(player)
 			density = 0.4,
 		})
 	end
-	-- Raise client viewing cap and push fog out so terrain + entities far below stay visible.
+	-- Push fog out. Client caps wanted_range to min(viewing_range, fog_distance) per frame when
+	-- fog_distance >= 0 — keep this well above viewing_range (see anthill_game/minetest.conf).
 	if player.set_sky then
 		player:set_sky({
 			fog = {
-				fog_distance = 1600,
-				fog_start = 0.42,
+				fog_distance = 6000,
+				fog_start = 0.88,
 			},
 		})
-	end
-	if minetest.settings then
-		minetest.settings:set("viewing_range", "1200")
 	end
 end
 

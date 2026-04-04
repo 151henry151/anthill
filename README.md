@@ -77,13 +77,14 @@ With **stock Luanti**, the window title stays **Luanti**. With the **`anthill`**
 - **`/ant_count`** — print how many ant entities are active.
 - **`/observer_reset`** — move to the default high camera above the nest (helps worlds created before observer tuning).
 
-The subgame raises the **cloud deck** and **viewing distance / fog** for the high spectator; it also bumps **server block/object send ranges**. If a world still looks foggy or empty below, **exit and open the world again** so engine send-distance settings apply cleanly.
+The subgame raises the **cloud deck** and **fog** for the high spectator and bumps **server block/object send ranges**. **Mapblock loading** follows the **client’s** `viewing_range` (sent in player position packets); the default ~190 nodes is far too small vertically from the spectator height. **`anthill_game/minetest.conf`** sets a high **`viewing_range`** via the engine **game settings layer** (same keys in user `minetest.conf` **override** the game file — remove or raise `viewing_range` there if the ground stays invisible). Restart the client or re-open the world after changing files.
 
 ## Layout
 
 | Path | Role |
 |------|------|
 | `anthill_game/game.conf` | Subgame metadata, menu/mapgen restrictions |
+| `anthill_game/minetest.conf` | Game-layer defaults (`viewing_range`, block/object send distances) |
 | `anthill_game/menu/` | Main-menu background and icon |
 | `engine/` | `build.sh`, unified Luanti patch → **`anthill`** binary |
 | `luanti_menu_patch/` | Same menu Lua as in the engine patch (for stock `luanti` installs) |

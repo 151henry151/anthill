@@ -6,8 +6,11 @@ anthill = {
 	ant_list = {},
 }
 
--- Mapblocks (16³ nodes): default engine limits are too small for a ~520-node-high spectator.
+-- Match anthill_game/minetest.conf (game settings layer). Lua cannot raise *remote clients'*
+-- viewing_range — only the game/client minetest.conf (or user config) does. These calls keep
+-- dedicated servers and edge cases aligned with that file.
 minetest.register_on_mods_loaded(function()
+	minetest.settings:set("viewing_range", "1200")
 	minetest.settings:set("max_block_send_distance", "72")
 	minetest.settings:set("active_object_send_range_blocks", "64")
 end)

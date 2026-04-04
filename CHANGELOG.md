@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.10] - 2026-04-04
+
+### Added
+
+- `anthill_game/minetest.conf`: set **`viewing_range`**, **`max_block_send_distance`**, and **`active_object_send_range_blocks`** in the engine **game settings layer** so **clients** negotiate a large enough mapblock radius (server Lua alone cannot change remote clients’ `viewing_range`).
+
+### Changed
+
+- `anthill_game/mods/anthill/init.lua`: clarify comments about game **`minetest.conf`** vs server Lua settings.
+- `anthill_game/mods/anthill/player_spawn.lua`: raise sky **`fog_distance`** to **6000** so client **`wanted_range`** is not capped below **`viewing_range`** by fog.
+
+### Updated
+
+- `README.md`: document client **`viewing_range`**, game vs user config override order, and `minetest.conf` path table entry.
+
+## [2.1.9] - 2026-04-04
+
+### Changed
+
+- `anthill_game/mods/anthill/player_spawn.lua`: remove **`enforce_spectator_pitch`** (no pitch clamping); set initial **`set_look_vertical(0)`** so the spectator can look up at clouds and down at the ground. Ground visibility remains from **`viewing_range`** in `init.lua`.
+
+## [2.1.8] - 2026-04-04
+
+### Changed
+
+- `anthill_game/mods/anthill/init.lua`: set **`viewing_range` to 1200** at mod load so the client negotiates a large enough **mapblock send radius** with the server (default ~190 nodes was ~12 blocks — terrain ~33+ blocks below the camera never loaded).
+- `anthill_game/mods/anthill/player_spawn.lua`: steeper default **`set_look_vertical`**, lighter fog, **`enforce_spectator_pitch`** when the view drifts to the horizon, and drop redundant late **`viewing_range`** set from `apply_observer_visibility`.
+
+### Updated
+
+- `README.md`: explain the viewing-range / mapblock send interaction.
+
 ## [2.1.7] - 2026-04-04
 
 ### Changed
