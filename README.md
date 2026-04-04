@@ -1,47 +1,90 @@
-# Anthill (Minetest)
+# Anthill
 
-The browser/Expo prototype is removed. This repository is a **Minetest** mod set: a clean **desert sand** world (no trees or map decorations) and a **giant ant** placeholder sized so that **one node reads like one grain of sand** and an ant spans on the order of **~100 nodes** (tunable in `minetest_mods/anthill_ant/init.lua`).
+A **Luanti** ([Minetest engine](https://www.luanti.org/)) **subgame**: a desert “grain world” and **giant ant** simulation built **only on the engine**—no Minetest Game, no default mod.
 
-## Requirements
+- **Scale**: Each **node** is a **grain of sand** in the fiction; **ants** are **~80-node** cubes (smaller collision) so they dominate the landscape.
+- **World**: Procedural **dunes** from 2D Perlin noise over **sand** and **stone**, with a **nest** at the origin.
+- **Simulation**: **Trail** and **home** pheromone fields on a coarse grid, **wander + trail following + weak nest bias + separation** between ants. An initial **colony** spawns once per world; use **`/spawn_ants`** for more.
 
-- [Minetest](https://www.minetest.net/) 5.x (desktop; Linux is the primary target).
-- The **Minetest Game** (`minetest_game`) subgame, usually included with official builds or installable from the Content DB.
+### Cursor: agent terminal
 
-## Install mods
+If the Cursor agent’s **Shell** tool shows **no output** or **does not create files** here, see **`docs/cursor-agent-shell.md`** (Agent **sandbox** / **Settings → Agent**).
 
-Copy (or symlink) each folder under `minetest_mods/` into your Minetest user mods directory, for example:
+## Anthill engine (`anthill` command)
 
-- `~/.minetest/mods/anthill_desert`
-- `~/.minetest/mods/anthill_ant`
+This repo ships a **patched Luanti 5.10.0** build that installs a client binary named **`anthill`** (window title **Anthill**, same menu tweaks as `luanti_menu_patch/`). Upstream source is **not** vendored in git; `engine/build.sh` clones [luanti-org/luanti](https://github.com/luanti-org/luanti) and applies `engine/patches/0001-anthill-engine.patch`.
 
-Names must match the directory names above so `mod.conf` is picked up correctly.
-
-## New world
-
-1. Start Minetest → **Start Game** → select **Minetest Game**.
-2. **Select Mods** → enable **anthill_desert** and **anthill_ant** → save.
-3. **New** world → create it (mapgen is forced to flat desert by `anthill_desert`; use a **new** world so settings apply cleanly).
-
-You should see flat **desert sand** with **desert stone** below; no trees or plants.
-
-## Try the ant placeholder
-
-In singleplayer you normally have the `server` privilege. Run:
-
-```text
-/spawn_ant
+```bash
+./engine/build.sh
 ```
 
-A ~100-node cube entity appears above you as a stand-in for future ant models and AI.
+That clones Luanti, applies `engine/patches/0001-anthill-engine.patch`, configures with **`cmake --preset anthill-engine`** (see root **`CMakePresets.json`**), installs, links **`anthill_game`** into `$PREFIX/share/luanti/games/`, and may append **`~/.local/bin`** to **`~/.bashrc`** once.
+
+Installs to `$HOME/.local` by default (`ANTHILL_INSTALL_PREFIX` to change). Then ensure **`~/.local/bin`** is on your `PATH` and run:
+
+```bash
+anthill
+```
+
+Register the subgame for that install:
+
+```bash
+ln -sfn /path/to/anthill/anthill_game ~/.local/share/luanti/games/anthill_game
+```
+
+Details and build dependencies: **`engine/README.md`**. Engine license: **LGPL 2.1+** (same as Luanti).
+
+## Requirements (using system Luanti instead)
+
+Alternatively use stock **[Luanti](https://www.luanti.org/)** 5.8+ (`luanti` package) without building the fork.
+
+You do **not** need `minetest_game` or any Content DB game.
+
+## Install the subgame (system Luanti)
+
+Copy or symlink this folder into your user games directory:
+
+```bash
+ln -s /path/to/anthill/anthill_game ~/.minetest/games/anthill_game
+```
+
+The directory name **`anthill_game`** must match (it is the **game id**). For the **`anthill`** binary, use `~/.local/share/luanti/games/` as above.
+
+## Play
+
+1. Start **`anthill`** or **`luanti`** → **Start Game** → choose **Anthill**.
+2. **New world** (recommended) so mapgen and the one-time colony spawn run cleanly.
+
+### Main menu (what we can change)
+
+Luanti’s shell is still the **engine** main menu. For Anthill, `game.conf` does the following:
+
+- **Mapgen**: only **flat** is allowed as a base pass (dunes are built in Lua on top of it).
+- **Start Game tab**: **Creative Mode**, **Enable Damage**, and **Host Server** are **hidden**; they are forced off for this subgame.
+- **Create World** (via `disallowed_mapgen_settings`): hides **caves / dungeons / decorations**, the **seed** field, **flat** noise knobs that do not apply, and (with the optional patch below) the **mapgen** dropdown when there is only one choice—leaving **world name** as the main input.
+
+**Menu patch:** If you use **stock** `luanti`, you can still install `luanti_menu_patch/dlg_create_world.lua` manually (`./scripts/install-menu-patch.sh`). The **`anthill`** engine build **already includes** that change (`engine/patches/0001-anthill-engine.patch`).
+
+**Game bar icon:** `anthill_game/menu/icon.png` is used as the game icon; `menu/background.png` themes the menu backdrop.
+
+**Hiding “Minetest Game” in the bottom bar:** Luanti lists every installed subgame. On Debian you can remove the default game package: `sudo apt remove luanti-game-minetest` (you only need the `luanti` engine). Alternatively keep both and ignore the extra icon.
+
+With **stock Luanti**, the window title stays **Luanti**. With the **`anthill`** binary from `./engine/build.sh`, the title uses **Anthill**. You will still see engine tabs such as **Join Game**, **Content**, and **About** unless you change the engine further.
+
+### Commands (usually need `server` / singleplayer host)
+
+- **`/spawn_ants [count]`** — spawn up to 48 extra ants near the nest (default 8).
+- **`/ant_count`** — print how many ant entities are active.
 
 ## Layout
 
-| Mod             | Role |
-|-----------------|------|
-| `anthill_desert` | Flat mapgen + chunk fill: `default:desert_sand` / `default:desert_stone`, air above surface. |
-| `anthill_ant`    | `anthill_ant:giant` entity and `/spawn_ant`. |
+| Path | Role |
+|------|------|
+| `anthill_game/game.conf` | Subgame metadata, menu/mapgen restrictions |
+| `anthill_game/menu/` | Main-menu background and icon |
+| `engine/` | `build.sh`, unified Luanti patch → **`anthill`** binary |
+| `luanti_menu_patch/` | Same menu Lua as in the engine patch (for stock `luanti` installs) |
+| `scripts/install-menu-patch.sh` | Copy menu Lua into system Luanti only |
+| `anthill_game/mods/anthill/` | Nodes, dunes mapgen, pheromones, `anthill:ant` entities, player spawn, chat commands |
 
-## Scale notes
-
-- Block size is fixed by the engine (~1 m). The design intent is **narrative scale**: ants are huge relative to nodes so gameplay treats nodes like sand grains.
-- Adjust `visual_size`, `collisionbox`, and `HALF` in `anthill_ant` if you want a different length in nodes.
+Tune dunes (`SURFACE_BASE`, `DUNE_AMP`, `SAND_DEPTH`) and ant size (`VIS`, `COLL_HALF` in `ant_entity.lua`) as needed.

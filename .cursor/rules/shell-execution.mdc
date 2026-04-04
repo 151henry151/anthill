@@ -1,0 +1,12 @@
+---
+description: When Cursor agent shell appears broken (no output, files not created), use workarounds
+alwaysApply: true
+---
+
+# Agent shell reliability
+
+If **Shell** returns success but **no output** and **no files** appear under the workspace, assume the agent terminal is **sandboxed or disconnected** from the project root.
+
+- Prefer **Read**, **Write**, and **StrReplace** for changing files.
+- Tell the user to follow **`docs/cursor-agent-shell.md`**: Cursor **Settings → Agent**, disable or adjust **Run in Sandbox**, and verify with a manual command in the integrated terminal.
+- Do not assume `git`, `cmake`, or `touch` ran correctly until the user confirms files or git state on disk.

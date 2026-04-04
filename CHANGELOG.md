@@ -7,6 +7,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.2] - 2026-04-04
+
+### Added
+
+- `docs/cursor-agent-shell.md`: troubleshoot Cursor agent shell (empty output / no workspace writes) and pointer to Agent + Sandbox settings.
+- `.cursor/rules/shell-execution.mdc`: remind agents to fall back to file tools when shell is unreliable.
+
+### Changed
+
+- `README.md`: link to Cursor agent shell troubleshooting.
+
+## [2.1.1] - 2026-04-04
+
+### Added
+
+- Root `CMakePresets.json`: preset **`anthill-engine`** (configure / build / install) for the patched Luanti tree under `third_party/luanti-src`.
+
+### Changed
+
+- `engine/build.sh`: use `cmake --preset anthill-engine` when available; export `ANTHILL_INSTALL_PREFIX` for the preset; symlink **`anthill_game`** into `$PREFIX/share/luanti/games/`; append **`~/.local/bin`** to **`~/.bashrc`** once when missing from `PATH`.
+- `engine/README.md`: document CMake preset workflow and manual `cmake --preset` commands.
+
+## [2.1.0] - 2026-04-04
+
+### Added
+
+- `engine/patches/0001-anthill-engine.patch`: Luanti 5.10.0 patch setting display name **Anthill**, client binary **`anthill`**, server **`anthillserver`**, and bundled create-world menu Lua.
+- `engine/build.sh` and `engine/README.md`: clone upstream Luanti, apply patch, CMake install to `$HOME/.local` (override `ANTHILL_INSTALL_PREFIX`).
+- `engine/NOTICE`: LGPL attribution for the patch.
+
+### Changed
+
+- `README.md`: document building and running **`anthill`** vs system **`luanti`**; games path under `~/.local/share/luanti/games/` for the custom install.
+- `.gitignore`: ignore `third_party/luanti-src/` and `engine/out/`.
+
+## [2.0.2] - 2026-04-04
+
+### Added
+
+- `luanti_menu_patch/dlg_create_world.lua` and `luanti_menu_patch/README.md`: optional Luanti builtin patch to hide the mapgen dropdown when only one mapgen is allowed and to fix create-world layout when the seed field is hidden.
+- `scripts/install-menu-patch.sh`: copy the patched dialog into the system Luanti install.
+
+### Changed
+
+- `anthill_game/game.conf`: add `mg_flags` and `seed` to `disallowed_mapgen_settings` so the stock create-world dialog hides generic caves/dungeons/decorations and the seed field without a menu patch.
+- `anthill_game/menu/icon.png`: regenerate with a visible “Anthill” label for the bottom game bar.
+- `README.md`: document the menu patch, icon, and removing `luanti-game-minetest` for an Anthill-only game list.
+
+## [2.0.1] - 2026-04-04
+
+### Added
+
+- `anthill_game/menu/background.png` and `menu/icon.png` (desert-toned placeholders) for the engine main menu.
+
+### Changed
+
+- `anthill_game/game.conf`: set `allowed_mapgens` / `default_mapgen` to flat only; `disabled_settings` for creative, damage, and host-server; `disallowed_mapgen_settings` for flat mapgen fields that do not apply to Lua dunes.
+- `README.md`: describe menu behavior and engine limitations.
+
+## [2.0.0] - 2026-04-04
+
+### Added
+
+- `anthill_game/` Luanti subgame (engine only): `anthill:sand`, `anthill:stone`, `anthill:nest`; mapgen aliases for flat mapgen; Perlin dune terrain and nest at the origin.
+- Coarse-grid **trail** and **home** pheromone fields with decay and nest seeding.
+- **`anthill:ant`** entities (~80-node visual cube): wander steering, trail gradient, home vector, separation, ground raycast, trail deposit; initial colony once per world via mod storage; **`/spawn_ants`** and **`/ant_count`**.
+- Observer-style **player** spawn high above the nest and simple cube appearance.
+
+### Removed
+
+- `minetest_mods/` mods that depended on **Minetest Game** (`default` nodes).
+
+### Changed
+
+- Document Luanti-only workflow in `README.md` (symlink `anthill_game`, no `minetest_game` requirement).
+
 ## [1.0.0] - 2026-04-04
 
 ### Added
