@@ -1,6 +1,7 @@
 extends Node3D
 
 const _MeshBuilder := preload("res://scripts/world/mesh_builder.gd")
+const _SandStepScript: GDScript = preload("res://scripts/world/sand_step.gd")
 
 @onready var world: Node = $WorldManager
 @onready var chunks_root: Node3D = $Chunks
@@ -26,7 +27,7 @@ func _ready() -> void:
 
 func _physics_process(_delta: float) -> void:
 	if not world.sand_idle:
-		SandStep.step(world)
+		_SandStepScript.call_static(&"step", world)
 	if world.take_mesh_dirty():
 		_rebuild_all_meshes()
 

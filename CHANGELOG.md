@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.18] - 2026-04-04
+
+### Fixed
+
+- **`scripts/main_controller.gd`**: invoke sand **`step`** via **`GDScript.call_static`** on a typed **`preload`** — **`SandStep`** **`class_name`** is not always in scope at parse time on some loads, which caused **Identifier "SandStep" not declared**.
+
 ## [0.2.17] - 2026-04-04
 
 ### Fixed
