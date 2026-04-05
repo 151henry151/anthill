@@ -22,14 +22,20 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 
-func _unhandled_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
+	# `_unhandled_input` often never sees drags (GUI / viewport eats them first).
+	var hc: Variant = get_viewport().gui_get_hovered_control()
+	var over_gui: bool = hc != null
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
 			size = clampf(size - zoom_step, min_zoom, max_zoom)
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
 			size = clampf(size + zoom_step, min_zoom, max_zoom)
 	if event is InputEventMouseMotion:
-		if event.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
+		if over_gui:
+			return
+		var pan_mask: int = MOUSE_BUTTON_MASK_LEFT | MOUSE_BUTTON_MASK_MIDDLE
+		if event.button_mask & pan_mask:
 			var s: float = size * 0.02
 			position.x -= event.relative.x * s * pan_speed
 			position.z -= event.relative.y * s * pan_speed

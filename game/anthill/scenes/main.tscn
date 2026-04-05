@@ -1,8 +1,9 @@
-[gd_scene load_steps=6 format=3 uid="uid://anthill_main"]
+[gd_scene load_steps=7 format=3 uid="uid://anthill_main"]
 
 [ext_resource type="Script" path="res://scripts/main_controller.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/world/world_manager.gd" id="2_world"]
 [ext_resource type="Script" path="res://scripts/colony_camera.gd" id="3_cam"]
+[ext_resource type="Script" path="res://scripts/colony_ants.gd" id="4_ants"]
 
 [sub_resource type="Environment" id="Environment_colony"]
 background_mode = 1
@@ -48,4 +49,4 @@ offset_left = 12.0
 offset_top = 12.0
 theme_override_colors/font_color = Color(0.9, 0.92, 0.85, 1)
 theme_override_font_sizes/font_size = 14
-text = "Colony view (not controlling ants) — middle-drag to pan · wheel to zoom · later: place food / queen, colony priorities"
+text = "Colony view — left-drag or middle-drag to pan · wheel to zoom · brown blocks are ants (AI later)"

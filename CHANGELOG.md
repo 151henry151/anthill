@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.11] - 2026-04-04
+
+### Added
+
+- **`scripts/colony_ants.gd`**, **`scenes/main.tscn`**: spawn **wandering brown box “ants”** on the **sand surface** for colony view (separate from the FPS **`ant.tscn`** prototype).
+
+### Fixed
+
+- **`scripts/colony_camera.gd`**: handle **pan** in **`_input`** and allow **left** or **middle** drag; **skip** panning when the mouse is over a **GUI control** so the hint label does not steal drags from the whole window.
+
+### Changed
+
+- **`scenes/main.tscn`**: update the **hint** line to describe **left-drag** and the **placeholder ants**.
+
 ## [0.2.10] - 2026-04-04
 
 ### Changed
