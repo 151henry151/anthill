@@ -34,8 +34,8 @@ func get_block(wx: int, wy: int, wz: int) -> int:
 	var max_wz := chunks_z * sz
 	if wx < 0 or wz < 0 or wx >= max_wx or wz >= max_wz:
 		return GameConstants.BLOCK_AIR
-	var cx := wx // sx
-	var cz := wz // sz
+	var cx: int = int(floor(float(wx) / float(sx)))
+	var cz: int = int(floor(float(wz) / float(sz)))
 	var lx := wx % sx
 	var lz := wz % sz
 	var ch: VoxelChunk = _chunks[Vector2i(cx, cz)]
@@ -51,8 +51,8 @@ func set_block(wx: int, wy: int, wz: int, id: int) -> void:
 	var max_wz := chunks_z * sz
 	if wx < 0 or wz < 0 or wx >= max_wx or wz >= max_wz:
 		return
-	var cx := wx // sx
-	var cz := wz // sz
+	var cx: int = int(floor(float(wx) / float(sx)))
+	var cz: int = int(floor(float(wz) / float(sz)))
 	var lx := wx % sx
 	var lz := wz % sz
 	var ch: VoxelChunk = _chunks[Vector2i(cx, cz)]

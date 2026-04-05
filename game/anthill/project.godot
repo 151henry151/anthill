@@ -3,6 +3,6 @@ config_version=5
 
 [application]
 config/name="Anthill"
-config/description="Grain-scale voxel world: procedural sand/stone, falling sand, ants that move grains."
+config/description="Grain-scale voxel colony: top-down view; sand physics; future food, queen, and colony policy — not direct ant control."
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.2", "Forward Plus")

@@ -20,12 +20,6 @@ func _ready() -> void:
 			_chunk_meshes[Vector2i(cx, cz)] = mi
 	_rebuild_all_meshes()
 
-	var ant_scene: PackedScene = preload("res://scenes/ant.tscn")
-	var ant: CharacterBody3D = ant_scene.instantiate() as CharacterBody3D
-	ant.world = world
-	ant.position = Vector3(24.0, 32.0, 24.0)
-	add_child(ant)
-
 
 func _physics_process(_delta: float) -> void:
 	SandStep.step(world)

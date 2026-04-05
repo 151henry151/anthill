@@ -1,5 +1,5 @@
 extends CharacterBody3D
-## Ant: moves on the ground, picks up one sand grain (E), places it (Q).
+## Reserved for future **AI** ant bodies — not a player avatar. Colony play is top-down; you do not drive ants.
 
 var world: WorldManager
 var carried: int = GameConstants.BLOCK_AIR

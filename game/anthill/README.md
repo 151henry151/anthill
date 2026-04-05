@@ -1,6 +1,6 @@
 # Anthill (Godot)
 
-Godot **4.2+** game: **one voxel = one sand grain** in fiction (~3 mm; see `scripts/constants.gd`). The world is a **chunked heightmap** (Minecraft-like layers: air / sand / stone) with **falling sand** each physics tick and an **ant** that can **grab** one sand block and **place** it elsewhere.
+Godot **4.2+** game: **one voxel = one sand grain** in fiction (~3 mm; see `scripts/constants.gd`). The world is a **chunked heightmap** (Minecraft-like layers: air / sand / stone) with **falling sand** each physics tick. You watch from a **top-down colony camera** (not direct ant control); later: food, queen, and colony priorities.
 
 ## Run
 
@@ -19,11 +19,12 @@ Godot **4.2+** game: **one voxel = one sand grain** in fiction (~3 mm; see `scri
 |------|------|
 | `scripts/constants.gd` | Grain size fiction, block type ids |
 | `scripts/world/` | Chunk storage, procedural fill, meshing, sand step |
-| `scripts/entities/ant.gd` | Player ant: move, ray pick sand, place |
+| `scripts/colony_camera.gd` | Orthographic top-down pan/zoom |
+| `scripts/entities/ant.gd` | Reserved for future AI ant mesh (not used as player) |
 | `scenes/main.tscn` | World, lights, floor collision, UI hint |
-| `scenes/ant.tscn` | Ant body + camera |
+| `scenes/ant.tscn` | Unused prototype scene (kept for a future AI ant asset) |
 
 ## Limits (prototype)
 
-- **Voxel–collision** for terrain is not implemented; a large **floor** collider plus rough Y clamp keeps the ant from falling forever. Mesh or heightfield collision per chunk is a natural next step.
+- **Voxel–collision** for terrain is not implemented; a large **floor** collider is a stand-in. Mesh or heightfield collision per chunk is a natural next step.
 - **Mesh rebuild** runs every physics frame after sand settles; fine for `3×3` chunks, optimize later.

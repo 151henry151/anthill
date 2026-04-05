@@ -1,6 +1,6 @@
 # Anthill
 
-**Grain-scale voxel game** built in **Godot 4.2+**. One voxel represents one **sand grain** in fiction (~3 mm); the world is **procedurally generated** (heightmap-style sand/stone), **sand falls** like Minecraft sand, and you control an **ant** that can **pick up** a single grain and **put it down** elsewhere.
+**Grain-scale voxel colony** built in **Godot 4.2+**. One voxel represents one **sand grain** in fiction (~3 mm); the world is **procedurally generated** (heightmap-style sand/stone), **sand falls** like Minecraft sand, and you **observe from above** — colony tools (food, queen, priorities) are planned; you **do not** drive individual ants.
 
 ## Run
 
@@ -12,7 +12,13 @@ godot --path game/anthill
 
 ### System install (`anthill` command)
 
-Requires **Godot 4** on your PATH as `godot4` or `godot` (e.g. distro package or [official build](https://godotengine.org/download/linux/)).
+Requires **Godot 4**. If you do not have it yet, install the official Linux x86_64 binary (needs **curl**, **unzip**, **sudo**):
+
+```bash
+sudo ./scripts/install-godot4.sh
+```
+
+That installs **`/usr/local/bin/godot4`** (override version: `sudo GODOT_VERSION=4.3.0 ./scripts/install-godot4.sh`). Alternatively use a distro package or [Godot downloads](https://godotengine.org/download/linux/) and ensure **`godot4`** or **`godot`** is on **`PATH`**.
 
 From the repo root:
 

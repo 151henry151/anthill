@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-04-05
+
+### Fixed
+
+- **`scripts/world/world_manager.gd`**: replace **`//`** integer division with **`int(floor(float(x) / float(y)))`** so Godot 4.2 parses the file (avoids `/` parse errors and restores **`class_name`** registration).
+
+### Changed
+
+- **`scenes/main.tscn`**, **`scripts/colony_camera.gd`**: **orthographic top-down** colony view (middle-drag pan, wheel zoom); remove spawning the old first-person **ant** player from **`main_controller.gd`**.
+- **`project.godot`**, UI hint label: describe **colony management** intent, not direct ant control.
+- **`game/anthill/README.md`**: document camera vs future systems.
+
+### Updated
+
+- **`scripts/entities/ant.gd`**: note script is for future **AI** ants only.
+
+## [0.2.3] - 2026-04-05
+
+### Added
+
+- **`scripts/install-godot4.sh`**: download and install official **Godot 4.x** Linux x86_64 to **`$PREFIX/lib/anthill/godot4`** with **`$PREFIX/bin/godot4`** symlink (`GODOT_VERSION` overrides default **4.2.2**).
+
+### Updated
+
+- **`README.md`**: document **`install-godot4.sh`** before **`install-anthill.sh`** when Godot is missing.
+
 ## [0.2.2] - 2026-04-04
 
 ### Added
