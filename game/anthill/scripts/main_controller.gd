@@ -54,7 +54,8 @@ var _rng: RandomNumberGenerator
 
 var _mesh_pending: Dictionary = {}
 var _xray_active: bool = false
-var _fast_forward: bool = false
+## **0** = 1×, **1…N** = **`FAST_FORWARD_SPEEDS[i−1]`**.
+var _ff_tier: int = 0
 var _mat_xray: StandardMaterial3D
 var _game_tick: int = 0
 var _game_day: int = 0
@@ -287,7 +288,7 @@ func _physics_process(_delta: float) -> void:
 		_pheromone_field,
 		_building_pheromone,
 		colony_ants,
-		_fast_forward
+		_ff_tier > 0
 	)
 
 
@@ -322,7 +323,7 @@ func _update_hud() -> void:
 		brood_total = int(counts["total"])
 	_peak_workers = maxi(_peak_workers, workers)
 	_hud.xray_active = _xray_active
-	_hud.fast_forward = _fast_forward
+	_hud.fast_forward_multiplier = _ff_time_scale()
 	_hud.update_data(
 		_game_day,
 		_format_clock_time(_game_tick),
@@ -376,9 +377,20 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_fast_forward()
 
 
+func _ff_time_scale() -> float:
+	if _ff_tier <= 0:
+		return 1.0
+	var i: int = _ff_tier - 1
+	var speeds: Array = _Const.FAST_FORWARD_SPEEDS
+	if i >= speeds.size():
+		return 1.0
+	return float(speeds[i])
+
+
 func _toggle_fast_forward() -> void:
-	_fast_forward = not _fast_forward
-	Engine.time_scale = _Const.FAST_FORWARD_SCALE if _fast_forward else 1.0
+	var n: int = _Const.FAST_FORWARD_SPEEDS.size() + 1
+	_ff_tier = (_ff_tier + 1) % n
+	Engine.time_scale = _ff_time_scale()
 
 
 func _toggle_xray() -> void:

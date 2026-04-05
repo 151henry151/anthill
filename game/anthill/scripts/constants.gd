@@ -187,8 +187,8 @@ const XRAY_DEPTH_FADE_RANGE := 80.0
 # ---------------------------------------------------------------------------
 # Fast-forward
 # ---------------------------------------------------------------------------
-## Engine time scale when fast-forward is active.
-const FAST_FORWARD_SCALE := 30.0
+## **[F]** cycles: **1×** → **10×** → **30×** → **60×** → **120×** → **1×** …
+const FAST_FORWARD_SPEEDS: Array[float] = [10.0, 30.0, 60.0, 120.0]
 
 # ---------------------------------------------------------------------------
 # Worker movement intervals (seconds between steps)

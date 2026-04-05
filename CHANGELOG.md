@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.13] - 2026-04-05
+
+### Changed
+
+- **`scripts/constants.gd`**: replace single **`FAST_FORWARD_SCALE`** with **`FAST_FORWARD_SPEEDS`** (**10**, **30**, **60**, **120**).
+- **`scripts/main_controller.gd`**: map **[F]** to a **1× → 10× → 30× → 60× → 120× → 1×** cycle via **`Engine.time_scale`**.
+- **`scripts/colony_hud.gd`**: drive the mode line from **`fast_forward_multiplier`** instead of a fixed constant.
+- **`scenes/main.tscn`**: update hint text for the multi-step fast-forward cycle.
+
 ## [0.5.12] - 2026-04-05
 
 ### Added
