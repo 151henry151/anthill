@@ -12,6 +12,7 @@ var _mode_label: Label
 var _panel: PanelContainer
 
 var game_day: int = 0
+var clock_time: String = "00:00"
 var colony_stage: String = "Founding"
 var queen_energy: float = 1.0
 var sugar: float = 0.0
@@ -52,8 +53,18 @@ func _mk_label(parent: VBoxContainer) -> Label:
 	return lbl
 
 
-func update_data(p_day: int, p_stage: String, p_queen_energy: float, p_sugar: float, p_protein: float, p_workers: int, p_brood: int) -> void:
+func update_data(
+	p_day: int,
+	p_clock: String,
+	p_stage: String,
+	p_queen_energy: float,
+	p_sugar: float,
+	p_protein: float,
+	p_workers: int,
+	p_brood: int
+) -> void:
 	game_day = p_day
+	clock_time = p_clock
 	colony_stage = p_stage
 	queen_energy = p_queen_energy
 	sugar = p_sugar
@@ -67,7 +78,7 @@ func _update_display() -> void:
 	if _stage_label == null:
 		return
 	_stage_label.text = colony_stage
-	_day_label.text = "Day %d" % game_day
+	_day_label.text = "Day %d · %s" % [game_day, clock_time]
 	var qc: String = "OK" if queen_energy > 0.5 else ("Low" if queen_energy > 0.2 else "Critical")
 	_queen_label.text = "Queen: %s (%.0f%%)" % [qc, queen_energy * 100.0]
 	_food_label.text = "Sugar: %.0f%% | Protein: %.0f%%" % [sugar * 100.0, protein * 100.0]

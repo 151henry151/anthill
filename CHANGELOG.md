@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-04-04
+
+### Added
+
+- **`scripts/day_night_cycle.gd`**: drive **`DirectionalLight3D`** orientation and color/energy from **`_game_tick`** so one full sun arc matches one **ant-day** (`TICKS_PER_ANT_DAY`); blend **`WorldEnvironment`** ambient and background for night.
+- **`scripts/main_controller.gd`**, **`scenes/main.tscn`**: add **`DayNightCycle`** node; enable directional **shadows** (PSSM, max distance) on the sun light.
+- **`scripts/colony_hud.gd`**: show a **24h-style clock** next to the day counter (same phase as the visual cycle).
+
 ## [0.5.1] - 2026-04-06
 
 ### Fixed

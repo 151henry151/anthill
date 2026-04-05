@@ -1,13 +1,20 @@
-; Anthill — Godot voxel prototype
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
 config_version=5
 
 [application]
+
 config/name="Anthill"
 config/description="Grain-scale voxel colony: top-down view; sand physics; future food, queen, and colony policy — not direct ant control."
 run/main_scene="res://scenes/loading_screen.tscn"
 config/features=PackedStringArray("4.2", "GL Compatibility")
 run/max_fps=60
-
 boot_splash/bg_color=Color(0.37, 0.51, 0.76, 1)
 boot_splash/image="res://assets/splash/anthill_boot.png"
 boot_splash/fullsize=false
@@ -15,12 +22,14 @@ boot_splash/show_image=true
 boot_splash/use_filter=true
 
 [display]
+
 window/vsync/vsync_mode=1
 
 [physics]
+
 common/physics_ticks_per_second=30
 
 [rendering]
 
-renderer/rendering_method="gl_compatibility"
 textures/canvas_textures/default_texture_filter=0
+renderer/rendering_method="gl_compatibility"

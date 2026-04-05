@@ -27,6 +27,7 @@ var _sand_step: RefCounted
 @onready var world: Node = $WorldManager
 @onready var chunks_root: Node3D = $Chunks
 @onready var colony_ants: Node3D = $ColonyAnts
+@onready var _day_night: Node = $DayNightCycle
 
 var _chunk_meshes: Dictionary = {}
 var _mat: StandardMaterial3D
@@ -84,6 +85,8 @@ func _ready() -> void:
 	for k in _chunk_meshes:
 		_initial_mesh_keys.append(k)
 	_setup_systems()
+	if _day_night:
+		_day_night.set_game_tick(_game_tick)
 	set_process(true)
 
 
@@ -203,6 +206,8 @@ func _physics_process(_delta: float) -> void:
 		_rebuild_chunk_mesh(k)
 		budget -= 1
 	_game_tick += 1
+	if _day_night:
+		_day_night.set_game_tick(_game_tick)
 	_game_day = _game_tick / _Const.TICKS_PER_ANT_DAY
 	if _brood_manager:
 		_brood_manager.tick()
@@ -227,6 +232,15 @@ func _update_colony_stage() -> void:
 		_colony_stage = "Founding"
 
 
+func _format_clock_time(tick: int) -> String:
+	var day_len: float = float(_Const.TICKS_PER_ANT_DAY)
+	var t: float = fmod(float(tick), day_len) / day_len
+	var total_min: int = int(round(t * 24.0 * 60.0)) % (24 * 60)
+	var h: int = total_min / 60
+	var m: int = total_min % 60
+	return "%02d:%02d" % [h, m]
+
+
 func _update_hud() -> void:
 	if _hud == null:
 		return
@@ -241,7 +255,16 @@ func _update_hud() -> void:
 	_peak_workers = maxi(_peak_workers, workers)
 	_hud.xray_active = _xray_active
 	_hud.fast_forward = _fast_forward
-	_hud.update_data(_game_day, _colony_stage, queen_energy, sugar, protein, workers, brood_total)
+	_hud.update_data(
+		_game_day,
+		_format_clock_time(_game_tick),
+		_colony_stage,
+		queen_energy,
+		sugar,
+		protein,
+		workers,
+		brood_total
+	)
 
 
 func _on_queen_egg_laid(count: int, is_trophic: bool) -> void:
