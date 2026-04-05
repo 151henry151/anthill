@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-05
+
+### Added
+
+- **`scripts/ant_caste.gd`**: define **`Caste`** enum (QUEEN, WORKER, MALE_ALATE, QUEEN_ALATE), **`Task`** enum, and **`WorkerState`** enum for Lasius niger simulation.
+- **`scripts/queen_ant.gd`**: queen ant with **state machine** (FLYING_IN → WING_SHEDDING → SEARCHING → DIGGING → CLAUSTRAL → ESTABLISHED → REPRODUCTIVE); opening cinematic sequence with fly-in arc, dust puff particle effect, wing-shed animation, surface search, vertical shaft + founding chamber excavation, entrance sealing, and claustral egg laying with energy drain.
+- **`scripts/brood_manager.gd`**: track eggs, larvae, and pupae with development timers (egg → larva → pupa → eclosion); emit **`ant_eclosed`** signal when adults emerge; support trophic egg cannibalism and larva feeding.
+- **`scripts/brood_renderer.gd`**: instanced mesh rendering of eggs (spheres), larvae (capsules), and pupae (capsules) inside nest chambers.
+- **`scripts/pheromone_field.gd`**: 2D trail pheromone grid on the XZ plane with cell-based deposition, multiplicative evaporation, directional sampling for forager navigation.
+- **`scripts/food_source.gd`**: food sources on terrain — aphid colony (sugar, replenishing), dead insect (protein, finite), seed cache (carbohydrate, finite) — with procedural mesh visuals.
+- **`scripts/colony_food_store.gd`**: colony-level sugar/protein resource tracker with **`food_critical`** signal.
+- **`scripts/nest_builder.gd`**: nest blueprint system with planned chambers (brood, food storage, worker rest) relative to founding chamber; expose dig targets for workers.
+- **`scripts/colony_hud.gd`**: HUD overlay showing colony stage, ant-day counter, queen energy status, food store bars, and population/brood counts.
+- **`scripts/game_over.gd`**: game over screen with cause of death, days survived, peak workers, and retry button.
+
+### Changed
+
+- **`scripts/constants.gd`**: add game time scale constants (`TICKS_PER_ANT_DAY`, `GAME_SECONDS_PER_ANT_DAY`), brood development durations, queen claustral parameters, pheromone field parameters, food source parameters, worker age thresholds, nest building dimensions, and cinematic timing constants.
+- **`scripts/colony_ants.gd`**: replace random-walk system with task-based worker state machine (EMERGING, RESTING, BROOD_CARE, NEST_BUILDING, FORAGING_DEPART, FORAGING_SCOUT, FORAGING_RECRUIT, RETURNING, TROPHALLAXIS, ATTENDING_QUEEN, DEFENDING); add age-based polyethism task assignment; support pheromone trail following and food source collection; spawn workers via `spawn_worker()` from brood eclosion instead of at startup.
+- **`scripts/main_controller.gd`**: wire up all colony systems (queen, brood manager, brood renderer, pheromone field, food store, food sources, nest builder, HUD, game over); manage game clock and colony stage transitions; spawn food sources on terrain at game start.
+
 ## [0.3.7] - 2026-04-05
 
 ### Changed
