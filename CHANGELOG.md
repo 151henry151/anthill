@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.6] - 2026-04-05
+
+### Changed
+
+- **`assets/splash/`**: redraw **`anthill_boot.png`** and **`anthill_hero.png`** with a **side-view** ant (**gaster**, **petiole**, **thorax**, **head**, **eye**, **mandible**, **geniculate antennae**, **six** **segmented** legs) on the existing sky / dune / mound background.
+- **`tools/generate_splash_assets.py`**: add a **PIL** script to **regenerate** those **PNGs** for future tweaks.
+- **`README.md`**: document **`tools/generate_splash_assets.py`**.
+
+## [0.3.5] - 2026-04-05
+
+### Changed
+
+- **`scripts/colony_ant_model.gd`**: rebuild colony ant mesh with **gaster / petiole / thorax / head**, **lateral eyes**, **small mandibles**, **geniculate antennae** (scape + funiculus), and **six** **two-segment** legs; expose **`MODEL_BODY_LENGTH`** (**1.0** local unit along the body axis).
+- **`scripts/colony_ants.gd`**: set default **`ant_visual_scale`** to **3.0** so body length is **~3** voxels; update **`_ANT_LOCAL_Y_MIN`** for the new rig’s **foot** height.
+
 ## [0.3.4] - 2026-04-05
 
 ### Added

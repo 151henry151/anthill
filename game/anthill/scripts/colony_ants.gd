@@ -7,10 +7,10 @@ const _AntModelScript = preload("res://scripts/colony_ant_model.gd")
 
 @export var ant_count: int = 72
 @export var move_interval: float = 0.45
-## World length ≈ `~8` model units × this scale; keep **≥ ~10** so ants read as **~10×** one voxel grain.
+## Body length in model space is **`ColonyAntModel.MODEL_BODY_LENGTH`** (**1.0**); **`×` this scale** ≈ world length in voxels (**3** ≈ **3** blocks long).
 @export var ant_visual_scale: float = 3.0
-## Lowest point of `ColonyAntModel` mesh in the ant root’s local space (feet below origin); keeps feet on the surface.
-const _ANT_LOCAL_Y_MIN: float = -2.05
+## Minimum **Y** in ant local space (lowest vertex; negative = below root); keeps feet on **sand** after scaling.
+const _ANT_LOCAL_Y_MIN: float = -0.22
 
 @onready var world: Node = $"../WorldManager"
 

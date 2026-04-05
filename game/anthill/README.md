@@ -24,6 +24,7 @@ Godot **4.2+** game: **one voxel = one sand grain** in fiction (~3 mm; see `scri
 | `scenes/loading_screen.tscn` | Boot UI: threaded load of `main.tscn` with a progress bar |
 | `scenes/main.tscn` | World, lights, floor collision, UI hint |
 | `scenes/ant.tscn` | Unused prototype scene (kept for a future AI ant asset) |
+| `tools/generate_splash_assets.py` | Regenerate `assets/splash/*.png` (requires **Pillow**: `pip install pillow`) |
 
 ## Limits (prototype)
 

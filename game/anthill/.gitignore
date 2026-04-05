@@ -2,3 +2,7 @@
 .godot/
 *.translation
 export_presets.cfg
+
+# Python (splash generator)
+__pycache__/
+*.py[cod]
