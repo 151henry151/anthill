@@ -48,6 +48,8 @@ var _dig_phase: int = 0  # 0=shaft, 1=chamber, 2=seal
 var _dig_timer: float = 0.0
 var _founding_chamber_center: Vector3i = Vector3i.ZERO
 var _shaft_start_xz: Vector2i = Vector2i.ZERO
+## Surface block Y at shaft center when digging starts (stable for whole shaft; avoids `get_surface_y` jumping after the hole is carved).
+var _shaft_top_y: int = 0
 var _shaft_depth_dug: int = 0
 var _chamber_voxels_to_dig: Array[Vector3i] = []
 var _chamber_dig_idx: int = 0
@@ -249,6 +251,10 @@ func _place_on_surface(sy: int) -> void:
 
 func _begin_digging() -> void:
 	_shaft_start_xz = Vector2i(_wx, _wz)
+	var sy0: int = _surface_y(_wx, _wz)
+	if sy0 < 0:
+		sy0 = _TerrainGen.SURFACE_BASE - 1
+	_shaft_top_y = sy0
 	_shaft_depth_dug = 0
 	_dig_phase = 0
 	_dig_timer = 0.0
@@ -273,10 +279,7 @@ func _dig_shaft_step() -> void:
 	if _shaft_depth_dug >= _Const.FOUNDING_SHAFT_DEPTH:
 		_prepare_chamber_dig()
 		return
-	var sy: int = _surface_y(_shaft_start_xz.x, _shaft_start_xz.y)
-	if sy < 0:
-		sy = _TerrainGen.SURFACE_BASE - 1
-	var target_y: int = sy - _shaft_depth_dug
+	var target_y: int = _shaft_top_y - _shaft_depth_dug
 	if target_y < 1:
 		_prepare_chamber_dig()
 		return
@@ -295,9 +298,7 @@ func _dig_shaft_step() -> void:
 
 func _prepare_chamber_dig() -> void:
 	_dig_phase = 1
-	var sy: int = _surface_y(_shaft_start_xz.x, _shaft_start_xz.y)
-	if sy < 0:
-		sy = _TerrainGen.SURFACE_BASE - 1
+	var sy: int = _shaft_top_y
 	var shaft_bottom_y: int = sy - _shaft_depth_dug + 1
 	var ch_size: Vector3i = _Const.FOUNDING_CHAMBER_SIZE
 	var cx: int = _shaft_start_xz.x - ch_size.x / 2
@@ -326,9 +327,16 @@ func _dig_chamber_step() -> void:
 
 
 func _seal_entrance() -> void:
-	var sy: int = _surface_y(_shaft_start_xz.x, _shaft_start_xz.y)
-	if sy >= 0:
-		_world.set_block(_shaft_start_xz.x, sy + 1, _shaft_start_xz.y, _Const.BLOCK_SAND)
+	# Plug the full shaft mouth with packed sand so loose sand physics cannot refill the shaft.
+	var hw: int = _Const.FOUNDING_SHAFT_WIDTH / 2
+	for dx in range(-hw, hw):
+		for dz in range(-hw, hw):
+			var wx: int = _shaft_start_xz.x + dx
+			var wz: int = _shaft_start_xz.y + dz
+			if _world.get_block(wx, _shaft_top_y, wz) == _Const.BLOCK_AIR:
+				_world.set_block(wx, _shaft_top_y, wz, _Const.BLOCK_PACKED_SAND)
+				if _nest_manager:
+					_nest_manager.compact_around(Vector3i(wx, _shaft_top_y, wz))
 	position = Vector3(
 		float(_founding_chamber_center.x) + 0.5,
 		float(_founding_chamber_center.y) + 0.5,

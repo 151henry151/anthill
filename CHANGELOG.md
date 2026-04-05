@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.5] - 2026-04-05
+
+### Fixed
+
+- **`scripts/queen_ant.gd`**: record **`_shaft_top_y`** when founding dig starts and use it for shaft and chamber depth math so the surface level does not drift after the column is hollowed out.
+- **`scripts/queen_ant.gd`**: seal the founding shaft with **`BLOCK_PACKED_SAND`** across the full shaft footprint at **`_shaft_top_y`** instead of placing a single loose **`BLOCK_SAND`** at **`sy + 1`**, which fell through the shaft in **`sand_step.gd`** (only loose sand moves) and refilled the nest.
+
 ## [0.5.4] - 2026-04-05
 
 ### Added
