@@ -45,11 +45,30 @@ static func _merge_to_array_mesh(root: Node3D) -> ArrayMesh:
 			if arr.is_empty():
 				continue
 			var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			if verts.is_empty():
+				continue
 			var norms: PackedVector3Array = arr[Mesh.ARRAY_NORMAL] if arr[Mesh.ARRAY_NORMAL] != null else PackedVector3Array()
-			for vi in range(verts.size()):
-				if vi < norms.size():
-					st.set_normal(xform.basis * norms[vi])
-				st.add_vertex(xform * verts[vi])
+			## Primitive meshes (Sphere/Cylinder/…) use **indexed** triangles. The merge optimization previously
+			## walked **verts** in array order, which is not triangle order — wrong indices broke lighting/normals
+			## and could make the merged ant effectively invisible. Expand **ARRAY_INDEX** when present.
+			var idxs: PackedInt32Array = arr[Mesh.ARRAY_INDEX] as PackedInt32Array if arr[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+			if idxs.size() > 0:
+				for ii in range(idxs.size()):
+					var vi: int = int(idxs[ii])
+					if vi < 0 or vi >= verts.size():
+						continue
+					if vi < norms.size():
+						st.set_normal((xform.basis * norms[vi]).normalized())
+					else:
+						st.set_normal(Vector3.UP)
+					st.add_vertex(xform * verts[vi])
+			else:
+				for vi in range(verts.size()):
+					if vi < norms.size():
+						st.set_normal((xform.basis * norms[vi]).normalized())
+					else:
+						st.set_normal(Vector3.UP)
+					st.add_vertex(xform * verts[vi])
 	return st.commit()
 
 

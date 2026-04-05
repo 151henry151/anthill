@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.11] - 2026-04-05
+
+### Fixed
+
+- **`scripts/colony_ant_model.gd`**: expand **`ARRAY_INDEX`** when merging primitive parts into one **`ArrayMesh`** (the **`85ec603`** merge walked vertex arrays in storage order, but **SphereMesh** / **CylinderMesh** use indexed triangles, so merged geometry and normals were wrong and ants could render invisible).
+
 ## [0.5.10] - 2026-04-05
 
 ### Changed
