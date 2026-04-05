@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`assets/splash/`**: redraw **`anthill_boot.png`** and **`anthill_hero.png`** with a **side-view** ant (**gaster**, **petiole**, **thorax**, **head**, **eye**, **mandible**, **geniculate antennae**, **six** **segmented** legs) on the existing sky / dune / mound background.
 - **`tools/generate_splash_assets.py`**: add a **PIL** script to **regenerate** those **PNGs** for future tweaks.
 - **`README.md`**: document **`tools/generate_splash_assets.py`**.
+- **`game/anthill/.gitignore`**: ignore **`__pycache__/`** and **`*.py[cod]`** under the game tree.
 
 ## [0.3.5] - 2026-04-05
 
