@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.25] - 2026-04-05
+
+### Fixed
+
+- **`scripts/colony_camera.gd`**: set **`near`** / **`far`** from **world AABB** corners each orbit/zoom so rotated ortho views do not **far**-clip the ground; raise **`max_zoom`** for panned views near a map edge.
+
 ## [0.2.24] - 2026-04-05
 
 ### Fixed

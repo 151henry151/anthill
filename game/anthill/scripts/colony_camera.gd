@@ -18,8 +18,8 @@ const _Chunk := preload("res://scripts/world/chunk_data.gd")
 @export var orbit_sensitivity: float = 0.22
 @export var zoom_step: float = 8.0
 @export var min_zoom: float = 14.0
-## Ortho `size` is vertical world units. Angled orbit needs **`size` ≥ ~770** so diagonal corners of a **544×544** ground fit (half-diagonal ≈ **385** → **`size`/2** must cover projection onto camera up).
-@export var max_zoom: float = 1600.0
+## Ortho `size` is vertical world units. Centered pivot needs **`size` ≥ ~770** for diagonal corners; panned near an edge can need **~1500+** (furthest world point from pivot up to **~768** in XZ).
+@export var max_zoom: float = 3200.0
 
 var pivot: Vector3 = Vector3.ZERO
 
@@ -31,10 +31,9 @@ func _ready() -> void:
 	look_at_xz = Vector2(half_x, half_z)
 	projection = PROJECTION_ORTHOGONAL
 	size = ortho_size
-	near = 0.05
-	_sync_far_to_zoom()
 	pivot = Vector3(look_at_xz.x, 0.0, look_at_xz.y)
 	_apply_orbit()
+	_sync_clip_to_world_aabb()
 	current = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
@@ -43,10 +42,10 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
 			size = clampf(size - zoom_step, min_zoom, max_zoom)
-			_sync_far_to_zoom()
+			_sync_clip_to_world_aabb()
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
 			size = clampf(size + zoom_step, min_zoom, max_zoom)
-			_sync_far_to_zoom()
+			_sync_clip_to_world_aabb()
 	if event is InputEventMouseMotion:
 		var motion: InputEventMouseMotion = event
 		var rel: Vector2 = motion.relative
@@ -79,6 +78,7 @@ func _apply_orbit() -> void:
 	)
 	position = pivot + off
 	look_at(pivot, Vector3.UP)
+	_sync_clip_to_world_aabb()
 
 
 func _ground_pan_axes() -> Array[Vector3]:
@@ -97,6 +97,38 @@ func _ground_pan_axes() -> Array[Vector3]:
 	return [r_h, f_h]
 
 
-func _sync_far_to_zoom() -> void:
-	# Zooming out increases ortho footprint and depth span along the view axis; keep geometry inside [near, far].
-	far = maxf(12000.0, size * 40.0)
+func _sync_clip_to_world_aabb() -> void:
+	# `far`/`near` must contain every voxel corner for the *current* yaw/phi/pivot — rotation changes depth along
+	# the view axis, so a size-only heuristic misses and the far plane can cut the ground (often a horizontal edge).
+	var wm: Node = $"../WorldManager"
+	var max_x: float = float(wm.chunks_x * _Chunk.SIZE_X)
+	var max_z: float = float(wm.chunks_z * _Chunk.SIZE_Z)
+	var max_y: float = float(_Chunk.SIZE_Y)
+	var corners: Array[Vector3] = [
+		Vector3(0.0, 0.0, 0.0),
+		Vector3(max_x, 0.0, 0.0),
+		Vector3(0.0, 0.0, max_z),
+		Vector3(max_x, 0.0, max_z),
+		Vector3(0.0, max_y, 0.0),
+		Vector3(max_x, max_y, 0.0),
+		Vector3(0.0, max_y, max_z),
+		Vector3(max_x, max_y, max_z),
+	]
+	var cam_pos: Vector3 = global_position
+	var forward: Vector3 = -global_transform.basis.z
+	var min_front: float = INF
+	var max_front: float = -INF
+	for p in corners:
+		var d: float = (p - cam_pos).dot(forward)
+		if d > 0.0:
+			min_front = minf(min_front, d)
+			max_front = maxf(max_front, d)
+	var margin: float = 256.0
+	if max_front > 0.0:
+		far = max_front + margin
+	else:
+		far = maxf(12000.0, size * 40.0)
+	if min_front < INF and min_front > 0.0:
+		near = minf(0.05, maxf(0.001, min_front * 0.25))
+	else:
+		near = 0.05
