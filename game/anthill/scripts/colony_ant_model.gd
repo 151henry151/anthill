@@ -4,8 +4,56 @@ class_name ColonyAntModel
 ## Hymenopteran worker layout (+Z = head). **`MODEL_BODY_LENGTH`** ≈ body axis; scale × **`~3`** ≈ **~3** voxels.
 const MODEL_BODY_LENGTH := 1.0
 
+var _cached_mesh: ArrayMesh
+var _cached_mat: StandardMaterial3D
+
 
 func build_ant() -> Node3D:
+	if _cached_mesh:
+		var root := Node3D.new()
+		root.name = "ColonyAnt"
+		var mi := MeshInstance3D.new()
+		mi.mesh = _cached_mesh
+		mi.material_override = _cached_mat
+		root.add_child(mi)
+		return root
+	var root_full := _build_ant_parts()
+	_cached_mesh = _merge_to_array_mesh(root_full)
+	_cached_mat = _mat_exo(1.0)
+	for c in root_full.get_children():
+		c.queue_free()
+	root_full.queue_free()
+	var root := Node3D.new()
+	root.name = "ColonyAnt"
+	var mi := MeshInstance3D.new()
+	mi.mesh = _cached_mesh
+	mi.material_override = _cached_mat
+	root.add_child(mi)
+	return root
+
+
+static func _merge_to_array_mesh(root: Node3D) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for child in root.get_children():
+		if child is MeshInstance3D:
+			var mi: MeshInstance3D = child
+			if mi.mesh == null:
+				continue
+			var xform: Transform3D = mi.transform
+			var arr: Array = mi.mesh.surface_get_arrays(0)
+			if arr.is_empty():
+				continue
+			var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var norms: PackedVector3Array = arr[Mesh.ARRAY_NORMAL] if arr[Mesh.ARRAY_NORMAL] != null else PackedVector3Array()
+			for vi in range(verts.size()):
+				if vi < norms.size():
+					st.set_normal(xform.basis * norms[vi])
+				st.add_vertex(xform * verts[vi])
+	return st.commit()
+
+
+func _build_ant_parts() -> Node3D:
 	var root := Node3D.new()
 	root.name = "ColonyAnt"
 

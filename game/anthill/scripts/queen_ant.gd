@@ -121,6 +121,8 @@ func _setup_fly_in() -> void:
 
 
 func _surface_y(wx: int, wz: int) -> int:
+	if _world.has_method("get_surface_y"):
+		return _world.get_surface_y(wx, wz)
 	return _SurfaceQuery.surface_block_y(_world, wx, wz)
 
 

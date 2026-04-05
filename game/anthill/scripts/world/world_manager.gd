@@ -13,6 +13,8 @@ var _dirty_chunks: Dictionary = {}
 var _sand_columns: Dictionary = {}
 ## After falling sand settles, `SandStep` skips work (pending columns empty).
 var sand_idle: bool = false
+## Surface-Y cache: maps Vector2i(wx, wz) → int (topmost non-air Y). -1 = not cached.
+var _surface_cache: Dictionary = {}
 
 ## ~sqrt(30)× prior 3×3 extent → ~30× horizontal cells; 17×32 = 544 units per side.
 @export var chunks_x: int = 17
@@ -20,6 +22,7 @@ var sand_idle: bool = false
 
 
 func _ready() -> void:
+	_init_bounds()
 	_noise = FastNoiseLite.new()
 	_noise.seed = randi()
 	_noise.frequency = 1.0
@@ -34,44 +37,54 @@ func get_chunk(cx: int, cz: int) -> Variant:
 	return _chunks.get(Vector2i(cx, cz), null)
 
 
+## SIZE_X and SIZE_Z are both 32 — use bit shifts for chunk coordinate math.
+const _SHIFT_X := 5  # log2(32)
+const _MASK_X := 31  # 32 - 1
+const _SHIFT_Z := 5
+const _MASK_Z := 31
+
+var _max_wx: int = 0
+var _max_wz: int = 0
+
+
+func _init_bounds() -> void:
+	_max_wx = chunks_x << _SHIFT_X
+	_max_wz = chunks_z << _SHIFT_Z
+
+
 func get_block(wx: int, wy: int, wz: int) -> int:
 	if wy < 0:
 		return _Const.BLOCK_STONE
 	if wy >= _Chunk.SIZE_Y:
 		return _Const.BLOCK_AIR
-	var sx: int = _Chunk.SIZE_X
-	var sz: int = _Chunk.SIZE_Z
-	var max_wx: int = chunks_x * sx
-	var max_wz: int = chunks_z * sz
-	if wx < 0 or wz < 0 or wx >= max_wx or wz >= max_wz:
+	if wx < 0 or wz < 0 or wx >= _max_wx or wz >= _max_wz:
 		return _Const.BLOCK_AIR
-	var cx: int = int(floor(float(wx) / float(sx)))
-	var cz: int = int(floor(float(wz) / float(sz)))
-	var lx: int = wx % sx
-	var lz: int = wz % sz
-	var ch = _chunks[Vector2i(cx, cz)]
-	return ch.get_b(lx, wy, lz)
+	var cx: int = wx >> _SHIFT_X
+	var cz: int = wz >> _SHIFT_Z
+	var ch = _chunks.get(Vector2i(cx, cz))
+	if ch == null:
+		return _Const.BLOCK_AIR
+	return ch.data[(wx & _MASK_X) + wy * _Chunk.SIZE_X + (wz & _MASK_Z) * _Chunk.SIZE_X * _Chunk.SIZE_Y]
 
 
 func set_block(wx: int, wy: int, wz: int, id: int) -> void:
 	if wy < 0 or wy >= _Chunk.SIZE_Y:
 		return
-	var sx: int = _Chunk.SIZE_X
-	var sz: int = _Chunk.SIZE_Z
-	var max_wx: int = chunks_x * sx
-	var max_wz: int = chunks_z * sz
-	if wx < 0 or wz < 0 or wx >= max_wx or wz >= max_wz:
+	if wx < 0 or wz < 0 or wx >= _max_wx or wz >= _max_wz:
 		return
-	var cx: int = int(floor(float(wx) / float(sx)))
-	var cz: int = int(floor(float(wz) / float(sz)))
-	var lx: int = wx % sx
-	var lz: int = wz % sz
-	var ch = _chunks[Vector2i(cx, cz)]
-	ch.set_b(lx, wy, lz, id)
+	var cx: int = wx >> _SHIFT_X
+	var cz: int = wz >> _SHIFT_Z
+	var ck := Vector2i(cx, cz)
+	var ch = _chunks.get(ck)
+	if ch == null:
+		return
+	ch.data.set((wx & _MASK_X) + wy * _Chunk.SIZE_X + (wz & _MASK_Z) * _Chunk.SIZE_X * _Chunk.SIZE_Y, id)
 	_mesh_dirty = true
-	sand_idle = false
-	_dirty_chunks[Vector2i(cx, cz)] = true
-	_mark_sand_column_wx_wz(wx, wz)
+	_dirty_chunks[ck] = true
+	_surface_cache.erase(Vector2i(wx, wz))
+	if id == _Const.BLOCK_SAND or id == _Const.BLOCK_AIR:
+		sand_idle = false
+		_mark_sand_column_wx_wz(wx, wz)
 
 
 ## Clears the flag; call once per frame after stepping sand to decide whether to rebuild meshes.
@@ -107,6 +120,24 @@ func take_sand_columns(max_columns: int = 65536) -> Array[Vector2i]:
 	for item in out:
 		_sand_columns.erase(item)
 	return out
+
+
+func get_surface_y(wx: int, wz: int) -> int:
+	var key := Vector2i(wx, wz)
+	if _surface_cache.has(key):
+		return int(_surface_cache[key])
+	var ceiling: int = mini(_Chunk.SIZE_Y - 2, _TerrainGen.SURFACE_BASE + 28)
+	var floor_y: int = maxi(1, _TerrainGen.SURFACE_BASE - 80)
+	for y in range(ceiling, floor_y - 1, -1):
+		if get_block(wx, y, wz) != _Const.BLOCK_AIR and get_block(wx, y + 1, wz) == _Const.BLOCK_AIR:
+			_surface_cache[key] = y
+			return y
+	for y in range(floor_y - 1, -1, -1):
+		if get_block(wx, y, wz) != _Const.BLOCK_AIR and get_block(wx, y + 1, wz) == _Const.BLOCK_AIR:
+			_surface_cache[key] = y
+			return y
+	_surface_cache[key] = -1
+	return -1
 
 
 func world_bounds_aabb() -> AABB:

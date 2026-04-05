@@ -81,7 +81,7 @@ func spawn_worker(pos: Vector3, is_nanitic: bool) -> void:
 
 
 func _surface_y(wx: int, wz: int) -> int:
-	return _SurfaceQuery.surface_block_y(world, wx, wz)
+	return world.get_surface_y(wx, wz)
 
 
 func _ant_pos(wx: int, wy: int, wz: int, sc: float) -> Vector3:

@@ -9,8 +9,6 @@ const COL_SAND := Color(0.88, 0.78, 0.58)
 const COL_STONE := Color(0.42, 0.39, 0.35)
 const COL_PACKED_SAND := Color(0.72, 0.60, 0.38)
 
-## Only scan the Y band that can have exposed faces (surface region +/- margin).
-## Deep stone is fully enclosed so it produces no mesh faces.
 const _MESH_Y_LO := _TerrainGen.SURFACE_BASE - 50
 const _MESH_Y_HI := _TerrainGen.SURFACE_BASE + 20
 
@@ -36,10 +34,17 @@ static func build_chunk_mesh(world: Node, chunk: RefCounted) -> ArrayMesh:
 	var oz: int = chunk.cz * sz
 	var y_lo: int = maxi(_MESH_Y_LO, 0)
 	var y_hi: int = mini(_MESH_Y_HI, sy - 1)
+	var data: PackedByteArray = chunk.data
+	var stride_y: int = sx
+	var stride_z: int = sx * sy
+	var inv_depth: float = 1.0 / _Const.XRAY_DEPTH_FADE_RANGE
+	var surface_base: int = _TerrainGen.SURFACE_BASE
 	for lz in range(sz):
+		var z_off: int = lz * stride_z
 		for ly in range(y_lo, y_hi + 1):
+			var yz_off: int = z_off + ly * stride_y
 			for lx in range(sx):
-				var id: int = chunk.get_b(lx, ly, lz)
+				var id: int = data[yz_off + lx]
 				if id == _Const.BLOCK_AIR:
 					continue
 				var wx: int = ox + lx
@@ -52,68 +57,51 @@ static func build_chunk_mesh(world: Node, chunk: RefCounted) -> ArrayMesh:
 					col = COL_PACKED_SAND
 				else:
 					col = COL_STONE
-				var depth_factor: float = clampf(float(_TerrainGen.SURFACE_BASE - wy) / _Const.XRAY_DEPTH_FADE_RANGE, 0.0, 1.0)
-				col = Color(col.r * (1.0 - depth_factor * 0.3), col.g * (1.0 - depth_factor * 0.15), col.b, col.a)
+				var df: float = clampf(float(surface_base - wy) * inv_depth, 0.0, 1.0)
+				col = Color(col.r * (1.0 - df * 0.3), col.g * (1.0 - df * 0.15), col.b, col.a)
 				var base := Vector3(wx, wy, wz)
-				if world.get_block(wx + 1, wy, wz) == _Const.BLOCK_AIR:
-					_add_quad(
-						st,
-						base + Vector3(1, 0, 1),
-						base + Vector3(1, 1, 1),
-						base + Vector3(1, 1, 0),
-						base + Vector3(1, 0, 0),
-						Vector3.RIGHT,
-						col
-					)
-				if world.get_block(wx - 1, wy, wz) == _Const.BLOCK_AIR:
-					_add_quad(
-						st,
-						base + Vector3(0, 0, 0),
-						base + Vector3(0, 1, 0),
-						base + Vector3(0, 1, 1),
-						base + Vector3(0, 0, 1),
-						Vector3.LEFT,
-						col
-					)
-				if world.get_block(wx, wy + 1, wz) == _Const.BLOCK_AIR:
-					_add_quad(
-						st,
-						base + Vector3(0, 1, 0),
-						base + Vector3(1, 1, 0),
-						base + Vector3(1, 1, 1),
-						base + Vector3(0, 1, 1),
-						Vector3.UP,
-						col
-					)
-				if world.get_block(wx, wy - 1, wz) == _Const.BLOCK_AIR:
-					_add_quad(
-						st,
-						base + Vector3(0, 0, 1),
-						base + Vector3(1, 0, 1),
-						base + Vector3(1, 0, 0),
-						base + Vector3(0, 0, 0),
-						Vector3.DOWN,
-						col
-					)
-				if world.get_block(wx, wy, wz + 1) == _Const.BLOCK_AIR:
-					_add_quad(
-						st,
-						base + Vector3(0, 0, 1),
-						base + Vector3(0, 1, 1),
-						base + Vector3(1, 1, 1),
-						base + Vector3(1, 0, 1),
-						Vector3.BACK,
-						col
-					)
-				if world.get_block(wx, wy, wz - 1) == _Const.BLOCK_AIR:
-					_add_quad(
-						st,
-						base + Vector3(1, 0, 0),
-						base + Vector3(1, 1, 0),
-						base + Vector3(0, 1, 0),
-						base + Vector3(0, 0, 0),
-						Vector3.FORWARD,
-						col
-					)
+				# Neighbor checks: use local array when neighbor is in-chunk; fall back to world.get_block at chunk borders.
+				var n_px: int
+				if lx < sx - 1:
+					n_px = data[yz_off + lx + 1]
+				else:
+					n_px = world.get_block(wx + 1, wy, wz)
+				if n_px == _Const.BLOCK_AIR:
+					_add_quad(st, base + Vector3(1,0,1), base + Vector3(1,1,1), base + Vector3(1,1,0), base + Vector3(1,0,0), Vector3.RIGHT, col)
+				var n_nx: int
+				if lx > 0:
+					n_nx = data[yz_off + lx - 1]
+				else:
+					n_nx = world.get_block(wx - 1, wy, wz)
+				if n_nx == _Const.BLOCK_AIR:
+					_add_quad(st, base + Vector3(0,0,0), base + Vector3(0,1,0), base + Vector3(0,1,1), base + Vector3(0,0,1), Vector3.LEFT, col)
+				var n_py: int
+				if ly < sy - 1:
+					n_py = data[z_off + (ly + 1) * stride_y + lx]
+				else:
+					n_py = _Const.BLOCK_AIR
+				if n_py == _Const.BLOCK_AIR:
+					_add_quad(st, base + Vector3(0,1,0), base + Vector3(1,1,0), base + Vector3(1,1,1), base + Vector3(0,1,1), Vector3.UP, col)
+				var n_ny: int
+				if ly > 0:
+					n_ny = data[z_off + (ly - 1) * stride_y + lx]
+				else:
+					n_ny = world.get_block(wx, wy - 1, wz)
+				if n_ny == _Const.BLOCK_AIR:
+					_add_quad(st, base + Vector3(0,0,1), base + Vector3(1,0,1), base + Vector3(1,0,0), base + Vector3(0,0,0), Vector3.DOWN, col)
+				var n_pz: int
+				if lz < sz - 1:
+					n_pz = data[(lz + 1) * stride_z + ly * stride_y + lx]
+				else:
+					n_pz = world.get_block(wx, wy, wz + 1)
+				if n_pz == _Const.BLOCK_AIR:
+					_add_quad(st, base + Vector3(0,0,1), base + Vector3(0,1,1), base + Vector3(1,1,1), base + Vector3(1,0,1), Vector3.BACK, col)
+				var n_nz: int
+				if lz > 0:
+					n_nz = data[(lz - 1) * stride_z + ly * stride_y + lx]
+				else:
+					n_nz = world.get_block(wx, wy, wz - 1)
+				if n_nz == _Const.BLOCK_AIR:
+					_add_quad(st, base + Vector3(1,0,0), base + Vector3(1,1,0), base + Vector3(0,1,0), base + Vector3(0,0,0), Vector3.FORWARD, col)
 	var mesh: ArrayMesh = st.commit()
 	return mesh

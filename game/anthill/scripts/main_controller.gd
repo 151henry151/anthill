@@ -183,7 +183,7 @@ func _spawn_food_sources() -> void:
 
 
 func _surface_y(wx: int, wz: int) -> int:
-	return _SurfaceQuery.surface_block_y(world, wx, wz)
+	return world.get_surface_y(wx, wz)
 
 
 func _process(_delta: float) -> void:
