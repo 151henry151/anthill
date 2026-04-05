@@ -1,7 +1,9 @@
 extends Node3D
 
 const _MeshBuilder := preload("res://scripts/world/mesh_builder.gd")
-const _SandStepScript: GDScript = preload("res://scripts/world/sand_step.gd")
+const _SandStepScript = preload("res://scripts/world/sand_step.gd")
+
+var _sand_step: RefCounted
 
 @onready var world: Node = $WorldManager
 @onready var chunks_root: Node3D = $Chunks
@@ -11,6 +13,7 @@ var _mat: StandardMaterial3D
 
 
 func _ready() -> void:
+	_sand_step = _SandStepScript.new()
 	_mat = StandardMaterial3D.new()
 	_mat.vertex_color_use_as_albedo = true
 	_mat.roughness = 0.88
@@ -27,7 +30,7 @@ func _ready() -> void:
 
 func _physics_process(_delta: float) -> void:
 	if not world.sand_idle:
-		_SandStepScript.call_static(&"step", world)
+		_sand_step.step(world)
 	if world.take_mesh_dirty():
 		_rebuild_all_meshes()
 

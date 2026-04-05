@@ -5,7 +5,7 @@ const _Const := preload("res://scripts/constants.gd")
 const _Chunk := preload("res://scripts/world/chunk_data.gd")
 
 
-static func step(world: Node) -> void:
+func step(world: Node) -> void:
 	if world is WorldManager and world.sand_idle:
 		return
 	var sx: int = world.chunks_x * _Chunk.SIZE_X

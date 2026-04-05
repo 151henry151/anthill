@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.19] - 2026-04-04
+
+### Fixed
+
+- **`scripts/world/sand_step.gd`**, **`scripts/main_controller.gd`**: use an **instance** **`step`** on a **`SandStep.new()`** ref — **`GDScript.call_static`** does not exist on **Godot 4.2**’s **`GDScript`** type (runtime error every physics tick).
+
 ## [0.2.18] - 2026-04-04
 
 ### Fixed
