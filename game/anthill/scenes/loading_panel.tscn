@@ -55,3 +55,10 @@ custom_minimum_size = Vector2(480, 28)
 layout_mode = 2
 max = 100.0
 show_percentage = true
+
+[node name="StatusLabel" type="Label" parent="Center/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.82, 0.9, 0.85)
+theme_override_font_sizes/font_size = 12
+text = ""
+horizontal_alignment = 1

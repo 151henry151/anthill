@@ -31,6 +31,7 @@ var _sand_step: RefCounted
 @onready var colony_ants: Node3D = $ColonyAnts
 @onready var _terrain_load_overlay: CanvasLayer = $TerrainLoadOverlay
 @onready var _terrain_load_bar: ProgressBar = $TerrainLoadOverlay/LoadingPanel/Center/VBox/ProgressBar
+@onready var _terrain_load_status: Label = $TerrainLoadOverlay/LoadingPanel/Center/VBox/StatusLabel
 @onready var _day_night: Node = $DayNightCycle
 
 var _chunk_meshes: Dictionary = {}
@@ -62,6 +63,15 @@ var _first_workers_emerged: bool = false
 var _colony_stage: String = "Founding"
 var _queen_alive: bool = true
 var _initial_terrain_ready: bool = false
+## Phase 1 (scene parse in loading_screen.gd) occupies 0–30%. Phase 2 (terrain gen, already done
+## in WorldManager._ready) is 30–35%. Phase 3 (chunk mesh builds) is 35–90%. Phase 4 (colony
+## systems init) is 90–100%.
+const _P2_START := 30.0
+const _P2_END := 35.0
+const _P3_START := 35.0
+const _P3_END := 90.0
+const _P4_START := 90.0
+var _load_phase: int = 2
 
 
 func _ready() -> void:
@@ -90,8 +100,10 @@ func _ready() -> void:
 	for k in _chunk_meshes:
 		_initial_mesh_keys.append(k)
 	colony_ants.process_mode = Node.PROCESS_MODE_DISABLED
-	if _terrain_load_bar:
-		_terrain_load_bar.value = 0.0
+	_load_phase = 2
+	_set_load_progress(_P2_END)
+	_set_load_status("Terrain generated. Building chunk meshes... (0/%d)" % _initial_mesh_keys.size())
+	_load_phase = 3
 	set_process(true)
 
 
@@ -193,16 +205,23 @@ func _process(_delta: float) -> void:
 		for i in range(_initial_mesh_idx, end_i):
 			_rebuild_chunk_mesh(_initial_mesh_keys[i])
 		_initial_mesh_idx = end_i
-		if _terrain_load_bar and not _initial_mesh_keys.is_empty():
-			_terrain_load_bar.value = 100.0 * float(_initial_mesh_idx) / float(_initial_mesh_keys.size())
+		var total: int = _initial_mesh_keys.size()
+		var frac: float = float(_initial_mesh_idx) / float(maxi(total, 1))
+		_set_load_progress(lerpf(_P3_START, _P3_END, frac))
+		_set_load_status("Building chunk meshes... (%d/%d)" % [_initial_mesh_idx, total])
 		return
 	if not _initial_terrain_ready:
+		_set_load_progress(_P4_START)
+		_set_load_status("Initializing colony systems...")
 		_finish_initial_terrain_load()
 	set_process(false)
 
 
 func _finish_initial_terrain_load() -> void:
+	_set_load_status("Setting up queen, brood, food, pheromones...")
 	_setup_systems()
+	_set_load_progress(100.0)
+	_set_load_status("Ready.")
 	_initial_terrain_ready = true
 	if _terrain_load_overlay:
 		_terrain_load_overlay.queue_free()
@@ -339,6 +358,16 @@ func _toggle_xray() -> void:
 	var active_mat: StandardMaterial3D = _mat_xray if _xray_active else _mat
 	for mi in _chunk_meshes.values():
 		(mi as MeshInstance3D).material_override = active_mat
+
+
+func _set_load_progress(pct: float) -> void:
+	if _terrain_load_bar:
+		_terrain_load_bar.value = clampf(pct, 0.0, 100.0)
+
+
+func _set_load_status(text: String) -> void:
+	if _terrain_load_status:
+		_terrain_load_status.text = text
 
 
 func _rebuild_chunk_mesh(k: Vector2i) -> void:
