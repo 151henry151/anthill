@@ -233,23 +233,35 @@ func _finish_initial_terrain_load() -> void:
 func _physics_process(_delta: float) -> void:
 	if not _initial_terrain_ready:
 		return
+	PerfTrace.begin_frame()
 	var suppress_sand: bool = (
 		is_instance_valid(_queen)
 		and _queen.has_method("sand_physics_suppressed")
 		and _queen.sand_physics_suppressed()
 	)
+	var sand_us: int = 0
 	if _sand_step != null and not world.sand_idle and not suppress_sand:
+		var t_sand := Time.get_ticks_usec()
 		_sand_step.step(world)
+		sand_us = Time.get_ticks_usec() - t_sand
+	PerfTrace.set_sand_usec(sand_us)
+	var t_meshq := Time.get_ticks_usec()
 	if world.take_mesh_dirty():
 		for ck in world.get_and_clear_dirty_chunks():
 			_mesh_pending[ck] = true
+	PerfTrace.set_mesh_dirty_usec(Time.get_ticks_usec() - t_meshq)
 	var budget: int = maxi(1, max_mesh_rebuilds_per_physics_frame)
+	var t_rebuild := Time.get_ticks_usec()
+	var rebuild_n: int = 0
 	while budget > 0 and not _mesh_pending.is_empty():
 		var keys: Array = _mesh_pending.keys()
 		var k: Vector2i = keys[0] as Vector2i
 		_mesh_pending.erase(k)
 		_rebuild_chunk_mesh(k)
+		rebuild_n += 1
 		budget -= 1
+	PerfTrace.set_mesh_rebuild_usec(Time.get_ticks_usec() - t_rebuild, rebuild_n)
+	var t_sys := Time.get_ticks_usec()
 	_game_tick += 1
 	if _day_night:
 		_day_night.set_game_tick(_game_tick)
@@ -266,6 +278,17 @@ func _physics_process(_delta: float) -> void:
 	_update_colony_stage()
 	if _game_tick % 60 == 0:
 		_update_hud()
+	PerfTrace.set_systems_usec(Time.get_ticks_usec() - t_sys)
+	PerfTrace.set_context(
+		_game_tick,
+		_game_day,
+		_mesh_pending.size(),
+		world,
+		_pheromone_field,
+		_building_pheromone,
+		colony_ants,
+		_fast_forward
+	)
 
 
 func _update_colony_stage() -> void:

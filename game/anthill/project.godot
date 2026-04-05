@@ -8,6 +8,10 @@
 
 config_version=5
 
+[autoload]
+
+PerfTrace="*res://scripts/perf_trace.gd"
+
 [application]
 
 config/name="Anthill"

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.12] - 2026-04-05
+
+### Added
+
+- **`scripts/perf_trace.gd`**: autoload **`PerfTrace`** — per-physics-frame timings (**sand**, mesh queue, **chunk rebuild**, colony **systems**, **workers**, **queen**), dictionary size hints (**pending mesh**, **sand column** backlog, **surface** cache, trail / building **pheromone** cells), **`VmRSS`** (Linux) and **`Performance.MEMORY_STATIC`**; logs to **`user://anthill_perf.log`** and prints **`WARN`** lines when total traced time exceeds **20 ms**; periodic lines every **30** ticks (override with env **`ANTHILL_PERF_TRACE_PERIOD`**). Disable with **`ANTHILL_PERF_TRACE=0`**.
+- **`project.godot`**: register **`PerfTrace`** autoload.
+- **`scripts/world/world_manager.gd`**: add **`debug_sand_column_count`** and **`debug_surface_cache_size`** for tracing.
+- **`scripts/pheromone_field.gd`**: add **`debug_trail_cell_count`**.
+- **`scripts/building_pheromone.gd`**: add **`debug_build_cell_count`**.
+
+### Changed
+
+- **`scripts/main_controller.gd`**: call **`PerfTrace`** around **`_physics_process`** sections and snapshot context after colony ticks.
+- **`scripts/colony_ants.gd`**, **`scripts/queen_ant.gd`**: record **`_physics_process`** duration for **`PerfTrace`**.
+
 ## [0.5.11] - 2026-04-05
 
 ### Fixed

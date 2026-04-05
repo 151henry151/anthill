@@ -175,6 +175,7 @@ func sand_physics_suppressed() -> bool:
 
 
 func _physics_process(delta: float) -> void:
+	var t0 := Time.get_ticks_usec()
 	age_ticks += 1
 	match state:
 		QueenState.FLYING_IN:
@@ -189,6 +190,7 @@ func _physics_process(delta: float) -> void:
 			_process_claustral(delta)
 		QueenState.ESTABLISHED:
 			_process_established(delta)
+	PerfTrace.set_queen_usec(Time.get_ticks_usec() - t0)
 
 
 func _set_state(s: int) -> void:

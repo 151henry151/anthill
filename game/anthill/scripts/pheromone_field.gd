@@ -42,6 +42,10 @@ func tick() -> void:
 		_trail_grid.erase(cell)
 
 
+func debug_trail_cell_count() -> int:
+	return _trail_grid.size()
+
+
 func get_grid() -> Dictionary:
 	return _trail_grid
 

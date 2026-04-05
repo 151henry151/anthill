@@ -91,6 +91,7 @@ func _ant_pos(wx: int, wy: int, wz: int, sc: float) -> Vector3:
 
 
 func _physics_process(delta: float) -> void:
+	var t0 := Time.get_ticks_usec()
 	_task_assign_timer += 1
 	if _task_assign_timer >= _TASK_ASSIGN_INTERVAL:
 		_task_assign_timer = 0
@@ -102,6 +103,7 @@ func _physics_process(delta: float) -> void:
 			continue
 		a["t"] = 0.0
 		_step_ant(a)
+	PerfTrace.set_ants_usec(Time.get_ticks_usec() - t0)
 
 
 func _assign_tasks() -> void:

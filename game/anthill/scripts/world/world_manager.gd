@@ -144,6 +144,14 @@ func get_surface_y(wx: int, wz: int) -> int:
 	return -1
 
 
+func debug_sand_column_count() -> int:
+	return _sand_columns.size()
+
+
+func debug_surface_cache_size() -> int:
+	return _surface_cache.size()
+
+
 func world_bounds_aabb() -> AABB:
 	var max_x: int = chunks_x * _Chunk.SIZE_X
 	var max_z: int = chunks_z * _Chunk.SIZE_Z

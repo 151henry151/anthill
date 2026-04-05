@@ -30,6 +30,10 @@ func evaporate_step() -> void:
 		_build_grid.erase(pos)
 
 
+func debug_build_cell_count() -> int:
+	return _build_grid.size()
+
+
 func tick() -> void:
 	_evap_timer += 1
 	if _evap_timer >= _Const.BUILD_PHEROMONE_EVAPORATION_INTERVAL_TICKS:
