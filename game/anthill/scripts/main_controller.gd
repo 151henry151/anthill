@@ -15,8 +15,11 @@ const _NestBuilderScript = preload("res://scripts/nest_builder.gd")
 const _HudScript = preload("res://scripts/colony_hud.gd")
 const _GameOverScript = preload("res://scripts/game_over.gd")
 const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
+const _SurfaceQuery := preload("res://scripts/world/surface_query.gd")
 
 @export var initial_mesh_chunks_per_frame: int = 10
+## Cap voxel mesh uploads per physics tick (sand/queen can dirty many chunks at once).
+@export var max_mesh_rebuilds_per_physics_frame: int = 8
 
 var _sand_step: RefCounted
 @onready var world: Node = $WorldManager
@@ -39,6 +42,7 @@ var _hud: CanvasLayer
 var _game_over: CanvasLayer
 var _rng: RandomNumberGenerator
 
+var _mesh_pending: Dictionary = {}
 var _game_tick: int = 0
 var _game_day: int = 0
 var _peak_workers: int = 0
@@ -143,11 +147,7 @@ func _spawn_food_sources() -> void:
 
 
 func _surface_y(wx: int, wz: int) -> int:
-	var ceiling: int = mini(_Chunk.SIZE_Y - 2, 240)
-	for y in range(ceiling, -1, -1):
-		if world.get_block(wx, y, wz) != _Const.BLOCK_AIR and world.get_block(wx, y + 1, wz) == _Const.BLOCK_AIR:
-			return y
-	return -1
+	return _SurfaceQuery.surface_block_y(world, wx, wz)
 
 
 func _process(_delta: float) -> void:
@@ -166,7 +166,14 @@ func _physics_process(_delta: float) -> void:
 		_sand_step.step(world)
 	if world.take_mesh_dirty():
 		for ck in world.get_and_clear_dirty_chunks():
-			_rebuild_chunk_mesh(ck)
+			_mesh_pending[ck] = true
+	var budget: int = maxi(1, max_mesh_rebuilds_per_physics_frame)
+	while budget > 0 and not _mesh_pending.is_empty():
+		var keys: Array = _mesh_pending.keys()
+		var k: Vector2i = keys[0] as Vector2i
+		_mesh_pending.erase(k)
+		_rebuild_chunk_mesh(k)
+		budget -= 1
 	_game_tick += 1
 	_game_day = _game_tick / _Const.TICKS_PER_ANT_DAY
 	if _brood_manager:

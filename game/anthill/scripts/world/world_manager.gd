@@ -97,12 +97,15 @@ func _mark_sand_column_wx_wz(wx: int, wz: int) -> void:
 	_sand_columns[Vector2i(wx, wz)] = true
 
 
-## Pops columns to scan this tick; `set_block` refills for the next tick.
-func take_sand_columns() -> Array[Vector2i]:
+## Pops up to **`max_columns`** keys; remaining keys stay for the next tick (keeps one physics frame from scanning the whole map).
+func take_sand_columns(max_columns: int = 65536) -> Array[Vector2i]:
 	var out: Array[Vector2i] = []
 	for k in _sand_columns:
+		if out.size() >= max_columns:
+			break
 		out.append(k)
-	_sand_columns.clear()
+	for item in out:
+		_sand_columns.erase(item)
 	return out
 
 

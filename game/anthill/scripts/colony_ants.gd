@@ -5,6 +5,7 @@ const _Const := preload("res://scripts/constants.gd")
 const _Chunk := preload("res://scripts/world/chunk_data.gd")
 const _AntModelScript = preload("res://scripts/colony_ant_model.gd")
 const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
+const _SurfaceQuery := preload("res://scripts/world/surface_query.gd")
 
 @export var move_interval: float = _Const.WORKER_MOVE_INTERVAL
 const _ANT_LOCAL_Y_MIN: float = -0.28
@@ -59,11 +60,7 @@ func spawn_worker(pos: Vector3, is_nanitic: bool) -> void:
 
 
 func _surface_y(wx: int, wz: int) -> int:
-	var ceiling: int = mini(_Chunk.SIZE_Y - 2, 240)
-	for y in range(ceiling, -1, -1):
-		if world.get_block(wx, y, wz) != _Const.BLOCK_AIR and world.get_block(wx, y + 1, wz) == _Const.BLOCK_AIR:
-			return y
-	return -1
+	return _SurfaceQuery.surface_block_y(world, wx, wz)
 
 
 func _ant_pos(wx: int, wy: int, wz: int, sc: float) -> Vector3:

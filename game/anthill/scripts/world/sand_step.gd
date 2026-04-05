@@ -8,6 +8,8 @@ const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
 ## Only scan the region where sand can exist: from stone top to a few layers above surface.
 const _SCAN_FLOOR := _TerrainGen.SURFACE_BASE - 50
 const _SCAN_CEIL := _TerrainGen.SURFACE_BASE + 20
+## Limits work per physics tick so sand + mesh rebuild do not freeze input.
+const _MAX_COLUMNS_PER_STEP := 384
 
 
 func step(world: Node) -> void:
@@ -15,7 +17,7 @@ func step(world: Node) -> void:
 		return
 	if not world.has_method("take_sand_columns"):
 		return
-	var cols: Array = world.call("take_sand_columns")
+	var cols: Array = world.callv("take_sand_columns", [_MAX_COLUMNS_PER_STEP])
 	if cols.is_empty():
 		world.set("sand_idle", true)
 		return
@@ -30,7 +32,7 @@ func step(world: Node) -> void:
 				if world.get_block(x, y - 1, z) == _Const.BLOCK_AIR:
 					moves.append(Vector3i(x, y, z))
 	if moves.is_empty():
-		world.set("sand_idle", true)
+		# More columns may still be pending; only `take_sand_columns` empty means global idle.
 		return
 	moves.shuffle()
 	for p in moves:

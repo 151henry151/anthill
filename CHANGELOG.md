@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-04-05
+
+### Changed
+
+- **`scripts/world/world_manager.gd`**: **`take_sand_columns(max_columns)`** pops at most **`max_columns`** keys per call.
+- **`scripts/world/sand_step.gd`**: cap columns per physics step; set **`sand_idle`** only when the pending column set is empty.
+- **`scripts/main_controller.gd`**: queue **dirty** chunk mesh rebuilds with **`max_mesh_rebuilds_per_physics_frame`** (default **8**).
+- **`scripts/world/surface_query.gd`**: fast surface **Y** query with full fallback; **`main_controller`**, **`colony_ants`**, **`queen_ant`** use it instead of per-call full-column scans.
+- **`scripts/colony_camera.gd`**: orbit / pan / zoom in **`_unhandled_input`**.
+
 ## [0.4.0] - 2026-04-05
 
 ### Added

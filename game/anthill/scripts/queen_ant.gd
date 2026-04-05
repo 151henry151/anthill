@@ -5,6 +5,7 @@ const _Const := preload("res://scripts/constants.gd")
 const _Chunk := preload("res://scripts/world/chunk_data.gd")
 const _AntModelScript = preload("res://scripts/colony_ant_model.gd")
 const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
+const _SurfaceQuery := preload("res://scripts/world/surface_query.gd")
 
 signal egg_laid(count: int, is_trophic: bool)
 signal queen_died(cause: String)
@@ -118,11 +119,7 @@ func _setup_fly_in() -> void:
 
 
 func _surface_y(wx: int, wz: int) -> int:
-	var ceiling: int = mini(_Chunk.SIZE_Y - 2, 240)
-	for y in range(ceiling, -1, -1):
-		if _world.get_block(wx, y, wz) != _Const.BLOCK_AIR and _world.get_block(wx, y + 1, wz) == _Const.BLOCK_AIR:
-			return y
-	return -1
+	return _SurfaceQuery.surface_block_y(_world, wx, wz)
 
 
 func _physics_process(delta: float) -> void:
