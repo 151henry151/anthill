@@ -164,7 +164,8 @@ func _on_physics_frame() -> void:
 func _read_vm_rss_mb() -> float:
 	if OS.get_name() != "Linux":
 		return -1.0
-	var f: FileAccess = FileAccess.open("/proc/self/status", FileAccess.READ)
+	var status_path: String = "/proc/%d/status" % OS.get_process_id()
+	var f: FileAccess = FileAccess.open(status_path, FileAccess.READ)
 	if f == null:
 		return -1.0
 	while not f.eof_reached():

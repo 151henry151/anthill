@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.14] - 2026-04-05
+
+### Changed
+
+- **`scripts/world/mesh_builder.gd`**: build chunk meshes only over a **tight bounding box** of non-air voxels in the mesh band (skip empty chunks; fewer face checks when the chunk is mostly air).
+- **`scripts/constants.gd`**: add **`QUEEN_BFS_AIR_MAX_NODES`**, **`PATH_TO_SURFACE_MAX_STEPS`**, **`QUEEN_SPOIL_DEPOSIT_SAMPLES`** for queen / path limits.
+- **`scripts/queen_ant.gd`**: cap **air BFS** when approaching a dig voxel; reduce spoil **deposit** search iterations.
+- **`scripts/nest_manager.gd`**: use **`PATH_TO_SURFACE_MAX_STEPS`** for **`get_path_to_surface`** (same default count as before).
+- **`scripts/main_controller.gd`**: lower **chunk mesh rebuilds per physics frame** when **`Engine.time_scale`** is high (**≤2** at **≥20×**, **1** at **≥60×**) to shorten worst frames under fast-forward.
+- **`scripts/perf_trace.gd`**: read **`VmRSS`** from **`/proc/<pid>/status`** via **`OS.get_process_id()`** (more reliable than **`/proc/self`** in some builds).
+
 ## [0.5.13] - 2026-04-05
 
 ### Changed

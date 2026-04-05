@@ -32,8 +32,6 @@ static func build_chunk_mesh(world: Node, chunk: RefCounted) -> ArrayMesh:
 	var sz: int = _Chunk.SIZE_Z
 	var ox: int = chunk.cx * sx
 	var oz: int = chunk.cz * sz
-	var lox: float = float(ox)
-	var loz: float = float(oz)
 	var y_lo: int = maxi(_MESH_Y_LO, 0)
 	var y_hi: int = mini(_MESH_Y_HI, sy - 1)
 	var data: PackedByteArray = chunk.data
@@ -41,11 +39,40 @@ static func build_chunk_mesh(world: Node, chunk: RefCounted) -> ArrayMesh:
 	var stride_z: int = sx * sy
 	var inv_depth: float = 1.0 / _Const.XRAY_DEPTH_FADE_RANGE
 	var surface_base: int = _TerrainGen.SURFACE_BASE
+	# Pass 1: bounding box of non-air in the mesh band (skip empty chunks; narrow loops for sparse tunnels).
+	var min_lx: int = sx
+	var max_lx: int = -1
+	var min_ly: int = sy
+	var max_ly: int = -1
+	var min_lz: int = sz
+	var max_lz: int = -1
 	for lz in range(sz):
 		var z_off: int = lz * stride_z
 		for ly in range(y_lo, y_hi + 1):
 			var yz_off: int = z_off + ly * stride_y
 			for lx in range(sx):
+				var id_a: int = data[yz_off + lx]
+				if id_a == _Const.BLOCK_AIR:
+					continue
+				min_lx = mini(min_lx, lx)
+				max_lx = maxi(max_lx, lx)
+				min_ly = mini(min_ly, ly)
+				max_ly = maxi(max_ly, ly)
+				min_lz = mini(min_lz, lz)
+				max_lz = maxi(max_lz, lz)
+	if max_lx < 0:
+		return st.commit()
+	var bx0: int = maxi(0, min_lx - 1)
+	var bx1: int = mini(sx - 1, max_lx + 1)
+	var by0: int = maxi(y_lo, min_ly - 1)
+	var by1: int = mini(y_hi, max_ly + 1)
+	var bz0: int = maxi(0, min_lz - 1)
+	var bz1: int = mini(sz - 1, max_lz + 1)
+	for lz in range(bz0, bz1 + 1):
+		var z_off: int = lz * stride_z
+		for ly in range(by0, by1 + 1):
+			var yz_off: int = z_off + ly * stride_y
+			for lx in range(bx0, bx1 + 1):
 				var id: int = data[yz_off + lx]
 				if id == _Const.BLOCK_AIR:
 					continue

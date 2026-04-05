@@ -156,7 +156,7 @@ func get_path_to_surface(from: Vector3i) -> Array[Vector3i]:
 	var current: Vector3i = from
 	var surface_y: int = _TerrainGen.SURFACE_BASE + 5
 	var visited: Dictionary = {}
-	for _step in range(200):
+	for _step in range(_Const.PATH_TO_SURFACE_MAX_STEPS):
 		if current.y >= surface_y:
 			break
 		visited[current] = true

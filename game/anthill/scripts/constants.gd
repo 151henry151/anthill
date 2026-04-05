@@ -172,6 +172,12 @@ const FOUNDING_SHAFT_DEPTH := 14
 const FOUNDING_SHAFT_WIDTH := 6
 ## Founding chamber size (x, y, z voxels) — fits queen at 6 vx long.
 const FOUNDING_CHAMBER_SIZE := Vector3i(10, 8, 10)
+## Cap air BFS expansion when the queen approaches a dig voxel (prevents pathological freezes in huge air volumes).
+const QUEEN_BFS_AIR_MAX_NODES := 4096
+## Greedy path length cap for queen carry-to-surface (nest-scale; avoids long get_block scans).
+const PATH_TO_SURFACE_MAX_STEPS := 200
+## Spoil deposit search iterations (each may call **`get_surface_y`**).
+const QUEEN_SPOIL_DEPOSIT_SAMPLES := 16
 
 # ---------------------------------------------------------------------------
 # Surface trail covers

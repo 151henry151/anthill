@@ -251,7 +251,7 @@ func _physics_process(_delta: float) -> void:
 		for ck in world.get_and_clear_dirty_chunks():
 			_mesh_pending[ck] = true
 	PerfTrace.set_mesh_dirty_usec(Time.get_ticks_usec() - t_meshq)
-	var budget: int = maxi(1, max_mesh_rebuilds_per_physics_frame)
+	var budget: int = maxi(1, _mesh_rebuild_budget())
 	var t_rebuild := Time.get_ticks_usec()
 	var rebuild_n: int = 0
 	while budget > 0 and not _mesh_pending.is_empty():
@@ -385,6 +385,16 @@ func _ff_time_scale() -> float:
 	if i >= speeds.size():
 		return 1.0
 	return float(speeds[i])
+
+
+func _mesh_rebuild_budget() -> int:
+	var cap: int = maxi(1, max_mesh_rebuilds_per_physics_frame)
+	var ts: float = Engine.time_scale
+	if ts >= 60.0:
+		return mini(cap, 1)
+	if ts >= 20.0:
+		return mini(cap, 2)
+	return cap
 
 
 func _toggle_fast_forward() -> void:

@@ -460,7 +460,7 @@ func _deposit_and_continue() -> void:
 func _choose_queen_deposit_pos() -> Vector3i:
 	var r: int = _Const.SPOIL_DEPOSIT_RADIUS
 	var inner_clear: float = _Const.SPOIL_DEPOSIT_INNER_CLEAR
-	for _i in range(40):
+	for _i in range(_Const.QUEEN_SPOIL_DEPOSIT_SAMPLES):
 		var off: Vector2i = _SpoilDeposit.random_offset_disk(_rng, r, inner_clear)
 		var wx: int = _shaft_start_xz.x + off.x
 		var wz: int = _shaft_start_xz.y + off.y
@@ -494,7 +494,11 @@ func _bfs_path_air(from: Vector3i, goals: Dictionary) -> Array[Vector3i]:
 	var came_from: Dictionary = {}
 	came_from[from] = from
 	var head: int = 0
+	var expanded: int = 0
 	while head < q.size():
+		expanded += 1
+		if expanded > _Const.QUEEN_BFS_AIR_MAX_NODES:
+			return []
 		var cur: Vector3i = q[head]
 		head += 1
 		for off in _NEIGH6:
