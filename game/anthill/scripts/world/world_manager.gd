@@ -7,6 +7,7 @@ const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
 
 var _chunks: Dictionary = {}
 var _noise: FastNoiseLite
+var _mesh_dirty: bool = false
 
 @export var chunks_x: int = 3
 @export var chunks_z: int = 3
@@ -61,6 +62,14 @@ func set_block(wx: int, wy: int, wz: int, id: int) -> void:
 	var lz: int = wz % sz
 	var ch = _chunks[Vector2i(cx, cz)]
 	ch.set_b(lx, wy, lz, id)
+	_mesh_dirty = true
+
+
+## Clears the flag; call once per frame after stepping sand to decide whether to rebuild meshes.
+func take_mesh_dirty() -> bool:
+	var was: bool = _mesh_dirty
+	_mesh_dirty = false
+	return was
 
 
 func world_bounds_aabb() -> AABB:

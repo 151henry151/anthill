@@ -1,6 +1,7 @@
 extends Object
 class_name GameConstants
 ## Fiction: one voxel = one sand grain. Godot units match voxels 1:1 for the prototype.
+## Colony camera orthographic `size` is vertical world units visible; grain height in pixels ≈ viewport_height / size.
 const GRAIN_SIZE_MM := 3.0
 ## How many millimetres one world unit represents (same as grain for this build).
 const MM_PER_UNIT := GRAIN_SIZE_MM

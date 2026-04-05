@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.10] - 2026-04-04
+
+### Changed
+
+- **`scripts/colony_camera.gd`**: default **`ortho_size`** to **180** and raise **`max_zoom`** so colony view matches roughly **~4 screen pixels per voxel height** at **720p** (Godot orthographic **`size`** is vertical world units; **pixels ≈ viewport_height / size**). Increase **`zoom_step`** slightly for the wider zoom range.
+- **`scripts/constants.gd`**: document the **ortho `size` → pixels-per-grain** relationship.
+
+## [0.2.9] - 2026-04-04
+
+### Fixed
+
+- **`scripts/world/world_manager.gd`**, **`scripts/main_controller.gd`**: rebuild chunk **meshes only when `set_block` runs** (sand moved) instead of every **physics** frame, avoiding redundant uploads and reducing **flicker** / **strip** artifacts on some **Mesa** setups.
+
 ## [0.2.8] - 2026-04-04
 
 ### Fixed
