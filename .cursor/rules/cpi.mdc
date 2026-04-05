@@ -14,4 +14,12 @@ When the user says **`cpi`** (or clearly means the same sequence), treat it as:
 
 **Discovery:** Infer install/deploy from `README`, `Makefile`, `package.json` scripts, `scripts/`, and `.github/workflows/`. Do not invent steps that aren’t standard for the repo.
 
+## Anthill (this repository)
+
+For **`anthill`** at the repo root, **`cpi` always includes the sudo install step** after commit and push — do not skip it or only describe it unless the user opts out for that run.
+
+1. From the repo root run **`sudo ./scripts/install-anthill.sh`** (copies the Godot project under **`PREFIX/share/anthill`** and installs the **`anthill`** launcher; see **`README.md`**).
+
+2. If **`godot`** / **`godot4`** is not available, run **`sudo ./scripts/install-godot4.sh`** first (same **`README`**), then **`install-anthill.sh`**.
+
 **Safety:** Do not run `cpi` unless the user asked for it (or used this shorthand). Do not post GitHub comments with `gh` unless the user approved that separately.
