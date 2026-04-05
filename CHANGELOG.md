@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-04-05
+
+### Changed
+
+- **`scripts/constants.gd`**: document **real-world** sand-grain (~**0.06–2** **mm**) and worker-ant (~**3–15** **mm**) **order-of-magnitude** scale vs **voxel** **grain** **fiction**.
+- **`scripts/colony_ants.gd`**: apply **`ant_visual_scale`** to colony ants; **place** **ants** so **scaled** **mesh** **feet** sit on **surface** (**not** **below** **terrain**); **default** **scale** **5** so ants stay **visible** at **colony** **zoom** while **body** **length** stays **~8–12×** **one** **voxel** **before** **scale**.
+
 ## [0.3.0] - 2026-04-05
 
 ### Changed

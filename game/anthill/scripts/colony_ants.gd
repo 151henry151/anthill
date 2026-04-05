@@ -7,6 +7,10 @@ const _AntModelScript = preload("res://scripts/colony_ant_model.gd")
 
 @export var ant_count: int = 72
 @export var move_interval: float = 0.45
+## Makes ants readable at colony zoom; logical size is still grain-relative (see `GameConstants`).
+@export var ant_visual_scale: float = 5.0
+## Lowest point of `ColonyAntModel` mesh in the ant root’s local space (feet below origin); keeps feet on the surface.
+const _ANT_LOCAL_Y_MIN: float = -2.05
 
 @onready var world: Node = $"../WorldManager"
 
@@ -33,6 +37,7 @@ func _spawn_one() -> void:
 		if wy < 0:
 			continue
 		var ant: Node3D = _ant_builder.build_ant()
+		ant.scale = Vector3.ONE * ant_visual_scale
 		ant.rotation_degrees.y = _rng.randf_range(0.0, 360.0)
 		add_child(ant)
 		ant.position = _ant_pos(wx, wy, wz)
@@ -54,8 +59,10 @@ func _surface_block_y(wx: int, wz: int) -> int:
 
 
 func _ant_pos(wx: int, wy: int, wz: int) -> Vector3:
-	# Model origin at sand surface (feet / ground contact).
-	return Vector3(float(wx) + 0.5, float(wy) + 1.0, float(wz) + 0.5)
+	# Top of surface block is y = wy + 1. Model mesh extends below local y = 0; place so lowest point sits on that surface.
+	var surface_top: float = float(wy) + 1.0
+	var y: float = surface_top - _ANT_LOCAL_Y_MIN * ant_visual_scale
+	return Vector3(float(wx) + 0.5, y, float(wz) + 0.5)
 
 
 func _physics_process(delta: float) -> void:
