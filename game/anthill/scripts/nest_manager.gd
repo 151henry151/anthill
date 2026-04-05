@@ -4,6 +4,7 @@ extends Node
 const _Const := preload("res://scripts/constants.gd")
 const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
 const _SurfaceQuery := preload("res://scripts/world/surface_query.gd")
+const _SpoilDeposit := preload("res://scripts/spoil_deposit.gd")
 
 var _world: Node
 var nest_entrance: Vector3i = Vector3i.ZERO
@@ -130,10 +131,9 @@ func choose_deposit_position(entrance: Vector3i) -> Vector3i:
 	var best_pos: Vector3i = Vector3i(entrance.x + 3, entrance.y, entrance.z)
 	var radius: int = _Const.SPOIL_DEPOSIT_RADIUS
 	for _i in range(20):
-		var dx: int = _rng.randi_range(-radius, radius)
-		var dz: int = _rng.randi_range(-radius, radius)
-		if absi(dx) < 2 and absi(dz) < 2:
-			continue
+		var off: Vector2i = _SpoilDeposit.random_offset_disk(_rng, radius, _Const.SPOIL_DEPOSIT_INNER_CLEAR)
+		var dx: int = off.x
+		var dz: int = off.y
 		var wx: int = entrance.x + dx
 		var wz: int = entrance.z + dz
 		var sy: int = _SurfaceQuery.surface_block_y(_world, wx, wz)

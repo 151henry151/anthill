@@ -6,6 +6,7 @@ const _Chunk := preload("res://scripts/world/chunk_data.gd")
 const _AntModelScript = preload("res://scripts/colony_ant_model.gd")
 const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
 const _SurfaceQuery := preload("res://scripts/world/surface_query.gd")
+const _SpoilDeposit := preload("res://scripts/spoil_deposit.gd")
 
 signal egg_laid(count: int, is_trophic: bool)
 signal queen_died(cause: String)
@@ -304,8 +305,9 @@ func _begin_digging() -> void:
 	_shaft_layer_queue.clear()
 	_dig_phase = 0
 	_dig_timer = 0.0
-	position = Vector3(float(_wx) + 0.5, float(_shaft_top_y) + 0.5, float(_wz) + 0.5)
-	_queen_cell = Vector3i(_wx, _shaft_top_y, _wz)
+	# Stand in the open air cell above the surface block (same feet height as search / `_place_on_surface`).
+	_queen_cell = Vector3i(_wx, _shaft_top_y + 1, _wz)
+	_apply_queen_cell_pos()
 	_set_state(QueenState.DIGGING)
 	var first: Vector3i = _pop_next_dig_voxel()
 	if first == _QUEEN_DIG_SENTINEL:
@@ -444,13 +446,8 @@ func _deposit_and_continue() -> void:
 		_carry_visual.visible = false
 	var sy: int = _surface_y(dep.x, dep.z)
 	if sy >= 0:
-		var surface_top: float = float(sy) + 1.0
-		position = Vector3(
-			float(dep.x) + 0.5,
-			surface_top - _ANT_LOCAL_Y_MIN * _Const.QUEEN_VISUAL_SCALE,
-			float(dep.z) + 0.5
-		)
 		_queen_cell = Vector3i(dep.x, sy + 1, dep.z)
+		_apply_queen_cell_pos()
 	var next_v: Vector3i = _pop_next_dig_voxel()
 	if next_v == _QUEEN_DIG_SENTINEL:
 		_seal_entrance()
@@ -460,13 +457,11 @@ func _deposit_and_continue() -> void:
 
 func _choose_queen_deposit_pos() -> Vector3i:
 	var r: int = _Const.SPOIL_DEPOSIT_RADIUS
+	var inner_clear: float = _Const.SPOIL_DEPOSIT_INNER_CLEAR
 	for _i in range(40):
-		var dx: int = _rng.randi_range(-r, r)
-		var dz: int = _rng.randi_range(-r, r)
-		if absi(dx) < 2 and absi(dz) < 2:
-			continue
-		var wx: int = _shaft_start_xz.x + dx
-		var wz: int = _shaft_start_xz.y + dz
+		var off: Vector2i = _SpoilDeposit.random_offset_disk(_rng, r, inner_clear)
+		var wx: int = _shaft_start_xz.x + off.x
+		var wz: int = _shaft_start_xz.y + off.y
 		var sy: int = _surface_y(wx, wz)
 		if sy < 0:
 			continue
@@ -474,14 +469,19 @@ func _choose_queen_deposit_pos() -> Vector3i:
 	var sy0: int = _surface_y(_shaft_start_xz.x, _shaft_start_xz.y)
 	if sy0 < 0:
 		sy0 = _TerrainGen.SURFACE_BASE
-	return Vector3i(_shaft_start_xz.x + 3, sy0 + 1, _shaft_start_xz.y)
+	var fallback: Vector2i = _SpoilDeposit.random_offset_disk(_rng, r, inner_clear)
+	return Vector3i(_shaft_start_xz.x + fallback.x, sy0 + 1, _shaft_start_xz.y + fallback.y)
 
 
+## `_queen_cell` is the voxel index of the cell the queen occupies (usually air). The model origin is the
+## body center with feet near local **`_ANT_LOCAL_Y_MIN` × scale**, so we must not use raw voxel centers on Y
+## (that buried the mesh one voxel deep inside solid terrain).
 func _apply_queen_cell_pos() -> void:
+	var c: Vector3i = _queen_cell
 	position = Vector3(
-		float(_queen_cell.x) + 0.5,
-		float(_queen_cell.y) + 0.5,
-		float(_queen_cell.z) + 0.5
+		float(c.x) + 0.5,
+		float(c.y) - _ANT_LOCAL_Y_MIN * _Const.QUEEN_VISUAL_SCALE,
+		float(c.z) + 0.5
 	)
 
 
@@ -586,11 +586,8 @@ func _seal_entrance() -> void:
 				_world.set_block(wx, _shaft_top_y, wz, _Const.BLOCK_PACKED_SAND)
 				if _nest_manager:
 					_nest_manager.compact_around(Vector3i(wx, _shaft_top_y, wz))
-	position = Vector3(
-		float(_founding_chamber_center.x) + 0.5,
-		float(_founding_chamber_center.y) + 0.5,
-		float(_founding_chamber_center.z) + 0.5
-	)
+	_queen_cell = _founding_chamber_center
+	_apply_queen_cell_pos()
 	_set_state(QueenState.CLAUSTRAL)
 	_egg_timer_ticks = 0
 	founding_chamber_ready.emit(_founding_chamber_center)

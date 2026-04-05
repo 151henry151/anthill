@@ -120,6 +120,8 @@ const DIG_ACT_DURATION_TICKS := 3
 const TUNNEL_YIELD_TICKS := 5
 ## Radius from entrance for spoil deposits.
 const SPOIL_DEPOSIT_RADIUS := 12
+## Minimum distance from nest center for spoil samples (disk sampling; world units ≈ voxels).
+const SPOIL_DEPOSIT_INNER_CLEAR := 2.0
 ## Max extra height of spoil pile above surface.
 const MAX_SPOIL_HEIGHT := 6
 ## Max simultaneous diggers (performance limit).

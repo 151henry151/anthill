@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.10] - 2026-04-05
+
+### Changed
+
+- **`scripts/spoil_deposit.gd`**, **`scripts/nest_manager.gd`**, **`scripts/queen_ant.gd`**: sample spoil / mound deposit offsets on a **uniform disk** (polar + **r = sqrt(u) × radius**) with a circular inner clearance, instead of independent **`randi_range`** on **dx/dz** (which filled a square).
+- **`scripts/constants.gd`**: add **`SPOIL_DEPOSIT_INNER_CLEAR`** for the minimum radius from the nest center used when sampling spoil positions.
+
+### Fixed
+
+- **`scripts/queen_ant.gd`**: place the queen’s feet on the floor of each occupied voxel (`_apply_queen_cell_pos`) using the same body-origin offset as **`_place_on_surface`**, instead of voxel centers on Y (which buried the mesh in solid terrain during dig/carry); snap **`DIGGING`** start to the air cell above the surface block and align claustral placement with **`_apply_queen_cell_pos`**.
+
 ## [0.5.9] - 2026-04-04
 
 ### Changed
