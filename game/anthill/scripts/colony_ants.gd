@@ -1,13 +1,12 @@
 extends Node3D
-## Simple wandering markers for colony view (not the FPS `ant.tscn` prototype).
+## Wandering markers for colony view — bright spheres so they read against sand/stone.
 
 const _Const := preload("res://scripts/constants.gd")
 const _Chunk := preload("res://scripts/world/chunk_data.gd")
 
-@export var ant_count: int = 16
+@export var ant_count: int = 10
 @export var move_interval: float = 0.45
-## World units — stylized “giants” so they read at ortho zoom (~4 px/voxel).
-@export var ant_body_size: Vector3 = Vector3(5.0, 3.0, 6.0)
+@export var sphere_radius: float = 3.5
 
 @onready var world: Node = $"../WorldManager"
 
@@ -32,14 +31,15 @@ func _spawn_one() -> void:
 		if wy < 0:
 			continue
 		var mi := MeshInstance3D.new()
-		var box := BoxMesh.new()
-		box.size = ant_body_size
-		mi.mesh = box
+		var sph := SphereMesh.new()
+		sph.radius = sphere_radius
+		sph.height = sphere_radius * 2.0
+		mi.mesh = sph
 		var mat := StandardMaterial3D.new()
 		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		mat.albedo_color = Color(0.62, 0.14, 0.09)
+		mat.albedo_color = Color(0.95, 0.2, 0.12)
 		mat.emission_enabled = true
-		mat.emission = Color(0.12, 0.03, 0.02)
+		mat.emission = Color(0.45, 0.08, 0.04)
 		mi.material_override = mat
 		add_child(mi)
 		mi.position = _ant_pos(wx, wy, wz)
@@ -60,9 +60,8 @@ func _surface_block_y(wx: int, wz: int) -> int:
 
 
 func _ant_pos(wx: int, wy: int, wz: int) -> Vector3:
-	# Surface at y = wy + 1; place box so its bottom sits on that plane.
-	var half_h: float = ant_body_size.y * 0.5
-	return Vector3(float(wx) + 0.5, float(wy) + 1.0 + half_h, float(wz) + 0.5)
+	# Top of surface voxels at y = wy + 1; sphere sits on that plane.
+	return Vector3(float(wx) + 0.5, float(wy) + 1.0 + sphere_radius, float(wz) + 0.5)
 
 
 func _physics_process(delta: float) -> void:
@@ -93,4 +92,4 @@ func _step_ant(a: Dictionary) -> void:
 	a["wx"] = nwx
 	a["wz"] = nwz
 	var mi: MeshInstance3D = a["node"]
-	mi.position = _ant_pos(nwx, wy, nwz)
+	mi.position = _ant_pos(nwx, wy, wz)

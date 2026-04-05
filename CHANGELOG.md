@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.15] - 2026-04-04
+
+### Added
+
+- **`scripts/colony_camera.gd`**: **orbit** the orthographic camera around a **ground pivot** — **left-drag** adjusts **yaw** and **pitch**; **middle-drag** **pans** the pivot on **XZ**; **wheel** still zooms **`size`**.
+
+### Changed
+
+- **`scripts/colony_ants.gd`**: render ants as **large emissive red spheres** (not brown boxes) so they are distinct from **sand tone** and from **terrain cross-section** edges; expose **`sphere_radius`**.
+
+- **`scenes/main.tscn`**: update **hint** text for **orbit / pan / ants**.
+
 ## [0.2.14] - 2026-04-04
 
 ### Fixed
