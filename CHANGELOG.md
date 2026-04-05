@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-04-05
+
+### Fixed
+
+- **`scripts/nest_manager.gd`**: add **`bind_world`** so **`_world`** is set before the queen’s digging phase calls **`compact_around`** (full **`setup`** was only run at **`founding_chamber_ready`**).
+- **`scripts/main_controller.gd`**: call **`bind_world(world)`** immediately after adding **`NestManager`**.
+
 ## [0.5.0] - 2026-04-05
 
 ### Added

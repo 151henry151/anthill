@@ -123,6 +123,7 @@ func _setup_systems() -> void:
 	_nest_manager.name = "NestManager"
 	_nest_manager.set_script(load("res://scripts/nest_manager.gd"))
 	add_child(_nest_manager)
+	_nest_manager.bind_world(world)
 
 	_hud = CanvasLayer.new()
 	_hud.name = "ColonyHUD"

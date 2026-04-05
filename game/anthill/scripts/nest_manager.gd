@@ -18,6 +18,11 @@ var _rng: RandomNumberGenerator
 var _building_pheromone: Node
 
 
+## Call as soon as the node exists — **before** the queen digs (she invokes **`compact_around`** during the shaft/chamber phase). Full **`setup`** still runs at **`founding_chamber_ready`** with the real chamber center.
+func bind_world(world: Node) -> void:
+	_world = world
+
+
 func setup(world: Node, founding_chamber: Vector3i, building_pheromone: Node) -> void:
 	_world = world
 	queen_chamber = founding_chamber
@@ -33,6 +38,8 @@ func setup(world: Node, founding_chamber: Vector3i, building_pheromone: Node) ->
 
 
 func compact_around(pos: Vector3i) -> void:
+	if _world == null:
+		return
 	var r: int = _Const.COMPACTION_RADIUS
 	for dx in range(-r, r + 1):
 		for dy in range(-r, r + 1):
@@ -45,6 +52,8 @@ func compact_around(pos: Vector3i) -> void:
 
 
 func on_voxel_removed(pos: Vector3i) -> void:
+	if _world == null:
+		return
 	compact_around(pos)
 	_nest_air_volume += 1
 	_interior_dirty = true
