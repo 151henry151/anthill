@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.7] - 2026-04-04
+
+### Fixed
+
+- **`scripts/main_controller.gd`**, **`shaders/terrain_unshaded.gdshader`**: draw voxel terrain with a minimal **unshaded spatial shader** that reads **vertex colors** (avoids a **blank / white / non-visible** terrain on **Vulkan llvmpipe** where **`StandardMaterial3D`** + vertex color was unreliable).
+- **`project.godot`**: set **`renderer/rendering_method`** to **`gl_compatibility`** and **`config/features`** to **GL Compatibility** so the game prefers **OpenGL** on hosts without stable **Vulkan** software rasterizers.
+
+### Changed
+
+- **`project.godot`**: omit **window stretch** and fixed **viewport size** overrides (they were added while chasing apparent **letterboxing**; that came from an external **screenshot overlay**, not the game).
+
 ## [0.2.6] - 2026-04-04
 
 ### Fixed

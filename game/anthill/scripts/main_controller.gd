@@ -2,19 +2,18 @@ extends Node3D
 
 const _SandStep := preload("res://scripts/world/sand_step.gd")
 const _MeshBuilder := preload("res://scripts/world/mesh_builder.gd")
+const _TerrainShader := preload("res://shaders/terrain_unshaded.gdshader")
 
 @onready var world: Node = $WorldManager
 @onready var chunks_root: Node3D = $Chunks
 
 var _chunk_meshes: Dictionary = {} # Vector2i -> MeshInstance3D
-var _mat: StandardMaterial3D
+var _mat: ShaderMaterial
 
 
 func _ready() -> void:
-	_mat = StandardMaterial3D.new()
-	_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_mat.vertex_color_use_as_albedo = true
-	_mat.roughness = 0.92
+	_mat = ShaderMaterial.new()
+	_mat.shader = _TerrainShader
 	for cz in range(world.chunks_z):
 		for cx in range(world.chunks_x):
 			var mi := MeshInstance3D.new()
