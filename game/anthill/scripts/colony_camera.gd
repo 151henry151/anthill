@@ -11,14 +11,15 @@ const _Chunk := preload("res://scripts/world/chunk_data.gd")
 ## Polar angle from +Y (0 = camera on +Y above pivot; larger = lower toward horizon).
 @export var orbit_phi_deg: float = 12.0
 ## Vertical world units in view (Godot ortho `size` = full height). ~viewport_height / size ≈ pixels per grain tall.
-@export var ortho_size: float = 180.0
+@export var ortho_size: float = 220.0
 @export var pan_speed: float = 0.28
 @export var pan_pixels_to_world: float = 0.011
 @export var pan_relative_max: float = 72.0
 @export var orbit_sensitivity: float = 0.22
-@export var zoom_step: float = 6.0
+@export var zoom_step: float = 8.0
 @export var min_zoom: float = 14.0
-@export var max_zoom: float = 240.0
+## Ortho `size` is vertical world units; ~17×32 ≈ 544 — allow zooming out past full map width/height.
+@export var max_zoom: float = 720.0
 
 var pivot: Vector3 = Vector3.ZERO
 

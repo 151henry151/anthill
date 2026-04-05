@@ -49,4 +49,4 @@ offset_left = 12.0
 offset_top = 12.0
 theme_override_colors/font_color = Color(0.9, 0.92, 0.85, 1)
 theme_override_font_sizes/font_size = 14
-text = "Colony view — left-drag orbit · middle-drag pan · wheel zoom · red spheres = ants"
+text = "Colony view — left-drag orbit · middle-drag pan · wheel zoom · brown shapes = ants"

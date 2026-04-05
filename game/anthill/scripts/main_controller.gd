@@ -2,8 +2,8 @@ extends Node3D
 
 const _MeshBuilder := preload("res://scripts/world/mesh_builder.gd")
 const _SandStepScript = preload("res://scripts/world/sand_step.gd")
-## Create at load so `_physics_process` never sees `Nil` if `_ready` aborts or ordering differs.
-var _sand_step: RefCounted = _SandStepScript.new()
+
+var _sand_step: RefCounted
 
 @onready var world: Node = $WorldManager
 @onready var chunks_root: Node3D = $Chunks
@@ -13,6 +13,8 @@ var _mat: StandardMaterial3D
 
 
 func _ready() -> void:
+	# Instantiate in `_ready` only — field `preload(...).new()` hits `GDScript` without `.new()` in 4.2.
+	_sand_step = _SandStepScript.new() as RefCounted
 	_mat = StandardMaterial3D.new()
 	_mat.vertex_color_use_as_albedo = true
 	_mat.roughness = 0.88

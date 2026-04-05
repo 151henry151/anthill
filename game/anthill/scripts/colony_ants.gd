@@ -1,20 +1,22 @@
 extends Node3D
-## Wandering markers for colony view — bright spheres so they read against sand/stone.
+## Wandering colony ants — procedural segmented bodies (see `colony_ant_model.gd`).
 
 const _Const := preload("res://scripts/constants.gd")
 const _Chunk := preload("res://scripts/world/chunk_data.gd")
+const _AntModelScript = preload("res://scripts/colony_ant_model.gd")
 
 @export var ant_count: int = 72
 @export var move_interval: float = 0.45
-@export var sphere_radius: float = 3.5
 
 @onready var world: Node = $"../WorldManager"
 
 var _ants: Array[Dictionary] = []
 var _rng: RandomNumberGenerator
+var _ant_builder: RefCounted
 
 
 func _ready() -> void:
+	_ant_builder = _AntModelScript.new() as RefCounted
 	_rng = RandomNumberGenerator.new()
 	_rng.randomize()
 	for i in ant_count:
@@ -30,21 +32,12 @@ func _spawn_one() -> void:
 		var wy: int = _surface_block_y(wx, wz)
 		if wy < 0:
 			continue
-		var mi := MeshInstance3D.new()
-		var sph := SphereMesh.new()
-		sph.radius = sphere_radius
-		sph.height = sphere_radius * 2.0
-		mi.mesh = sph
-		var mat := StandardMaterial3D.new()
-		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		mat.albedo_color = Color(0.95, 0.2, 0.12)
-		mat.emission_enabled = true
-		mat.emission = Color(0.45, 0.08, 0.04)
-		mi.material_override = mat
-		add_child(mi)
-		mi.position = _ant_pos(wx, wy, wz)
+		var ant: Node3D = _ant_builder.build_ant()
+		ant.rotation_degrees.y = _rng.randf_range(0.0, 360.0)
+		add_child(ant)
+		ant.position = _ant_pos(wx, wy, wz)
 		_ants.append({
-			"node": mi,
+			"node": ant,
 			"wx": wx,
 			"wz": wz,
 			"t": _rng.randf_range(0.0, move_interval),
@@ -60,8 +53,8 @@ func _surface_block_y(wx: int, wz: int) -> int:
 
 
 func _ant_pos(wx: int, wy: int, wz: int) -> Vector3:
-	# Top of surface voxels at y = wy + 1; sphere sits on that plane.
-	return Vector3(float(wx) + 0.5, float(wy) + 1.0 + sphere_radius, float(wz) + 0.5)
+	# Model origin at sand surface (feet / ground contact).
+	return Vector3(float(wx) + 0.5, float(wy) + 1.0, float(wz) + 0.5)
 
 
 func _physics_process(delta: float) -> void:
@@ -91,5 +84,6 @@ func _step_ant(a: Dictionary) -> void:
 		return
 	a["wx"] = nwx
 	a["wz"] = nwz
-	var mi: MeshInstance3D = a["node"]
-	mi.position = _ant_pos(nwx, wy, wz)
+	var ant: Node3D = a["node"]
+	ant.position = _ant_pos(nwx, wy, wz)
+	ant.rotation.y = atan2(float(dx), float(dz))

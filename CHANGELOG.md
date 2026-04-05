@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.23] - 2026-04-04
+
+### Fixed
+
+- **`scripts/colony_ant_model.gd`**: add procedural ant builder to version control (referenced by **`colony_ants.gd`** but missing from the tree).
+- **`scripts/world/sand_step.gd`**: replace **`WorldManager`** type checks with **`get`/`set`** on **`sand_idle`** so the file parses without **`class_name`** resolution issues.
+- **`scripts/main_controller.gd`**, **`scripts/colony_ants.gd`**: create **`SandStep`** / **`ColonyAntModel`** with **`preload(...).new()`** inside **`_ready`** only (avoid **`GDScript.new`** at field init on Godot **4.2**).
+
+### Changed
+
+- **`scripts/colony_camera.gd`**: raise default **`ortho_size`**, **`zoom_step`**, and **`max_zoom`** so the camera can zoom out far enough for the larger world.
+
+## [0.2.22] - 2026-04-04
+
+### Added
+
+- **`scripts/colony_ant_model.gd`**: build **procedural** colony ants — **segmented abdomen**, **petiole**, **thorax**, **head**, **antennae**, and **six** **legs** (primitives + unshaded materials with light **emission** for visibility).
+
+### Changed
+
+- **`scripts/colony_ants.gd`**: spawn **assembled ant** **rig** instead of a **sphere**; **face** **walk** **direction**; **random** **spawn** **yaw**.
+- **`scenes/main.tscn`**: hint text no longer says **red spheres**.
+
 ## [0.2.21] - 2026-04-04
 
 ### Added
