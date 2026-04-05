@@ -1,6 +1,8 @@
 extends CanvasLayer
 ## Minimal HUD: colony stage, ant-day counter, queen status, food bars, population.
 
+const _Const := preload("res://scripts/constants.gd")
+
 var _stage_label: Label
 var _day_label: Label
 var _queen_label: Label
@@ -72,7 +74,7 @@ func _update_display() -> void:
 	_pop_label.text = "%d workers | %d brood" % [worker_count, brood_count]
 	var modes: Array[String] = []
 	if fast_forward:
-		modes.append("[F] FAST >>")
+		modes.append("[F] FAST %.0fx >>" % _Const.FAST_FORWARD_SCALE)
 	if xray_active:
 		modes.append("[X] X-RAY")
 	_mode_label.text = "  ".join(modes) if not modes.is_empty() else ""

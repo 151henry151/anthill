@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-04-06
+
+### Fixed
+
+- **`scripts/colony_ants.gd`**: include **BROOD_CARE** workers past **`YOUNG_WORKER_AGE_THRESHOLD`** in **`_assign_tasks`** so they can be given **foraging** / **dig** / **rest** (previously only **EMERGING**/**RESTING** ants were reassigned, so interior workers never “graduated”).
+
+### Changed
+
+- **`scripts/constants.gd`**: set **`FAST_FORWARD_SCALE`** to **30** (was **10**).
+- **`scripts/colony_hud.gd`**: show fast-forward multiplier from **`FAST_FORWARD_SCALE`** in the mode line.
+
 ## [0.4.2] - 2026-04-05
 
 ### Fixed

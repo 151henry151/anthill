@@ -119,11 +119,15 @@ func _assign_tasks() -> void:
 	var old_idle: Array[Dictionary] = []
 	for a in _ants:
 		var st: int = int(a["state"])
+		var age: int = int(a["age_ticks"])
 		if st == 0 or st == 1:
-			if int(a["age_ticks"]) < _Const.YOUNG_WORKER_AGE_THRESHOLD:
+			if age < _Const.YOUNG_WORKER_AGE_THRESHOLD:
 				young_idle.append(a)
 			else:
 				old_idle.append(a)
+		elif st == 2 and age >= _Const.YOUNG_WORKER_AGE_THRESHOLD:
+			# Brood-care workers past the “young” window must be eligible for foraging / dig / rest.
+			old_idle.append(a)
 	for a in young_idle:
 		a["state"] = 2  # BROOD_CARE
 	for a in old_idle:
