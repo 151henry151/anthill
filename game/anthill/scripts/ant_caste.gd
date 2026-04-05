@@ -1,0 +1,31 @@
+extends RefCounted
+class_name AntCaste
+## Caste definitions and worker task enum for Lasius niger colony simulation.
+
+enum Caste { QUEEN, WORKER, MALE_ALATE, QUEEN_ALATE }
+
+enum Task {
+	IDLE,
+	BROOD_CARE,
+	NEST_BUILDING,
+	FORAGING_SCOUT,
+	FORAGING_RECRUIT,
+	TROPHALLAXIS,
+	RESTING,
+	ATTENDING_QUEEN,
+	DEFENDING,
+}
+
+enum WorkerState {
+	EMERGING,
+	RESTING,
+	BROOD_CARE,
+	NEST_BUILDING,
+	FORAGING_DEPART,
+	FORAGING_SCOUT,
+	FORAGING_RECRUIT,
+	RETURNING,
+	TROPHALLAXIS,
+	ATTENDING_QUEEN,
+	DEFENDING,
+}

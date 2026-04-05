@@ -1,24 +1,55 @@
 extends Node3D
+## Scene coordinator: wires up all colony systems, manages game clock, food sources.
 
+const _Const := preload("res://scripts/constants.gd")
+const _Chunk := preload("res://scripts/world/chunk_data.gd")
 const _MeshBuilder := preload("res://scripts/world/mesh_builder.gd")
 const _SandStepScript = preload("res://scripts/world/sand_step.gd")
+const _QueenScript = preload("res://scripts/queen_ant.gd")
+const _BroodScript = preload("res://scripts/brood_manager.gd")
+const _PheromoneScript = preload("res://scripts/pheromone_field.gd")
+const _FoodStoreScript = preload("res://scripts/colony_food_store.gd")
+const _FoodSourceScript = preload("res://scripts/food_source.gd")
+const _BroodRendererScript = preload("res://scripts/brood_renderer.gd")
+const _NestBuilderScript = preload("res://scripts/nest_builder.gd")
+const _HudScript = preload("res://scripts/colony_hud.gd")
+const _GameOverScript = preload("res://scripts/game_over.gd")
+const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
 
-## Chunk mesh builds per frame during initial load (spreads GPU/CPU cost; avoids a long freeze after the loading bar).
 @export var initial_mesh_chunks_per_frame: int = 10
 
 var _sand_step: RefCounted
-
 @onready var world: Node = $WorldManager
 @onready var chunks_root: Node3D = $Chunks
+@onready var colony_ants: Node3D = $ColonyAnts
 
-var _chunk_meshes: Dictionary = {} # Vector2i -> MeshInstance3D
+var _chunk_meshes: Dictionary = {}
 var _mat: StandardMaterial3D
 var _initial_mesh_keys: Array[Vector2i] = []
 var _initial_mesh_idx: int = 0
 
+var _queen: Node3D
+var _brood_manager: Node
+var _brood_renderer: Node3D
+var _pheromone_field: Node
+var _food_store: Node
+var _food_sources: Array[Node3D] = []
+var _nest_builder: Node
+var _hud: CanvasLayer
+var _game_over: CanvasLayer
+var _rng: RandomNumberGenerator
+
+var _game_tick: int = 0
+var _game_day: int = 0
+var _peak_workers: int = 0
+var _first_workers_emerged: bool = false
+var _colony_stage: String = "Founding"
+var _queen_alive: bool = true
+
 
 func _ready() -> void:
-	# Instantiate in `_ready` only — field `preload(...).new()` hits `GDScript` without `.new()` in 4.2.
+	_rng = RandomNumberGenerator.new()
+	_rng.randomize()
 	_sand_step = _SandStepScript.new() as RefCounted
 	_mat = StandardMaterial3D.new()
 	_mat.vertex_color_use_as_albedo = true
@@ -33,7 +64,90 @@ func _ready() -> void:
 			_chunk_meshes[Vector2i(cx, cz)] = mi
 	for k in _chunk_meshes:
 		_initial_mesh_keys.append(k)
+	_setup_systems()
 	set_process(true)
+
+
+func _setup_systems() -> void:
+	_brood_manager = Node.new()
+	_brood_manager.name = "BroodManager"
+	_brood_manager.set_script(load("res://scripts/brood_manager.gd"))
+	add_child(_brood_manager)
+
+	_brood_renderer = Node3D.new()
+	_brood_renderer.name = "BroodRenderer"
+	_brood_renderer.set_script(load("res://scripts/brood_renderer.gd"))
+	add_child(_brood_renderer)
+	_brood_renderer.setup(_brood_manager)
+
+	_pheromone_field = Node.new()
+	_pheromone_field.name = "PheromoneField"
+	_pheromone_field.set_script(load("res://scripts/pheromone_field.gd"))
+	add_child(_pheromone_field)
+
+	_food_store = Node.new()
+	_food_store.name = "ColonyFoodStore"
+	_food_store.set_script(load("res://scripts/colony_food_store.gd"))
+	add_child(_food_store)
+
+	_nest_builder = Node.new()
+	_nest_builder.name = "NestBuilder"
+	_nest_builder.set_script(load("res://scripts/nest_builder.gd"))
+	add_child(_nest_builder)
+
+	_hud = CanvasLayer.new()
+	_hud.name = "ColonyHUD"
+	_hud.set_script(load("res://scripts/colony_hud.gd"))
+	add_child(_hud)
+
+	_game_over = CanvasLayer.new()
+	_game_over.name = "GameOver"
+	_game_over.set_script(load("res://scripts/game_over.gd"))
+	add_child(_game_over)
+
+	_queen = Node3D.new()
+	_queen.name = "Queen"
+	_queen.set_script(load("res://scripts/queen_ant.gd"))
+	add_child(_queen)
+	_queen.setup(world)
+	_queen.egg_laid.connect(_on_queen_egg_laid)
+	_queen.queen_died.connect(_on_queen_died)
+	_queen.founding_chamber_ready.connect(_on_founding_chamber_ready)
+
+	_brood_manager.ant_eclosed.connect(_on_ant_eclosed)
+
+	colony_ants.pheromone_field = _pheromone_field
+	colony_ants.food_store = _food_store
+
+	_spawn_food_sources()
+
+
+func _spawn_food_sources() -> void:
+	var count: int = _rng.randi_range(_Const.FOOD_SOURCE_COUNT_MIN, _Const.FOOD_SOURCE_COUNT_MAX)
+	var max_x: int = world.chunks_x * _Chunk.SIZE_X
+	var max_z: int = world.chunks_z * _Chunk.SIZE_Z
+	var types: Array[String] = ["aphid_colony", "dead_insect", "seed_cache"]
+	for i in range(count):
+		var wx: int = _rng.randi_range(20, max_x - 20)
+		var wz: int = _rng.randi_range(20, max_z - 20)
+		var sy: int = _surface_y(wx, wz)
+		if sy < 0:
+			continue
+		var fs := Node3D.new()
+		fs.name = "FoodSource_%d" % i
+		fs.set_script(load("res://scripts/food_source.gd"))
+		add_child(fs)
+		fs.setup(types[i % types.size()], wx, wz, sy)
+		_food_sources.append(fs)
+	colony_ants.food_sources = _food_sources
+
+
+func _surface_y(wx: int, wz: int) -> int:
+	var ceiling: int = mini(_Chunk.SIZE_Y - 2, 240)
+	for y in range(ceiling, -1, -1):
+		if world.get_block(wx, y, wz) != _Const.BLOCK_AIR and world.get_block(wx, y + 1, wz) == _Const.BLOCK_AIR:
+			return y
+	return -1
 
 
 func _process(_delta: float) -> void:
@@ -53,6 +167,71 @@ func _physics_process(_delta: float) -> void:
 	if world.take_mesh_dirty():
 		for ck in world.get_and_clear_dirty_chunks():
 			_rebuild_chunk_mesh(ck)
+	_game_tick += 1
+	_game_day = _game_tick / _Const.TICKS_PER_ANT_DAY
+	if _brood_manager:
+		_brood_manager.tick()
+	if _pheromone_field:
+		_pheromone_field.tick()
+	for fs in _food_sources:
+		if is_instance_valid(fs):
+			fs.tick()
+	_update_colony_stage()
+	if _game_tick % 60 == 0:
+		_update_hud()
+
+
+func _update_colony_stage() -> void:
+	if not _queen_alive:
+		return
+	if _first_workers_emerged:
+		_colony_stage = "Ergonomic"
+	else:
+		_colony_stage = "Founding"
+
+
+func _update_hud() -> void:
+	if _hud == null:
+		return
+	var queen_energy: float = _queen.energy_reserve if is_instance_valid(_queen) else 0.0
+	var sugar: float = _food_store.sugar if _food_store else 0.0
+	var protein: float = _food_store.protein if _food_store else 0.0
+	var workers: int = colony_ants.get_worker_count() if colony_ants else 0
+	var brood_total: int = 0
+	if _brood_manager:
+		var counts: Dictionary = _brood_manager.get_counts()
+		brood_total = int(counts["total"])
+	_peak_workers = maxi(_peak_workers, workers)
+	_hud.update_data(_game_day, _colony_stage, queen_energy, sugar, protein, workers, brood_total)
+
+
+func _on_queen_egg_laid(count: int, is_trophic: bool) -> void:
+	if _brood_manager:
+		_brood_manager.add_eggs(count, is_trophic)
+
+
+func _on_queen_died(cause: String) -> void:
+	_queen_alive = false
+	if _game_over:
+		_game_over.show_game_over(cause, _game_day, _peak_workers)
+
+
+func _on_founding_chamber_ready(chamber_center: Vector3i) -> void:
+	if _brood_manager:
+		_brood_manager.set_chamber_center(chamber_center)
+	if _nest_builder:
+		_nest_builder.setup(world, chamber_center)
+	colony_ants.nest_entrance = Vector3i(chamber_center.x, _TerrainGen.SURFACE_BASE, chamber_center.z)
+	colony_ants.nest_chamber = chamber_center
+
+
+func _on_ant_eclosed(caste_destiny: String, pos: Vector3) -> void:
+	if caste_destiny == "worker":
+		if not _first_workers_emerged:
+			_first_workers_emerged = true
+			if is_instance_valid(_queen):
+				_queen.transition_to_established()
+		colony_ants.spawn_worker(pos, not _first_workers_emerged or colony_ants.get_worker_count() < 6)
 
 
 func _rebuild_chunk_mesh(k: Vector2i) -> void:
