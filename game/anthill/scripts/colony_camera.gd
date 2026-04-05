@@ -18,11 +18,11 @@ const _Chunk := preload("res://scripts/world/chunk_data.gd")
 @export var orbit_sensitivity: float = 0.22
 @export var zoom_step: float = 8.0
 @export var min_zoom: float = 14.0
-## Upper bound for wheel intent; effective `size` may exceed this when the world AABB needs a wider ortho frustum.
+## Upper bound for wheel intent; effective `size` may exceed this when the frustum must fit the world AABB.
 @export var max_zoom: float = 3200.0
 
 var pivot: Vector3 = Vector3.ZERO
-## Wheel-only target; effective `size` is at least `_required_ortho_size()` so corners are not cut by ortho side planes.
+## Wheel-only target; effective `size` is at least what fits the world in the current frustum.
 var _size_user: float = 220.0
 var _orbiting: bool = false
 var _panning: bool = false
@@ -34,6 +34,8 @@ func _ready() -> void:
 	var half_z: float = float(wm.chunks_z * _Chunk.SIZE_Z) * 0.5
 	look_at_xz = Vector2(half_x, half_z)
 	projection = PROJECTION_ORTHOGONAL
+	# Match landscape windows; projection aspect must match our `_required_ortho_size` math.
+	keep_aspect = KEEP_HEIGHT
 	_size_user = ortho_size
 	pivot = Vector3(look_at_xz.x, 0.0, look_at_xz.y)
 	_apply_orbit()
@@ -41,23 +43,38 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 
-func _input(event: InputEvent) -> void:
+func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
-		match event.button_index:
-			MOUSE_BUTTON_LEFT:
-				_orbiting = event.pressed
-			MOUSE_BUTTON_MIDDLE:
-				_panning = event.pressed
-			MOUSE_BUTTON_WHEEL_UP:
-				if event.pressed:
-					_size_user = clampf(_size_user - zoom_step, min_zoom, max_zoom)
-					_apply_orbit()
-			MOUSE_BUTTON_WHEEL_DOWN:
-				if event.pressed:
-					_size_user = clampf(_size_user + zoom_step, min_zoom, max_zoom)
-					_apply_orbit()
-	if event is InputEventMouseMotion:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			_orbiting = event.pressed
+		elif event.button_index == MOUSE_BUTTON_MIDDLE:
+			_panning = event.pressed
+		elif event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			if event.echo:
+				return
+			# Wheel: use factor for smooth scroll; do not require `pressed` — some platforms differ.
+			var f: float = maxf(event.factor, 1.0)
+			var step: float = zoom_step * f
+			if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+				_size_user = clampf(_size_user - step, min_zoom, max_zoom)
+			else:
+				_size_user = clampf(_size_user + step, min_zoom, max_zoom)
+			_apply_orbit()
+			get_viewport().set_input_as_handled()
+	elif event is InputEventPanGesture:
+		# Trackpad / some Wayland setups send pan instead of wheel buttons.
+		var dz: float = clampf(-event.delta.y - event.delta.x, -4.0, 4.0)
+		if absf(dz) > 0.05:
+			_size_user = clampf(_size_user + dz * zoom_step * 0.28, min_zoom, max_zoom)
+			_apply_orbit()
+			get_viewport().set_input_as_handled()
+	elif event is InputEventMouseMotion:
 		var motion: InputEventMouseMotion = event
+		# `button_mask` is unreliable on some drivers; query live button state as fallback.
+		var orbit_now: bool = _orbiting or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+		var pan_now: bool = _panning or Input.is_mouse_button_pressed(MOUSE_BUTTON_MIDDLE)
+		if not orbit_now and not pan_now:
+			return
 		var rel: Vector2 = motion.relative
 		rel.x = clampf(rel.x, -pan_relative_max, pan_relative_max)
 		rel.y = clampf(rel.y, -pan_relative_max, pan_relative_max)
@@ -65,16 +82,17 @@ func _input(event: InputEvent) -> void:
 		var basis_xz := _ground_pan_axes()
 		var right_h: Vector3 = basis_xz[0]
 		var forward_h: Vector3 = basis_xz[1]
-		if _orbiting:
+		if orbit_now:
 			yaw_deg -= rel.x * orbit_sensitivity
 			orbit_phi_deg = clampf(orbit_phi_deg + rel.y * orbit_sensitivity, 4.0, 89.0)
 			_apply_orbit()
-		elif _panning:
-			# Screen/mouse Y is down-positive; move pivot so the ground follows the cursor (not inverted).
+			get_viewport().set_input_as_handled()
+		elif pan_now:
 			var delta: Vector3 = right_h * rel.x * pan_scale + forward_h * rel.y * pan_scale
 			pivot.x += delta.x
 			pivot.z += delta.z
 			_apply_orbit()
+			get_viewport().set_input_as_handled()
 
 
 func _apply_orbit() -> void:
@@ -116,7 +134,7 @@ func _world_aabb_corners() -> Array[Vector3]:
 	]
 
 
-## Smallest ortho `size` so all AABB corners fit inside the orthographic X/Y slab (rotation / corner views).
+## Analytic lower bound for ortho `size` (camera-local X/Y); `keep_aspect` + projection may differ slightly.
 func _required_ortho_size() -> float:
 	var inv: Transform3D = global_transform.affine_inverse()
 	var aspect: float = _viewport_aspect()
@@ -126,7 +144,6 @@ func _required_ortho_size() -> float:
 		var local: Vector3 = inv * p
 		max_abs_x = maxf(max_abs_x, absf(local.x))
 		max_abs_y = maxf(max_abs_y, absf(local.y))
-	# Godot ortho: height = `size`, width = `size * aspect` (visible rect aspect).
 	var need_y: float = 2.0 * max_abs_y
 	var need_x: float = (2.0 * max_abs_x) / aspect
 	return maxf(need_y, need_x)
@@ -134,9 +151,22 @@ func _required_ortho_size() -> float:
 
 func _apply_ortho_size_and_clip() -> void:
 	var req: float = _required_ortho_size()
-	var cap: float = maxf(max_zoom, req * 1.02)
+	var cap: float = maxf(max_zoom, req * 1.12)
 	size = clampf(maxf(_size_user, req), min_zoom, cap)
 	_sync_clip_to_world_aabb()
+	# Frustum from projection + keep_aspect can differ slightly from the analytic `req`; grow until all corners fit.
+	var guard: int = 0
+	while guard < 72:
+		var all_in: bool = true
+		for p in _world_aabb_corners():
+			if not is_position_in_frustum(p):
+				all_in = false
+				break
+		if all_in:
+			break
+		size = minf(size * 1.028, 1.0e6)
+		_sync_clip_to_world_aabb()
+		guard += 1
 
 
 func _ground_pan_axes() -> Array[Vector3]:

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.27] - 2026-04-05
+
+### Fixed
+
+- **`scripts/colony_camera.gd`**: handle **orbit**, **pan**, and **zoom** in **`_unhandled_input`**; use **live** **`Input.is_mouse_button_pressed`** with held-state for **pan**/**orbit**; apply **wheel** **`factor`** and accept **`InputEventPanGesture`** where scroll does not arrive as buttons.
+- **`scripts/colony_camera.gd`**: set **`keep_aspect`** to **`KEEP_HEIGHT`**; grow **`size`** until **`is_position_in_frustum`** is true for **world** **AABB** corners (matches engine frustum vs analytic size).
+- **`scenes/main.tscn`**: set **Hint** **`mouse_filter`** to **IGNORE** so **UI** does not eat **viewport** **input**.
+
 ## [0.2.26] - 2026-04-05
 
 ### Fixed
