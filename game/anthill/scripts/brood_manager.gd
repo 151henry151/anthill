@@ -80,6 +80,20 @@ func feed_larva(amount: float) -> bool:
 	return false
 
 
+func feed_all_larvae(amount_each: float) -> void:
+	for b in _brood:
+		if b["type"] == "larva":
+			b["nutrition"] = minf(float(b["nutrition"]) + amount_each, 1.0)
+
+
+func count_larvae() -> int:
+	var n: int = 0
+	for b in _brood:
+		if b["type"] == "larva":
+			n += 1
+	return n
+
+
 func consume_trophic_egg() -> bool:
 	for i in range(_brood.size()):
 		if _brood[i]["type"] == "egg" and bool(_brood[i]["is_trophic"]):

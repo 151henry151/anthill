@@ -160,7 +160,7 @@ func _setup_systems() -> void:
 	_queen.name = "Queen"
 	_queen.set_script(load("res://scripts/queen_ant.gd"))
 	add_child(_queen)
-	_queen.setup(world, _nest_manager)
+	_queen.setup(world, _nest_manager, _brood_manager)
 	_queen.egg_laid.connect(_on_queen_egg_laid)
 	_queen.queen_died.connect(_on_queen_died)
 	_queen.founding_chamber_ready.connect(_on_founding_chamber_ready)
@@ -267,6 +267,11 @@ func _physics_process(_delta: float) -> void:
 	if _day_night:
 		_day_night.set_game_tick(_game_tick)
 	_game_day = _game_tick / _Const.TICKS_PER_ANT_DAY
+	var worker_n: int = colony_ants.get_worker_count() if colony_ants else 0
+	if is_instance_valid(_queen) and _queen.has_method("care_for_brood"):
+		_queen.care_for_brood(worker_n)
+	if worker_n > 0 and _brood_manager and _brood_manager.has_method("feed_all_larvae"):
+		_brood_manager.call("feed_all_larvae", _Const.WORKER_BROOD_CARE_PER_TICK)
 	if _brood_manager:
 		_brood_manager.tick()
 	if _pheromone_field:

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.15] - 2026-04-05
+
+### Fixed
+
+- **`scripts/brood_manager.gd`**, **`scripts/queen_ant.gd`**, **`scripts/main_controller.gd`**, **`scripts/constants.gd`**: provision **larvae** during **claustral** and **established-without-workers** (queen **energy** + optional **trophic-egg** consumption); apply **worker trophallaxis** when **`worker_count > 0`** so larvae survive to **pupation** and workers can bootstrap the colony.
+
 ## [0.5.14] - 2026-04-05
 
 ### Changed

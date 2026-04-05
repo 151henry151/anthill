@@ -53,8 +53,14 @@ const QUEEN_ESTABLISHED_EGG_INTERVAL_TICKS := 2 * TICKS_PER_ANT_DAY
 const QUEEN_CLAUSTRAL_ENERGY_DRAIN_PER_TICK := 1.0 / float(40 * TICKS_PER_ANT_DAY)
 ## Energy regained when queen cannibalises a trophic egg.
 const QUEEN_EGG_CANNIBAL_ENERGY_GAIN := 0.06
-## Energy drain per tick when queen feeds a larva from reserves.
+## Legacy single-feed cost (reserved for future targeted care).
 const QUEEN_LARVA_FEED_ENERGY_COST := 0.003
+## Nutrition added to **each** larva per tick when the queen is the sole caregiver (claustral, or established with no workers yet). Slightly above base larva loss so brood can reach pupation.
+const QUEEN_LARVA_FEED_PER_TICK := 0.00012
+## Queen energy spent per larva per tick while feeding the brood (metabolic cost of provisioning).
+const QUEEN_LARVA_FEED_ENERGY_PER_LARVA_PER_TICK := 0.000015
+## Trophallaxis-style topping when workers exist (foraging not modeled per-larva; stabilizes nutrition until a fuller food→brood loop exists).
+const WORKER_BROOD_CARE_PER_TICK := 0.00011
 ## Visual scale multiplier for queen vs worker model.
 const QUEEN_VISUAL_SCALE := 6.0
 ## Worker visual scale.

@@ -81,6 +81,7 @@ var _first_egg_batch_laid: bool = false
 var _wx: int = 0
 var _wz: int = 0
 var _nest_manager: Node
+var _brood_manager: Node
 
 const _ANT_LOCAL_Y_MIN: float = -0.28
 
@@ -96,9 +97,10 @@ func _founding_shaft_hi() -> int:
 	return w / 2 + 1
 
 
-func setup(world: Node, nest_manager: Node = null) -> void:
+func setup(world: Node, nest_manager: Node = null, brood_manager: Node = null) -> void:
 	_world = world
 	_nest_manager = nest_manager
+	_brood_manager = brood_manager
 	_rng = RandomNumberGenerator.new()
 	_rng.randomize()
 	_ant_builder = _AntModelScript.new() as RefCounted
@@ -637,6 +639,29 @@ func transition_to_established() -> void:
 	if state == QueenState.CLAUSTRAL:
 		_set_state(QueenState.ESTABLISHED)
 		_egg_timer_ticks = 0
+
+
+## Called from **`main_controller`** before **`brood_manager.tick`**: queen provisions larvae during **claustral** and **established-without-workers** (nanitic bootstrap); may eat **trophic eggs** when energy is low.
+func care_for_brood(worker_count: int) -> void:
+	if _brood_manager == null:
+		return
+	if state != QueenState.CLAUSTRAL and not (state == QueenState.ESTABLISHED and worker_count == 0):
+		return
+	var n: int = int(_brood_manager.call("count_larvae"))
+	if n <= 0:
+		return
+	var per: float = _Const.QUEEN_LARVA_FEED_PER_TICK
+	var e_cost: float = float(n) * _Const.QUEEN_LARVA_FEED_ENERGY_PER_LARVA_PER_TICK
+	var bites: int = 0
+	while energy_reserve < e_cost and bites < 4:
+		if not bool(_brood_manager.call("consume_trophic_egg")):
+			break
+		energy_reserve = minf(1.0, energy_reserve + _Const.QUEEN_EGG_CANNIBAL_ENERGY_GAIN)
+		bites += 1
+	if energy_reserve < e_cost:
+		return
+	energy_reserve -= e_cost
+	_brood_manager.call("feed_all_larvae", per)
 
 
 func get_chamber_center() -> Vector3i:
