@@ -1,0 +1,17 @@
+---
+description: User shorthand "cpi" — commit, push, install or deploy
+alwaysApply: true
+---
+
+# `cpi` — commit, push, install / deploy
+
+When the user says **`cpi`** (or clearly means the same sequence), treat it as:
+
+1. **Commit** — Stage the relevant changes (including everything they intend from the current task), write an **imperative** commit message, and commit. Follow any stricter project rules (e.g. changelog/version) if present.
+2. **Push** — Push to the appropriate remote branch (usually `origin` and the current branch; ask only if ambiguous).
+3. **Install** — Run whatever installs the project for local use (e.g. `make install`, `./scripts/install-*.sh`, `pip install -e .`). Use **`sudo`** only when the project’s docs or script require it.
+4. **Deploy** — In repos where “install” is not meaningful, **`cpi`’s third step means deploy**: use the repo’s documented path (e.g. CI workflow, container registry push, cloud CLI, `ansible-playbook`, etc.). If both install and deploy exist, prefer what the user’s workflow implies; when unclear, do **install** for dev tools and mention **deploy** if it’s separate.
+
+**Discovery:** Infer install/deploy from `README`, `Makefile`, `package.json` scripts, `scripts/`, and `.github/workflows/`. Do not invent steps that aren’t standard for the repo.
+
+**Safety:** Do not run `cpi` unless the user asked for it (or used this shorthand). Do not post GitHub comments with `gh` unless the user approved that separately.

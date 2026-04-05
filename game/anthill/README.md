@@ -11,7 +11,7 @@ Godot **4.2+** game: **one voxel = one sand grain** in fiction (~3 mm; see `scri
    godot --path /path/to/anthill/game/anthill
    ```
 
-3. Press **F5** or open `scenes/main.tscn` and run.
+3. Press **F5** (or **Run Project**). The game starts at **`scenes/loading_screen.tscn`** (Anthill title, art, load bar), then enters **`scenes/main.tscn`**. You can still open **`main.tscn`** directly in the editor to inspect the colony scene.
 
 ## Layout
 
@@ -21,6 +21,7 @@ Godot **4.2+** game: **one voxel = one sand grain** in fiction (~3 mm; see `scri
 | `scripts/world/` | Chunk storage, procedural fill, meshing, sand step |
 | `scripts/colony_camera.gd` | Orthographic top-down pan/zoom |
 | `scripts/entities/ant.gd` | Reserved for future AI ant mesh (not used as player) |
+| `scenes/loading_screen.tscn` | Boot UI: threaded load of `main.tscn` with a progress bar |
 | `scenes/main.tscn` | World, lights, floor collision, UI hint |
 | `scenes/ant.tscn` | Unused prototype scene (kept for a future AI ant asset) |
 

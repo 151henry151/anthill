@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-04-05
+
+### Added
+
+- **`scenes/loading_screen.tscn`** and **`scripts/loading_screen.gd`**: first-run scene that shows **ANTHILL** title, hero art, and a **progress bar** while **`main.tscn`** loads via **`ResourceLoader`** threaded load.
+- **`assets/splash/`**: **`anthill_boot.png`** (engine boot splash) and **`anthill_hero.png`** (loading UI art), with **`.import`** metadata.
+
+### Changed
+
+- **`project.godot`**: set **`run/main_scene`** to the loading scene; configure **`boot_splash`** image and background so the engine splash matches Anthill branding instead of the default Godot logo.
+- **`README.md`**: document **`loading_screen.tscn`** as the run entry and **`main.tscn`** as the colony scene.
+
 ## [0.3.3] - 2026-04-05
 
 ### Fixed
