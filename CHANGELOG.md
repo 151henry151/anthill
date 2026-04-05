@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-04-05
+
+### Fixed
+
+- **`scripts/world/*.gd`**, **`main_controller.gd`**, **`entities/ant.gd`**: use **`preload()`** for **`constants.gd`** and **`chunk_data.gd`** instead of relying on global **`class_name`** resolution (fixes parse/analyzer errors for **`GameConstants`**, **`VoxelChunk`**, and **`:=` inference** on some Godot 4.2 builds).
+- **`terrain_gen.gd`**, **`mesh_builder.gd`**: use **`range()`** for **`for`** loops over chunk sizes; add explicit **`int`** types where needed.
+
 ## [0.2.4] - 2026-04-05
 
 ### Fixed

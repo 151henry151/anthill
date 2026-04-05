@@ -1,8 +1,10 @@
 extends CharacterBody3D
 ## Reserved for future **AI** ant bodies — not a player avatar. Colony play is top-down; you do not drive ants.
 
-var world: WorldManager
-var carried: int = GameConstants.BLOCK_AIR
+const _Const := preload("res://scripts/constants.gd")
+
+var world: Node
+var carried: int = _Const.BLOCK_AIR
 
 @export var move_speed: float = 10.0
 @export var sprint_mult: float = 1.6
@@ -65,24 +67,24 @@ func _physics_process(delta: float) -> void:
 
 
 func _try_grab() -> void:
-	if carried != GameConstants.BLOCK_AIR:
+	if carried != _Const.BLOCK_AIR:
 		return
 	var hit := _ray_voxel_hit(4.0)
 	if hit.x < -90000:
 		return
-	if world.get_block(hit.x, hit.y, hit.z) == GameConstants.BLOCK_SAND:
-		world.set_block(hit.x, hit.y, hit.z, GameConstants.BLOCK_AIR)
-		carried = GameConstants.BLOCK_SAND
+	if world.get_block(hit.x, hit.y, hit.z) == _Const.BLOCK_SAND:
+		world.set_block(hit.x, hit.y, hit.z, _Const.BLOCK_AIR)
+		carried = _Const.BLOCK_SAND
 
 
 func _try_place() -> void:
-	if carried != GameConstants.BLOCK_SAND:
+	if carried != _Const.BLOCK_SAND:
 		return
 	var p := global_position + Vector3.UP * 0.5 - transform.basis.z * 1.8
 	var c := Vector3i(int(floor(p.x)), int(floor(p.y)), int(floor(p.z)))
-	if world.get_block(c.x, c.y, c.z) == GameConstants.BLOCK_AIR:
-		world.set_block(c.x, c.y, c.z, GameConstants.BLOCK_SAND)
-		carried = GameConstants.BLOCK_AIR
+	if world.get_block(c.x, c.y, c.z) == _Const.BLOCK_AIR:
+		world.set_block(c.x, c.y, c.z, _Const.BLOCK_SAND)
+		carried = _Const.BLOCK_AIR
 
 
 func _ray_voxel_hit(max_dist: float) -> Vector3i:
@@ -94,7 +96,7 @@ func _ray_voxel_hit(max_dist: float) -> Vector3i:
 		var p := from + dir * t
 		var c := Vector3i(int(floor(p.x)), int(floor(p.y)), int(floor(p.z)))
 		var id := world.get_block(c.x, c.y, c.z)
-		if id != GameConstants.BLOCK_AIR:
+		if id != _Const.BLOCK_AIR:
 			return c
 		t += step
 	return Vector3i(-99999, -99999, -99999)
