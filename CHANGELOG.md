@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.26] - 2026-04-05
+
+### Fixed
+
+- **`scripts/colony_camera.gd`**: enforce **minimum orthographic `size`** from **world AABB** in **camera space** so **side** frusta do not clip corners when **yawed**; track **wheel** intent separately from **effective** `size`.
+- **`scripts/colony_camera.gd`**: pan with **middle** **mouse** using **held** **button** **state** (not **motion** `button_mask`); **invert** **pan** **delta** so **drag** **matches** **ground** **motion**.
+
 ## [0.2.25] - 2026-04-05
 
 ### Fixed

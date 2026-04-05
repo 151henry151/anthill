@@ -18,10 +18,14 @@ const _Chunk := preload("res://scripts/world/chunk_data.gd")
 @export var orbit_sensitivity: float = 0.22
 @export var zoom_step: float = 8.0
 @export var min_zoom: float = 14.0
-## Ortho `size` is vertical world units. Centered pivot needs **`size` ≥ ~770** for diagonal corners; panned near an edge can need **~1500+** (furthest world point from pivot up to **~768** in XZ).
+## Upper bound for wheel intent; effective `size` may exceed this when the world AABB needs a wider ortho frustum.
 @export var max_zoom: float = 3200.0
 
 var pivot: Vector3 = Vector3.ZERO
+## Wheel-only target; effective `size` is at least `_required_ortho_size()` so corners are not cut by ortho side planes.
+var _size_user: float = 220.0
+var _orbiting: bool = false
+var _panning: bool = false
 
 
 func _ready() -> void:
@@ -30,22 +34,28 @@ func _ready() -> void:
 	var half_z: float = float(wm.chunks_z * _Chunk.SIZE_Z) * 0.5
 	look_at_xz = Vector2(half_x, half_z)
 	projection = PROJECTION_ORTHOGONAL
-	size = ortho_size
+	_size_user = ortho_size
 	pivot = Vector3(look_at_xz.x, 0.0, look_at_xz.y)
 	_apply_orbit()
-	_sync_clip_to_world_aabb()
 	current = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
-			size = clampf(size - zoom_step, min_zoom, max_zoom)
-			_sync_clip_to_world_aabb()
-		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
-			size = clampf(size + zoom_step, min_zoom, max_zoom)
-			_sync_clip_to_world_aabb()
+		match event.button_index:
+			MOUSE_BUTTON_LEFT:
+				_orbiting = event.pressed
+			MOUSE_BUTTON_MIDDLE:
+				_panning = event.pressed
+			MOUSE_BUTTON_WHEEL_UP:
+				if event.pressed:
+					_size_user = clampf(_size_user - zoom_step, min_zoom, max_zoom)
+					_apply_orbit()
+			MOUSE_BUTTON_WHEEL_DOWN:
+				if event.pressed:
+					_size_user = clampf(_size_user + zoom_step, min_zoom, max_zoom)
+					_apply_orbit()
 	if event is InputEventMouseMotion:
 		var motion: InputEventMouseMotion = event
 		var rel: Vector2 = motion.relative
@@ -55,12 +65,13 @@ func _input(event: InputEvent) -> void:
 		var basis_xz := _ground_pan_axes()
 		var right_h: Vector3 = basis_xz[0]
 		var forward_h: Vector3 = basis_xz[1]
-		if motion.button_mask & MOUSE_BUTTON_MASK_LEFT:
+		if _orbiting:
 			yaw_deg -= rel.x * orbit_sensitivity
 			orbit_phi_deg = clampf(orbit_phi_deg + rel.y * orbit_sensitivity, 4.0, 89.0)
 			_apply_orbit()
-		elif motion.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
-			var delta: Vector3 = -right_h * rel.x * pan_scale - forward_h * rel.y * pan_scale
+		elif _panning:
+			# Screen/mouse Y is down-positive; move pivot so the ground follows the cursor (not inverted).
+			var delta: Vector3 = right_h * rel.x * pan_scale + forward_h * rel.y * pan_scale
 			pivot.x += delta.x
 			pivot.z += delta.z
 			_apply_orbit()
@@ -78,6 +89,53 @@ func _apply_orbit() -> void:
 	)
 	position = pivot + off
 	look_at(pivot, Vector3.UP)
+	_apply_ortho_size_and_clip()
+
+
+func _viewport_aspect() -> float:
+	var r: Vector2 = get_viewport().get_visible_rect().size
+	if r.y <= 1e-6:
+		return 1.0
+	return r.x / r.y
+
+
+func _world_aabb_corners() -> Array[Vector3]:
+	var wm: Node = $"../WorldManager"
+	var max_x: float = float(wm.chunks_x * _Chunk.SIZE_X)
+	var max_z: float = float(wm.chunks_z * _Chunk.SIZE_Z)
+	var max_y: float = float(_Chunk.SIZE_Y)
+	return [
+		Vector3(0.0, 0.0, 0.0),
+		Vector3(max_x, 0.0, 0.0),
+		Vector3(0.0, 0.0, max_z),
+		Vector3(max_x, 0.0, max_z),
+		Vector3(0.0, max_y, 0.0),
+		Vector3(max_x, max_y, 0.0),
+		Vector3(0.0, max_y, max_z),
+		Vector3(max_x, max_y, max_z),
+	]
+
+
+## Smallest ortho `size` so all AABB corners fit inside the orthographic X/Y slab (rotation / corner views).
+func _required_ortho_size() -> float:
+	var inv: Transform3D = global_transform.affine_inverse()
+	var aspect: float = _viewport_aspect()
+	var max_abs_x: float = 0.0
+	var max_abs_y: float = 0.0
+	for p in _world_aabb_corners():
+		var local: Vector3 = inv * p
+		max_abs_x = maxf(max_abs_x, absf(local.x))
+		max_abs_y = maxf(max_abs_y, absf(local.y))
+	# Godot ortho: height = `size`, width = `size * aspect` (visible rect aspect).
+	var need_y: float = 2.0 * max_abs_y
+	var need_x: float = (2.0 * max_abs_x) / aspect
+	return maxf(need_y, need_x)
+
+
+func _apply_ortho_size_and_clip() -> void:
+	var req: float = _required_ortho_size()
+	var cap: float = maxf(max_zoom, req * 1.02)
+	size = clampf(maxf(_size_user, req), min_zoom, cap)
 	_sync_clip_to_world_aabb()
 
 
@@ -98,22 +156,7 @@ func _ground_pan_axes() -> Array[Vector3]:
 
 
 func _sync_clip_to_world_aabb() -> void:
-	# `far`/`near` must contain every voxel corner for the *current* yaw/phi/pivot — rotation changes depth along
-	# the view axis, so a size-only heuristic misses and the far plane can cut the ground (often a horizontal edge).
-	var wm: Node = $"../WorldManager"
-	var max_x: float = float(wm.chunks_x * _Chunk.SIZE_X)
-	var max_z: float = float(wm.chunks_z * _Chunk.SIZE_Z)
-	var max_y: float = float(_Chunk.SIZE_Y)
-	var corners: Array[Vector3] = [
-		Vector3(0.0, 0.0, 0.0),
-		Vector3(max_x, 0.0, 0.0),
-		Vector3(0.0, 0.0, max_z),
-		Vector3(max_x, 0.0, max_z),
-		Vector3(0.0, max_y, 0.0),
-		Vector3(max_x, max_y, 0.0),
-		Vector3(0.0, max_y, max_z),
-		Vector3(max_x, max_y, max_z),
-	]
+	var corners: Array[Vector3] = _world_aabb_corners()
 	var cam_pos: Vector3 = global_position
 	var forward: Vector3 = -global_transform.basis.z
 	var min_front: float = INF
