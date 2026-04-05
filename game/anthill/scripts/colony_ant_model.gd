@@ -9,24 +9,22 @@ func build_ant() -> Node3D:
 	var root := Node3D.new()
 	root.name = "ColonyAnt"
 
-	var mat_dark: StandardMaterial3D = _mat(Color(0.12, 0.07, 0.05))
-	var mat_abdomen: StandardMaterial3D = _mat(Color(0.34, 0.15, 0.1))
-	var mat_thorax: StandardMaterial3D = _mat(Color(0.16, 0.09, 0.06))
-	var mat_head: StandardMaterial3D = _mat(Color(0.14, 0.08, 0.06))
-	var mat_leg: StandardMaterial3D = _mat(Color(0.09, 0.05, 0.04))
-	var mat_antenna: StandardMaterial3D = _mat(Color(0.1, 0.06, 0.05))
+	# High-contrast black on sand; unshaded + emission so near-black albedo stays visible.
+	var mat_body: StandardMaterial3D = _mat_black()
+	var mat_leg: StandardMaterial3D = _mat_black(0.92)
+	var mat_antenna: StandardMaterial3D = _mat_black(0.88)
 
 	# +Z = head direction, -Z = rear. Body sits above y=0 (sand surface).
 	# Rear abdomen (largest segment)
-	_add_sphere(root, Vector3(0.0, 0.95, -3.15), 1.05, mat_abdomen)
+	_add_sphere(root, Vector3(0.0, 0.95, -3.15), 1.05, mat_body)
 	# Mid abdomen
-	_add_sphere(root, Vector3(0.0, 1.0, -1.75), 0.82, mat_abdomen)
+	_add_sphere(root, Vector3(0.0, 1.0, -1.75), 0.82, mat_body)
 	# Petiole (narrow waist)
-	_add_cylinder(root, Vector3(0.0, 1.02, -0.75), Vector3(90, 0, 0), 0.32, 0.55, mat_dark)
+	_add_cylinder(root, Vector3(0.0, 1.02, -0.75), Vector3(90, 0, 0), 0.32, 0.55, mat_body)
 	# Thorax
-	_add_box(root, Vector3(0.0, 1.08, 0.15), Vector3(1.35, 0.75, 1.15), mat_thorax)
+	_add_box(root, Vector3(0.0, 1.08, 0.15), Vector3(1.35, 0.75, 1.15), mat_body)
 	# Head
-	_add_sphere(root, Vector3(0.0, 1.12, 1.42), 0.52, mat_head)
+	_add_sphere(root, Vector3(0.0, 1.12, 1.42), 0.52, mat_body)
 
 	# Antennae — forward / outward from head
 	_add_cylinder(root, Vector3(-0.38, 1.35, 1.78), Vector3(35, -15, -20), 0.1, 2.0, mat_antenna)
@@ -39,16 +37,15 @@ func build_ant() -> Node3D:
 	return root
 
 
-static func _mat(c: Color) -> StandardMaterial3D:
+## `shade` slightly scales emission so legs/antennae read apart from the body.
+static func _mat_black(shade: float = 1.0) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	m.albedo_color = c
+	m.albedo_color = Color(0.02, 0.02, 0.02)
 	m.emission_enabled = true
-	m.emission = Color(
-		clampf(c.r * 0.35, 0.0, 1.0),
-		clampf(c.g * 0.35, 0.0, 1.0),
-		clampf(c.b * 0.35, 0.0, 1.0)
-	)
+	# Pure black albedo is invisible with zero emission; keep ants reading as black on tan sand.
+	var e: float = 0.22 * shade
+	m.emission = Color(e, e, e)
 	return m
 
 

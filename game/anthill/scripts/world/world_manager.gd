@@ -9,7 +9,9 @@ var _chunks: Dictionary = {}
 var _noise: FastNoiseLite
 var _mesh_dirty: bool = false
 var _dirty_chunks: Dictionary = {}
-## After falling sand settles, `SandStep` skips the full-world scan (major CPU save).
+## Columns (world XZ) that may contain falling sand this physics tick — avoids scanning 544×544 every frame.
+var _sand_columns: Dictionary = {}
+## After falling sand settles, `SandStep` skips work (pending columns empty).
 var sand_idle: bool = false
 
 ## ~sqrt(30)× prior 3×3 extent → ~30× horizontal cells; 17×32 = 544 units per side.
@@ -26,6 +28,7 @@ func _ready() -> void:
 			var ch = _Chunk.new(cx, cz)
 			_TerrainGen.fill_chunk(ch, _noise)
 			_chunks[Vector2i(cx, cz)] = ch
+	bootstrap_sand_columns()
 
 
 func get_chunk(cx: int, cz: int) -> Variant:
@@ -69,6 +72,7 @@ func set_block(wx: int, wy: int, wz: int, id: int) -> void:
 	_mesh_dirty = true
 	sand_idle = false
 	_dirty_chunks[Vector2i(cx, cz)] = true
+	_mark_sand_column_wx_wz(wx, wz)
 
 
 ## Clears the flag; call once per frame after stepping sand to decide whether to rebuild meshes.
@@ -83,6 +87,37 @@ func get_and_clear_dirty_chunks() -> Array[Vector2i]:
 	for k in _dirty_chunks:
 		out.append(k)
 	_dirty_chunks.clear()
+	return out
+
+
+func _mark_sand_column_wx_wz(wx: int, wz: int) -> void:
+	var max_wx: int = chunks_x * _Chunk.SIZE_X
+	var max_wz: int = chunks_z * _Chunk.SIZE_Z
+	if wx < 0 or wz < 0 or wx >= max_wx or wz >= max_wz:
+		return
+	_sand_columns[Vector2i(wx, wz)] = true
+
+
+## One-time after terrain gen: columns that contain any sand in the falling-sand Y band (O(cells) once, not per frame).
+func bootstrap_sand_columns() -> void:
+	var y_lo: int = maxi(_TerrainGen.SURFACE_BASE - 50, 1)
+	var y_hi: int = mini(_TerrainGen.SURFACE_BASE + 20, _Chunk.SIZE_Y)
+	var sx: int = chunks_x * _Chunk.SIZE_X
+	var sz: int = chunks_z * _Chunk.SIZE_Z
+	for x in range(sx):
+		for z in range(sz):
+			for y in range(y_lo, y_hi):
+				if get_block(x, y, z) == _Const.BLOCK_SAND:
+					_mark_sand_column_wx_wz(x, z)
+					break
+
+
+## Pops columns to scan this tick; `set_block` refills for the next tick.
+func take_sand_columns() -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	for k in _sand_columns:
+		out.append(k)
+	_sand_columns.clear()
 	return out
 
 

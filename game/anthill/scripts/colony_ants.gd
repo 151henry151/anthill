@@ -7,8 +7,8 @@ const _AntModelScript = preload("res://scripts/colony_ant_model.gd")
 
 @export var ant_count: int = 72
 @export var move_interval: float = 0.45
-## Makes ants readable at colony zoom; logical size is still grain-relative (see `GameConstants`).
-@export var ant_visual_scale: float = 5.0
+## World length ≈ `~8` model units × this scale; keep **≥ ~10** so ants read as **~10×** one voxel grain.
+@export var ant_visual_scale: float = 3.0
 ## Lowest point of `ColonyAntModel` mesh in the ant root’s local space (feet below origin); keeps feet on the surface.
 const _ANT_LOCAL_Y_MIN: float = -2.05
 

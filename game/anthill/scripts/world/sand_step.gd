@@ -13,17 +13,22 @@ const _SCAN_CEIL := _TerrainGen.SURFACE_BASE + 20
 func step(world: Node) -> void:
 	if world.get("sand_idle") == true:
 		return
-	var sx: int = world.chunks_x * _Chunk.SIZE_X
-	var sz: int = world.chunks_z * _Chunk.SIZE_Z
+	if not world.has_method("take_sand_columns"):
+		return
+	var cols: Array = world.call("take_sand_columns")
+	if cols.is_empty():
+		world.set("sand_idle", true)
+		return
 	var y_lo: int = maxi(_SCAN_FLOOR, 1)
 	var y_hi: int = mini(_SCAN_CEIL, _Chunk.SIZE_Y)
 	var moves: Array[Vector3i] = []
-	for x in range(sx):
-		for z in range(sz):
-			for y in range(y_lo, y_hi):
-				if world.get_block(x, y, z) == _Const.BLOCK_SAND:
-					if world.get_block(x, y - 1, z) == _Const.BLOCK_AIR:
-						moves.append(Vector3i(x, y, z))
+	for xz in cols:
+		var x: int = xz.x
+		var z: int = xz.y
+		for y in range(y_lo, y_hi):
+			if world.get_block(x, y, z) == _Const.BLOCK_SAND:
+				if world.get_block(x, y - 1, z) == _Const.BLOCK_AIR:
+					moves.append(Vector3i(x, y, z))
 	if moves.is_empty():
 		world.set("sand_idle", true)
 		return

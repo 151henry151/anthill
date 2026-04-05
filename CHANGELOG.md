@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-04-05
+
+### Fixed
+
+- **`scenes/main.tscn`**: add **`ColonyAnts`** node with **`colony_ants.gd`** (the script was referenced but never instantiated, so no ants appeared).
+
+### Changed
+
+- **`scripts/colony_ant_model.gd`**: render colony ants **black** (dark albedo + emission so **unshaded** bodies stay visible on **sand**).
+- **`scripts/colony_ants.gd`**: set default **`ant_visual_scale`** to **3.0** (~**24** voxel lengths for the rig, **>10×** one grain).
+- **`scenes/main.tscn`**: hint text now says **black** **ants** instead of **brown**.
+
+## [0.3.2] - 2026-04-05
+
+### Changed
+
+- **`scripts/world/world_manager.gd`**: track **`_sand_columns`** (world **XZ** keys) for sand simulation; **`set_block`** marks the column **`sand_idle = false`**; **`bootstrap_sand_columns()`** runs once after terrain gen to seed columns that contain sand in the falling-sand **Y** band; **`take_sand_columns()`** returns pending columns and clears the set for the next tick.
+- **`scripts/world/sand_step.gd`**: call **`take_sand_columns()`** and scan only those columns (plus existing **Y** band limits) instead of every **(x,z)** on the map; use **`has_method`/`call`** so **`WorldManager`** **`class_name`** is not required at parse time.
+
 ## [0.3.1] - 2026-04-05
 
 ### Changed
