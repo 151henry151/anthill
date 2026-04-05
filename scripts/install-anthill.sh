@@ -33,3 +33,9 @@ echo "Installed:"
 echo "  $BIN"
 echo "  $DEST"
 echo "Run: anthill   (requires godot4 or godot on PATH)"
+# If ~/.local/bin is earlier on PATH, an old Luanti build named anthill wins over $BIN.
+if [[ -f "$HOME/.local/bin/anthill" ]] && file "$HOME/.local/bin/anthill" 2>/dev/null | grep -q ELF; then
+	echo "" >&2
+	echo "Warning: $HOME/.local/bin/anthill is an engine binary and appears before $BIN on PATH." >&2
+	echo "  Rename it, e.g.:  mv $HOME/.local/bin/anthill $HOME/.local/bin/anthill-luanti-engine" >&2
+fi

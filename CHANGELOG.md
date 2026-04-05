@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-04-04
+
+### Added
+
+- **`scripts/install-anthill.sh`**: warn when **`~/.local/bin/anthill`** is an ELF that could shadow **`/usr/local/bin/anthill`** on PATH.
+
+### Updated
+
+- **`README.md`**: explain PATH conflict with an older **`~/.local/bin/anthill`** Luanti build.
+
 ## [0.2.1] - 2026-04-04
 
 ### Added
