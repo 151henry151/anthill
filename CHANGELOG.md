@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.30] - 2026-04-05
+
+### Fixed
+
+- **`scripts/colony_camera.gd`**: handle **orbit**, **pan**, and **wheel** in **`_input`** (not **`_unhandled_input`**) so **viewport**/**GUI** **handling** does not drop **events**; **debounce** **wheel** **ticks** (**40ms**) **without** **`pressed`** **gating**; **disable** **`physics_object_picking`** on the **viewport** so **picking** does not **consume** **mouse** **events**.
+- **`scripts/colony_camera.gd`**: **widen** **ortho** **fit** **margins**, **raise** **far** **slack** (**2048**), **more** **frustum** **refine** **steps** (**28**) **and** **higher** **refine** **cap** (**~3×** **analytic**) for **corner** **clipping** at **oblique** **angles**.
+
 ## [0.2.29] - 2026-04-05
 
 ### Fixed

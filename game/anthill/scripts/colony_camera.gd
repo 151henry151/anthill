@@ -26,6 +26,8 @@ var pivot: Vector3 = Vector3.ZERO
 var _size_user: float = 220.0
 var _orbiting: bool = false
 var _panning: bool = false
+## Wheel can fire pressed=true and/or pressed=false per notch; debounce so we zoom once per physical tick.
+var _last_wheel_ms: int = 0
 
 
 func _ready() -> void:
@@ -34,25 +36,28 @@ func _ready() -> void:
 	var half_z: float = float(wm.chunks_z * _Chunk.SIZE_Z) * 0.5
 	look_at_xz = Vector2(half_x, half_z)
 	projection = PROJECTION_ORTHOGONAL
-	# Match landscape windows; projection aspect must match our `_required_ortho_size` math.
 	keep_aspect = KEEP_HEIGHT
 	_size_user = ortho_size
 	pivot = Vector3(look_at_xz.x, 0.0, look_at_xz.y)
 	_apply_orbit()
 	current = true
+	# Avoid 3D physics picking consuming mouse events before gameplay `_input` runs reliably.
+	get_viewport().physics_object_picking = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 
-func _unhandled_input(event: InputEvent) -> void:
+## Use `_input` (not `_unhandled_input`) so wheel and drags are seen even when the viewport/GUI pipeline would mark events handled later.
+func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			_orbiting = event.pressed
 		elif event.button_index == MOUSE_BUTTON_MIDDLE:
 			_panning = event.pressed
 		elif event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			# `echo` exists on keys, not on `InputEventMouseButton` (Godot 4.2).
-			if not event.pressed:
+			var now: int = Time.get_ticks_msec()
+			if now - _last_wheel_ms < 40:
 				return
+			_last_wheel_ms = now
 			var f: float = maxf(event.factor, 1.0)
 			var step: float = zoom_step * f
 			if event.button_index == MOUSE_BUTTON_WHEEL_UP:
@@ -62,7 +67,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			_apply_orbit()
 			get_viewport().set_input_as_handled()
 	elif event is InputEventPanGesture:
-		# Trackpad / some Wayland setups send pan instead of wheel buttons.
 		var dz: float = clampf(-event.delta.y - event.delta.x, -4.0, 4.0)
 		if absf(dz) > 0.05:
 			_size_user = clampf(_size_user + dz * zoom_step * 0.28, min_zoom, max_zoom)
@@ -70,7 +74,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 	elif event is InputEventMouseMotion:
 		var motion: InputEventMouseMotion = event
-		# `button_mask` is unreliable on some drivers; query live button state as fallback.
 		var orbit_now: bool = _orbiting or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
 		var pan_now: bool = _panning or Input.is_mouse_button_pressed(MOUSE_BUTTON_MIDDLE)
 		if not orbit_now and not pan_now:
@@ -110,8 +113,10 @@ func _apply_orbit() -> void:
 	_apply_ortho_size_and_clip()
 
 
+## Match RenderingServer camera aspect: visible rect size, not always equal to window when stretch/scale differs.
 func _viewport_aspect() -> float:
-	var r: Vector2 = get_viewport().get_visible_rect().size
+	var vp: Viewport = get_viewport()
+	var r: Vector2 = vp.get_visible_rect().size
 	if r.y <= 1e-6:
 		return 1.0
 	return r.x / r.y
@@ -134,7 +139,6 @@ func _world_aabb_corners() -> Array[Vector3]:
 	]
 
 
-## Analytic lower bound for ortho `size` (camera-local X/Y); `keep_aspect` + projection may differ slightly.
 func _required_ortho_size() -> float:
 	var inv: Transform3D = global_transform.affine_inverse()
 	var aspect: float = _viewport_aspect()
@@ -147,21 +151,19 @@ func _required_ortho_size() -> float:
 	var need_y: float = 2.0 * max_abs_y
 	var need_x: float = (2.0 * max_abs_x) / aspect
 	var req: float = maxf(need_y, need_x)
-	# Guard bad frames (zero viewport, degenerate transform) from exploding `size`.
 	return clampf(req, min_zoom, 50000.0)
 
 
 func _apply_ortho_size_and_clip() -> void:
 	var req: float = _required_ortho_size()
-	# Analytic bound + margin; projection/keep_aspect can differ slightly from `visible_rect` aspect.
-	var req_fit: float = req * 1.24
-	var cap: float = maxf(max_zoom, req_fit * 1.2)
+	# Extra margin for projection vs. analytic aspect; refinement catches the rest.
+	var req_fit: float = req * 1.38
+	var cap: float = maxf(max_zoom, req_fit * 1.45)
 	size = clampf(maxf(_size_user, req_fit), min_zoom, cap)
 	_sync_clip_to_world_aabb()
-	# Capped refinement: grow ortho `size` only until corners fit lateral frustum (no unbounded x1.028 loop).
-	var refine_cap: float = minf(cap, maxf(req_fit * 2.0, req * 2.2))
+	var refine_cap: float = minf(cap, maxf(req_fit * 3.0, req * 3.2))
 	var step: int = 0
-	while step < 14:
+	while step < 28:
 		var all_in: bool = true
 		for p in _world_aabb_corners():
 			if not is_position_in_frustum(p):
@@ -169,8 +171,8 @@ func _apply_ortho_size_and_clip() -> void:
 				break
 		if all_in:
 			break
-		var grown: float = minf(size * 1.035, refine_cap)
-		if grown <= size * 1.002:
+		var grown: float = minf(size * 1.028, refine_cap)
+		if grown <= size * 1.001:
 			break
 		size = grown
 		_sync_clip_to_world_aabb()
@@ -204,8 +206,7 @@ func _sync_clip_to_world_aabb() -> void:
 		if d > 0.0:
 			min_front = minf(min_front, d)
 			max_front = maxf(max_front, d)
-	# Extra slack so tilted views do not far-clip the farthest terrain corners.
-	var margin: float = 768.0
+	var margin: float = 2048.0
 	if max_front > 0.0:
 		far = max_front + margin
 	else:
