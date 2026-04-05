@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-04-04
+
+### Fixed
+
+- **`scenes/main.tscn`**: add **`ColonyCamera`** **`Camera3D`** node with **`colony_camera.gd`** (script was loaded but unattached, so no active camera ran and the 3D world did not display correctly).
+- **`scripts/main_controller.gd`**: set terrain **`StandardMaterial3D`** to **`SHADING_MODE_UNSHADED`** so vertex colors stay visible without relying on directional lighting (helps software **`llvmpipe`** and steep light angles).
+
+### Changed
+
+- **`scenes/main.tscn`**: disable **DirectionalLight3D** shadows to avoid rasterizer edge cases on software Vulkan.
+
 ## [0.2.5] - 2026-04-05
 
 ### Fixed

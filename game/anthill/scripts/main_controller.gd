@@ -12,6 +12,7 @@ var _mat: StandardMaterial3D
 
 func _ready() -> void:
 	_mat = StandardMaterial3D.new()
+	_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_mat.vertex_color_use_as_albedo = true
 	_mat.roughness = 0.92
 	for cz in range(world.chunks_z):
