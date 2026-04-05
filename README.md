@@ -10,6 +10,18 @@ Open the Godot project under **`game/anthill`** (see **`game/anthill/README.md`*
 godot --path game/anthill
 ```
 
+### System install (`anthill` command)
+
+Requires **Godot 4** on your PATH as `godot4` or `godot` (e.g. distro package or [official build](https://godotengine.org/download/linux/)).
+
+From the repo root:
+
+```bash
+sudo ./scripts/install-anthill.sh
+```
+
+This copies the project to **`/usr/local/share/anthill/game/anthill`** and installs **`/usr/local/bin/anthill`**, which runs `godot4`/`godot --path …` (also checks **`/usr/bin`** and **`/usr/local/bin`**). If the binary has another name or location, set **`GODOT_BIN`** for one session, e.g. `GODOT_BIN=/path/to/Godot_v4.x_linux.x86_64 anthill`. Override install prefix: `sudo PREFIX=/opt/anthill ./scripts/install-anthill.sh`.
+
 ## Layout
 
 | Path | Role |

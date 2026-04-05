@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-04-04
+
+### Added
+
+- **`scripts/install-anthill.sh`**: copy **`game/anthill`** to **`$PREFIX/share/anthill/game/anthill`** and install **`$PREFIX/bin/anthill`** launcher (invokes **`godot4`** / **`godot`**, common **`/usr/bin`** and **`/usr/local/bin`** paths, or **`GODOT_BIN`**, with `--path`).
+- **`scripts/anthill-launcher.sh.in`**: template for the installed launcher.
+
+### Updated
+
+- **`README.md`**: document system install and `PREFIX`.
+
 ## [0.2.0] - 2026-04-04
 
 ### Removed
