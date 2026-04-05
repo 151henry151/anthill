@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.20] - 2026-04-04
+
+### Fixed
+
+- **`scripts/main_controller.gd`**: construct **`SandStep`** at **variable init** (not only in **`_ready`**) so **`_sand_step`** is never **`Nil`** when **`_physics_process`** runs **`step`**.
+
 ## [0.2.19] - 2026-04-04
 
 ### Fixed
