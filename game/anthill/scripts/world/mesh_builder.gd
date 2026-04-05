@@ -7,6 +7,7 @@ const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
 
 const COL_SAND := Color(0.88, 0.78, 0.58)
 const COL_STONE := Color(0.42, 0.39, 0.35)
+const COL_PACKED_SAND := Color(0.72, 0.60, 0.38)
 
 ## Only scan the Y band that can have exposed faces (surface region +/- margin).
 ## Deep stone is fully enclosed so it produces no mesh faces.
@@ -41,10 +42,18 @@ static func build_chunk_mesh(world: Node, chunk: RefCounted) -> ArrayMesh:
 				var id: int = chunk.get_b(lx, ly, lz)
 				if id == _Const.BLOCK_AIR:
 					continue
-				var col: Color = COL_SAND if id == _Const.BLOCK_SAND else COL_STONE
 				var wx: int = ox + lx
 				var wy: int = ly
 				var wz: int = oz + lz
+				var col: Color
+				if id == _Const.BLOCK_SAND:
+					col = COL_SAND
+				elif id == _Const.BLOCK_PACKED_SAND:
+					col = COL_PACKED_SAND
+				else:
+					col = COL_STONE
+				var depth_factor: float = clampf(float(_TerrainGen.SURFACE_BASE - wy) / _Const.XRAY_DEPTH_FADE_RANGE, 0.0, 1.0)
+				col = Color(col.r * (1.0 - depth_factor * 0.3), col.g * (1.0 - depth_factor * 0.15), col.b, col.a)
 				var base := Vector3(wx, wy, wz)
 				if world.get_block(wx + 1, wy, wz) == _Const.BLOCK_AIR:
 					_add_quad(

@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-04-05
+
+### Added
+
+- **`scripts/constants.gd`**: add **`BLOCK_PACKED_SAND`** (value 3) block type for stable compacted tunnel walls; add nest excavation constants (compaction radius, dig durations, spoil deposit radius, volume regulation, tunnel/chamber dimensions, dig target scoring weights, building pheromone parameters, x-ray view alpha).
+- **`scripts/building_pheromone.gd`**: 3D building pheromone field for stigmergic construction coordination; sparse `Vector3i → float` grid with deposition (6-connected neighbor spread), multiplicative evaporation, and query API.
+- **`scripts/nest_manager.gd`**: colony-level nest manager with `compact_around()` (converts SAND shell to PACKED_SAND on excavation), dig front tracking, voxel reservation system, stigmergic dig target scoring (depth bias, tunnel continuation bonus, crowding penalty, radial/branching transition), spoil deposit site selection with building pheromone feedback, greedy path-to-surface navigation for tunnel traversal, and nest volume regulation.
+- **`scripts/colony_ants.gd`**: add worker digging states (DIGGING_APPROACH, DIGGING_ACT, CARRYING_TO_SURFACE, DEPOSITING) with voxel carry system — carried voxel visual mesh on ant, pick/drop mechanics, path-following through tunnels, stigmergic deposit on surface as loose SAND.
+- **`scripts/main_controller.gd`**: add x-ray view toggle (X key) swapping terrain chunk materials between opaque and semi-transparent; wire nest_manager and building_pheromone to all systems.
+
+### Changed
+
+- **`scripts/world/mesh_builder.gd`**: add `COL_PACKED_SAND` vertex colour for compacted tunnel walls; add depth tinting to all block vertex colours for x-ray depth cueing.
+- **`scripts/queen_ant.gd`**: widen founding shaft to `FOUNDING_SHAFT_WIDTH` (6×6 voxels); enlarge founding chamber to 10×8×10 voxels; call `compact_around()` on every voxel removal during digging to stabilise tunnels with PACKED_SAND; accept `nest_manager` reference.
+- **`scripts/colony_ants.gd`**: add volume-deficit-based task assignment for NEST_BUILDING workers; cap concurrent diggers at `MAX_NEST_BUILDERS`.
+- **`scripts/constants.gd`**: increase `FOUNDING_SHAFT_DEPTH` to 14; increase `FOUNDING_CHAMBER_SIZE` to `Vector3i(10, 8, 10)`; add `FOUNDING_SHAFT_WIDTH` (6).
+
 ## [0.4.1] - 2026-04-05
 
 ### Changed

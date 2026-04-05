@@ -16,6 +16,8 @@ const _HudScript = preload("res://scripts/colony_hud.gd")
 const _GameOverScript = preload("res://scripts/game_over.gd")
 const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
 const _SurfaceQuery := preload("res://scripts/world/surface_query.gd")
+const _NestManagerScript = preload("res://scripts/nest_manager.gd")
+const _BuildPheromoneScript = preload("res://scripts/building_pheromone.gd")
 
 @export var initial_mesh_chunks_per_frame: int = 10
 ## Cap voxel mesh uploads per physics tick (sand/queen can dirty many chunks at once).
@@ -38,11 +40,15 @@ var _pheromone_field: Node
 var _food_store: Node
 var _food_sources: Array[Node3D] = []
 var _nest_builder: Node
+var _nest_manager: Node
+var _building_pheromone: Node
 var _hud: CanvasLayer
 var _game_over: CanvasLayer
 var _rng: RandomNumberGenerator
 
 var _mesh_pending: Dictionary = {}
+var _xray_active: bool = false
+var _mat_xray: StandardMaterial3D
 var _game_tick: int = 0
 var _game_day: int = 0
 var _peak_workers: int = 0
@@ -59,6 +65,14 @@ func _ready() -> void:
 	_mat.vertex_color_use_as_albedo = true
 	_mat.roughness = 0.88
 	_mat.metallic = 0.0
+	_mat_xray = StandardMaterial3D.new()
+	_mat_xray.vertex_color_use_as_albedo = true
+	_mat_xray.roughness = 0.88
+	_mat_xray.metallic = 0.0
+	_mat_xray.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_mat_xray.albedo_color = Color(1.0, 1.0, 1.0, _Const.XRAY_SAND_ALPHA)
+	_mat_xray.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_mat_xray.render_priority = -1
 	for cz in range(world.chunks_z):
 		for cx in range(world.chunks_x):
 			var mi := MeshInstance3D.new()
@@ -99,6 +113,16 @@ func _setup_systems() -> void:
 	_nest_builder.set_script(load("res://scripts/nest_builder.gd"))
 	add_child(_nest_builder)
 
+	_building_pheromone = Node.new()
+	_building_pheromone.name = "BuildingPheromone"
+	_building_pheromone.set_script(load("res://scripts/building_pheromone.gd"))
+	add_child(_building_pheromone)
+
+	_nest_manager = Node.new()
+	_nest_manager.name = "NestManager"
+	_nest_manager.set_script(load("res://scripts/nest_manager.gd"))
+	add_child(_nest_manager)
+
 	_hud = CanvasLayer.new()
 	_hud.name = "ColonyHUD"
 	_hud.set_script(load("res://scripts/colony_hud.gd"))
@@ -113,7 +137,7 @@ func _setup_systems() -> void:
 	_queen.name = "Queen"
 	_queen.set_script(load("res://scripts/queen_ant.gd"))
 	add_child(_queen)
-	_queen.setup(world)
+	_queen.setup(world, _nest_manager)
 	_queen.egg_laid.connect(_on_queen_egg_laid)
 	_queen.queen_died.connect(_on_queen_died)
 	_queen.founding_chamber_ready.connect(_on_founding_chamber_ready)
@@ -122,6 +146,8 @@ func _setup_systems() -> void:
 
 	colony_ants.pheromone_field = _pheromone_field
 	colony_ants.food_store = _food_store
+	colony_ants.nest_manager = _nest_manager
+	colony_ants.building_pheromone = _building_pheromone
 
 	_spawn_food_sources()
 
@@ -180,6 +206,8 @@ func _physics_process(_delta: float) -> void:
 		_brood_manager.tick()
 	if _pheromone_field:
 		_pheromone_field.tick()
+	if _building_pheromone:
+		_building_pheromone.tick()
 	for fs in _food_sources:
 		if is_instance_valid(fs):
 			fs.tick()
@@ -228,6 +256,8 @@ func _on_founding_chamber_ready(chamber_center: Vector3i) -> void:
 		_brood_manager.set_chamber_center(chamber_center)
 	if _nest_builder:
 		_nest_builder.setup(world, chamber_center)
+	if _nest_manager:
+		_nest_manager.setup(world, chamber_center, _building_pheromone)
 	colony_ants.nest_entrance = Vector3i(chamber_center.x, _TerrainGen.SURFACE_BASE, chamber_center.z)
 	colony_ants.nest_chamber = chamber_center
 
@@ -239,6 +269,19 @@ func _on_ant_eclosed(caste_destiny: String, pos: Vector3) -> void:
 			if is_instance_valid(_queen):
 				_queen.transition_to_established()
 		colony_ants.spawn_worker(pos, not _first_workers_emerged or colony_ants.get_worker_count() < 6)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed:
+		if event.keycode == KEY_X:
+			_toggle_xray()
+
+
+func _toggle_xray() -> void:
+	_xray_active = not _xray_active
+	var active_mat: StandardMaterial3D = _mat_xray if _xray_active else _mat
+	for mi in _chunk_meshes.values():
+		(mi as MeshInstance3D).material_override = active_mat
 
 
 func _rebuild_chunk_mesh(k: Vector2i) -> void:

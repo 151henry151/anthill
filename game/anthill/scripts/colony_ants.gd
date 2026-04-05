@@ -21,9 +21,13 @@ var food_store: Node
 var food_sources: Array[Node3D] = []
 var nest_entrance: Vector3i = Vector3i.ZERO
 var nest_chamber: Vector3i = Vector3i.ZERO
+var nest_manager: Node
+var building_pheromone: Node
 ## Task assignment tick counter.
 var _task_assign_timer: int = 0
 const _TASK_ASSIGN_INTERVAL := 300
+## Extended states: 11=DIGGING_APPROACH 12=DIGGING_ACT 13=CARRYING_TO_SURFACE 14=DEPOSITING
+var _digger_count: int = 0
 
 
 func _ready() -> void:
@@ -43,6 +47,17 @@ func spawn_worker(pos: Vector3, is_nanitic: bool) -> void:
 		sy = _TerrainGen.SURFACE_BASE
 	ant.position = _ant_pos(int(pos.x), sy, int(pos.z), sc)
 	var state: int = 0  # EMERGING
+	var carry_vis := MeshInstance3D.new()
+	var carry_mesh := BoxMesh.new()
+	carry_mesh.size = Vector3(0.25, 0.25, 0.25)
+	carry_vis.mesh = carry_mesh
+	var carry_mat := StandardMaterial3D.new()
+	carry_mat.albedo_color = Color(0.92, 0.82, 0.62)
+	carry_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	carry_vis.material_override = carry_mat
+	carry_vis.position = Vector3(0, 0.4, 0.3)
+	carry_vis.visible = false
+	ant.add_child(carry_vis)
 	_ants.append({
 		"node": ant,
 		"wx": int(pos.x),
@@ -56,6 +71,12 @@ func spawn_worker(pos: Vector3, is_nanitic: bool) -> void:
 		"is_nanitic": is_nanitic,
 		"scale": sc,
 		"callow_ticks": 0,
+		"carrying_voxel": false,
+		"dig_target": Vector3i.ZERO,
+		"dig_ticks": 0,
+		"carry_visual": carry_vis,
+		"path_to_surface": [] as Array[Vector3i],
+		"path_idx": 0,
 	})
 
 
@@ -84,11 +105,21 @@ func _physics_process(delta: float) -> void:
 
 
 func _assign_tasks() -> void:
+	_digger_count = 0
+	for a in _ants:
+		var st: int = int(a["state"])
+		if st >= 11 and st <= 14:
+			_digger_count += 1
+	var need_diggers: bool = false
+	if nest_manager:
+		var vol: int = nest_manager.get_nest_air_volume()
+		var target: int = _ants.size() * _Const.VOLUME_PER_WORKER
+		need_diggers = vol < target and _digger_count < _Const.MAX_NEST_BUILDERS
 	var young_idle: Array[Dictionary] = []
 	var old_idle: Array[Dictionary] = []
 	for a in _ants:
 		var st: int = int(a["state"])
-		if st == 0 or st == 1:  # EMERGING or RESTING
+		if st == 0 or st == 1:
 			if int(a["age_ticks"]) < _Const.YOUNG_WORKER_AGE_THRESHOLD:
 				young_idle.append(a)
 			else:
@@ -96,7 +127,10 @@ func _assign_tasks() -> void:
 	for a in young_idle:
 		a["state"] = 2  # BROOD_CARE
 	for a in old_idle:
-		if _rng.randf() < 0.6:
+		if need_diggers and _digger_count < _Const.MAX_NEST_BUILDERS and _rng.randf() < 0.5:
+			a["state"] = 11  # DIGGING_APPROACH
+			_digger_count += 1
+		elif _rng.randf() < 0.6:
 			a["state"] = 4  # FORAGING_DEPART
 		else:
 			a["state"] = 1  # RESTING
@@ -126,6 +160,14 @@ func _step_ant(a: Dictionary) -> void:
 			_step_returning(a)
 		8:
 			_step_trophallaxis(a)
+		11:
+			_step_digging_approach(a)
+		12:
+			_step_digging_act(a)
+		13:
+			_step_carrying_to_surface(a)
+		14:
+			_step_depositing(a)
 		_:
 			_step_random_walk(a)
 
@@ -146,7 +188,7 @@ func _step_brood_care(a: Dictionary) -> void:
 
 
 func _step_nest_building(a: Dictionary) -> void:
-	_step_random_walk(a)
+	a["state"] = 11  # Redirect to digging approach
 
 
 func _step_foraging_depart(a: Dictionary) -> void:
@@ -195,6 +237,87 @@ func _step_returning(a: Dictionary) -> void:
 
 func _step_trophallaxis(a: Dictionary) -> void:
 	a["state"] = 1  # RESTING (simplified)
+
+
+func _step_digging_approach(a: Dictionary) -> void:
+	if nest_manager == null:
+		a["state"] = 1
+		return
+	var target: Variant = a.get("dig_target", Vector3i.ZERO) as Vector3i
+	if target == Vector3i.ZERO:
+		var t: Variant = nest_manager.get_dig_target(a["node"])
+		if t == null:
+			a["state"] = 1
+			return
+		target = t as Vector3i
+		a["dig_target"] = target
+		nest_manager.reserve_voxel(target, a["node"])
+	_move_toward(a, target)
+	if _dist_to(a, target) < 2.0:
+		a["state"] = 12
+		a["dig_ticks"] = 0
+
+
+func _step_digging_act(a: Dictionary) -> void:
+	var target: Vector3i = a["dig_target"] as Vector3i
+	var bt: int = world.get_block(target.x, target.y, target.z)
+	if bt == _Const.BLOCK_AIR:
+		nest_manager.release_voxel(target)
+		a["dig_target"] = Vector3i.ZERO
+		a["state"] = 11
+		return
+	var duration: int = nest_manager.dig_duration_for(bt)
+	a["dig_ticks"] = int(a["dig_ticks"]) + 1
+	if int(a["dig_ticks"]) >= duration:
+		world.set_block(target.x, target.y, target.z, _Const.BLOCK_AIR)
+		nest_manager.on_voxel_removed(target)
+		nest_manager.release_voxel(target)
+		a["carrying_voxel"] = true
+		a["dig_target"] = Vector3i.ZERO
+		var cv: MeshInstance3D = a.get("carry_visual") as MeshInstance3D
+		if cv:
+			cv.visible = true
+		a["path_to_surface"] = nest_manager.get_path_to_surface(target)
+		a["path_idx"] = 0
+		a["state"] = 13
+
+
+func _step_carrying_to_surface(a: Dictionary) -> void:
+	var path: Array = a.get("path_to_surface", []) as Array
+	var idx: int = int(a.get("path_idx", 0))
+	if idx >= path.size():
+		a["state"] = 14
+		return
+	var next_pos: Vector3i = path[idx] as Vector3i
+	a["wx"] = next_pos.x
+	a["wz"] = next_pos.z
+	var ant: Node3D = a["node"]
+	var sc: float = float(a.get("scale", _Const.WORKER_VISUAL_SCALE))
+	ant.position = Vector3(float(next_pos.x) + 0.5, float(next_pos.y) + 0.5, float(next_pos.z) + 0.5)
+	a["path_idx"] = idx + 1
+	if idx + 1 >= path.size():
+		a["state"] = 14
+
+
+func _step_depositing(a: Dictionary) -> void:
+	if not bool(a.get("carrying_voxel", false)):
+		a["state"] = 1
+		return
+	var deposit_pos: Vector3i = nest_manager.choose_deposit_position(nest_entrance)
+	world.set_block(deposit_pos.x, deposit_pos.y, deposit_pos.z, _Const.BLOCK_SAND)
+	if building_pheromone:
+		building_pheromone.add_build_pheromone(deposit_pos, _Const.BUILD_PHEROMONE_DEPOSIT_AMOUNT)
+	nest_manager.on_voxel_placed(deposit_pos)
+	a["carrying_voxel"] = false
+	var cv: MeshInstance3D = a.get("carry_visual") as MeshInstance3D
+	if cv:
+		cv.visible = false
+	var sy: int = _surface_y(int(a["wx"]), int(a["wz"]))
+	if sy >= 0:
+		var ant: Node3D = a["node"]
+		var sc: float = float(a.get("scale", _Const.WORKER_VISUAL_SCALE))
+		ant.position = _ant_pos(int(a["wx"]), sy, int(a["wz"]), sc)
+	a["state"] = 11
 
 
 func _check_food_nearby(a: Dictionary) -> void:

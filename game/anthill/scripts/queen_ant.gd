@@ -59,12 +59,14 @@ var _first_egg_batch_laid: bool = false
 ## Ant position in world coords
 var _wx: int = 0
 var _wz: int = 0
+var _nest_manager: Node
 
 const _ANT_LOCAL_Y_MIN: float = -0.28
 
 
-func setup(world: Node) -> void:
+func setup(world: Node, nest_manager: Node = null) -> void:
 	_world = world
+	_nest_manager = nest_manager
 	_rng = RandomNumberGenerator.new()
 	_rng.randomize()
 	_ant_builder = _AntModelScript.new() as RefCounted
@@ -276,8 +278,15 @@ func _dig_shaft_step() -> void:
 	if target_y < 1:
 		_prepare_chamber_dig()
 		return
-	if _world.get_block(_shaft_start_xz.x, target_y, _shaft_start_xz.y) != _Const.BLOCK_AIR:
-		_world.set_block(_shaft_start_xz.x, target_y, _shaft_start_xz.y, _Const.BLOCK_AIR)
+	var hw: int = _Const.FOUNDING_SHAFT_WIDTH / 2
+	for dx in range(-hw, hw):
+		for dz in range(-hw, hw):
+			var wx: int = _shaft_start_xz.x + dx
+			var wz: int = _shaft_start_xz.y + dz
+			if _world.get_block(wx, target_y, wz) != _Const.BLOCK_AIR:
+				_world.set_block(wx, target_y, wz, _Const.BLOCK_AIR)
+				if _nest_manager:
+					_nest_manager.compact_around(Vector3i(wx, target_y, wz))
 	_shaft_depth_dug += 1
 	position = Vector3(float(_shaft_start_xz.x) + 0.5, float(target_y) + 0.5, float(_shaft_start_xz.y) + 0.5)
 
@@ -308,6 +317,8 @@ func _dig_chamber_step() -> void:
 	var p: Vector3i = _chamber_voxels_to_dig[_chamber_dig_idx]
 	if _world.get_block(p.x, p.y, p.z) != _Const.BLOCK_AIR:
 		_world.set_block(p.x, p.y, p.z, _Const.BLOCK_AIR)
+		if _nest_manager:
+			_nest_manager.compact_around(p)
 	_chamber_dig_idx += 1
 	position = Vector3(float(p.x) + 0.5, float(p.y) + 0.5, float(p.z) + 0.5)
 

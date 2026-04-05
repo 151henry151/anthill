@@ -15,6 +15,7 @@ const MM_PER_UNIT := GRAIN_SIZE_MM
 const BLOCK_AIR := 0
 const BLOCK_SAND := 1
 const BLOCK_STONE := 2
+const BLOCK_PACKED_SAND := 3
 
 # ---------------------------------------------------------------------------
 # Game time scale  (Lasius niger biology compressed into playable real-time)
@@ -101,12 +102,85 @@ const APHID_REPLENISH_RATE := 0.0001
 const FOOD_CRITICAL_THRESHOLD := 0.15
 
 # ---------------------------------------------------------------------------
-# Nest building
+# Packed sand / tunnel stability
 # ---------------------------------------------------------------------------
-## How many voxels deep the queen digs the founding shaft.
-const FOUNDING_SHAFT_DEPTH := 10
-## Founding chamber size (x, y, z voxels).
-const FOUNDING_CHAMBER_SIZE := Vector3i(4, 3, 4)
+## Shell radius around newly dug AIR converted from SAND to PACKED_SAND.
+const COMPACTION_RADIUS := 1
+## PACKED_SAND takes longer to dig than loose SAND.
+const PACKED_SAND_DIG_MULTIPLIER := 2
+## Vertex colour for compacted tunnel walls (darker/warmer than loose sand).
+const PACKED_SAND_COLOR := Color(0.72, 0.60, 0.38)
+
+# ---------------------------------------------------------------------------
+# Nest excavation
+# ---------------------------------------------------------------------------
+## Ticks to complete one dig act on a SAND voxel.
+const DIG_ACT_DURATION_TICKS := 3
+## Ticks to wait when blocked in narrow tunnel.
+const TUNNEL_YIELD_TICKS := 5
+## Radius from entrance for spoil deposits.
+const SPOIL_DEPOSIT_RADIUS := 12
+## Max extra height of spoil pile above surface.
+const MAX_SPOIL_HEIGHT := 6
+## Max simultaneous diggers (performance limit).
+const MAX_NEST_BUILDERS := 8
+## Target voxels of nest space per worker for volume regulation.
+const VOLUME_PER_WORKER := 24
+## Maximum voxel depth below surface ants can dig.
+const MAX_DIG_DEPTH := 150
+
+# ---------------------------------------------------------------------------
+# Tunnel / chamber minimum dimensions (voxels, sized for rendered ant scale)
+# ---------------------------------------------------------------------------
+const MIN_GALLERY_WIDTH := 4
+const MIN_GALLERY_HEIGHT := 4
+const MIN_SHAFT_WIDTH := 6
+const MIN_BROOD_CHAMBER_DIAMETER := 8
+const QUEEN_CHAMBER_DIAMETER := 10
+const QUEEN_CHAMBER_HEIGHT := 8
+const QUEEN_PERMANENT_CHAMBER_DIAMETER := 14
+
+# ---------------------------------------------------------------------------
+# Dig target scoring weights
+# ---------------------------------------------------------------------------
+const DEPTH_WEIGHT := 0.8
+const TUNNEL_CONTINUE_BONUS := 2.0
+const CROWDING_PENALTY := 5.0
+const NOISE_AMPLITUDE := 0.3
+const BLUEPRINT_WEIGHT := 1.5
+const RADIAL_OUTWARD_BIAS := 2.0
+const TUNNEL_EXTEND_BIAS := 2.5
+## Voxels of open volume that trigger branching transition.
+const CHAMBER_THRESHOLD := 400
+
+# ---------------------------------------------------------------------------
+# Building pheromone
+# ---------------------------------------------------------------------------
+const BUILD_PHEROMONE_DEPOSIT_AMOUNT := 0.4
+const BUILD_PHEROMONE_EVAPORATION_RATE := 0.94
+const BUILD_PHEROMONE_EVAPORATION_INTERVAL_TICKS := 15
+const BUILD_PHEROMONE_MINIMUM := 0.01
+
+# ---------------------------------------------------------------------------
+# Founding chamber (queen digs before workers exist)
+# ---------------------------------------------------------------------------
+## Voxels deep for queen's initial shaft.
+const FOUNDING_SHAFT_DEPTH := 14
+## Shaft width in voxels (queen is 3 vx wide; needs clearance).
+const FOUNDING_SHAFT_WIDTH := 6
+## Founding chamber size (x, y, z voxels) — fits queen at 6 vx long.
+const FOUNDING_CHAMBER_SIZE := Vector3i(10, 8, 10)
+
+# ---------------------------------------------------------------------------
+# Surface trail covers
+# ---------------------------------------------------------------------------
+const TRAIL_COVER_BUILD_PROB := 0.05
+
+# ---------------------------------------------------------------------------
+# X-ray view
+# ---------------------------------------------------------------------------
+const XRAY_SAND_ALPHA := 0.18
+const XRAY_DEPTH_FADE_RANGE := 80.0
 
 # ---------------------------------------------------------------------------
 # Worker movement intervals (seconds between steps)
