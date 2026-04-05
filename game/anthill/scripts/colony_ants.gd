@@ -6,8 +6,8 @@ const _Chunk := preload("res://scripts/world/chunk_data.gd")
 
 @export var ant_count: int = 16
 @export var move_interval: float = 0.45
-## World units; must read at colony zoom (~4 px/voxel): sub-voxel boxes were invisible.
-@export var ant_body_size: Vector3 = Vector3(2.4, 1.6, 3.2)
+## World units — stylized “giants” so they read at ortho zoom (~4 px/voxel).
+@export var ant_body_size: Vector3 = Vector3(5.0, 3.0, 6.0)
 
 @onready var world: Node = $"../WorldManager"
 
@@ -36,8 +36,10 @@ func _spawn_one() -> void:
 		box.size = ant_body_size
 		mi.mesh = box
 		var mat := StandardMaterial3D.new()
-		mat.albedo_color = Color(0.18, 0.07, 0.04)
-		mat.roughness = 0.65
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.albedo_color = Color(0.62, 0.14, 0.09)
+		mat.emission_enabled = true
+		mat.emission = Color(0.12, 0.03, 0.02)
 		mi.material_override = mat
 		add_child(mi)
 		mi.position = _ant_pos(wx, wy, wz)

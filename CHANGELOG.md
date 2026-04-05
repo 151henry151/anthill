@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.13] - 2026-04-04
+
+### Fixed
+
+- **`scripts/colony_camera.gd`**: pan along **camera-aligned ground axes** (flattened **basis** onto **XZ**) instead of raw **world X/Z**, which felt **wrong and jittery** with a **tilted** orthographic camera; **clamp** large **relative** deltas and **tune** pan gain.
+
+### Changed
+
+- **`scripts/colony_ants.gd`**: make placeholder ants **larger**, **unshaded**, and slightly **emissive** so they stay **visible** on **sand** at colony zoom.
+
 ## [0.2.12] - 2026-04-04
 
 ### Fixed
