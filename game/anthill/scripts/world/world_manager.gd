@@ -29,8 +29,9 @@ func _ready() -> void:
 	for cz in range(chunks_z):
 		for cx in range(chunks_x):
 			var ch = _Chunk.new(cx, cz)
-			_TerrainGen.fill_chunk(ch, _noise, Callable(self, "_mark_sand_column_wx_wz"))
+			_TerrainGen.fill_chunk(ch, _noise)
 			_chunks[Vector2i(cx, cz)] = ch
+	sand_idle = true
 
 
 func get_chunk(cx: int, cz: int) -> Variant:
@@ -78,7 +79,10 @@ func set_block(wx: int, wy: int, wz: int, id: int) -> void:
 	var ch = _chunks.get(ck)
 	if ch == null:
 		return
-	ch.data.set((wx & _MASK_X) + wy * _Chunk.SIZE_X + (wz & _MASK_Z) * _Chunk.SIZE_X * _Chunk.SIZE_Y, id)
+	var idx: int = (wx & _MASK_X) + wy * _Chunk.SIZE_X + (wz & _MASK_Z) * _Chunk.SIZE_X * _Chunk.SIZE_Y
+	if ch.data[idx] == id:
+		return
+	ch.data.set(idx, id)
 	_mesh_dirty = true
 	_dirty_chunks[ck] = true
 	_surface_cache.erase(Vector2i(wx, wz))

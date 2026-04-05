@@ -32,6 +32,8 @@ static func build_chunk_mesh(world: Node, chunk: RefCounted) -> ArrayMesh:
 	var sz: int = _Chunk.SIZE_Z
 	var ox: int = chunk.cx * sx
 	var oz: int = chunk.cz * sz
+	var lox: float = float(ox)
+	var loz: float = float(oz)
 	var y_lo: int = maxi(_MESH_Y_LO, 0)
 	var y_hi: int = mini(_MESH_Y_HI, sy - 1)
 	var data: PackedByteArray = chunk.data
@@ -59,7 +61,7 @@ static func build_chunk_mesh(world: Node, chunk: RefCounted) -> ArrayMesh:
 					col = COL_STONE
 				var df: float = clampf(float(surface_base - wy) * inv_depth, 0.0, 1.0)
 				col = Color(col.r * (1.0 - df * 0.3), col.g * (1.0 - df * 0.15), col.b, col.a)
-				var base := Vector3(wx, wy, wz)
+				var base := Vector3(float(lx), float(wy), float(lz))
 				# Neighbor checks: use local array when neighbor is in-chunk; fall back to world.get_block at chunk borders.
 				var n_px: int
 				if lx < sx - 1:

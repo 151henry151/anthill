@@ -95,7 +95,7 @@ func _ready() -> void:
 			var mi := MeshInstance3D.new()
 			mi.material_override = _mat
 			chunks_root.add_child(mi)
-			mi.position = Vector3.ZERO
+			mi.position = Vector3(float(cx * _Chunk.SIZE_X), 0.0, float(cz * _Chunk.SIZE_Z))
 			_chunk_meshes[Vector2i(cx, cz)] = mi
 	for k in _chunk_meshes:
 		_initial_mesh_keys.append(k)
@@ -379,3 +379,5 @@ func _rebuild_chunk_mesh(k: Vector2i) -> void:
 		return
 	var mesh: ArrayMesh = _MeshBuilder.build_chunk_mesh(world, ch)
 	mi.mesh = mesh
+	if mesh and mesh.get_surface_count() > 0:
+		mi.custom_aabb = AABB(Vector3.ZERO, Vector3(float(_Chunk.SIZE_X), float(_Chunk.SIZE_Y), float(_Chunk.SIZE_Z)))
