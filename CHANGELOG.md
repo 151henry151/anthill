@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.12] - 2026-04-04
+
+### Fixed
+
+- **`scripts/colony_camera.gd`**: stop calling **`gui_get_hovered_control`** on the root viewport (**`Window`** in **4.2.x** has no such method), which was spamming errors and breaking **pan**.
+- **`scripts/colony_ants.gd`**: enlarge **placeholder** ant **meshes** to **several world units** so they stay **visible** at colony **ortho** zoom (~**4 px** per voxel); previous **sub-voxel** boxes were **~1 pixel** wide on screen.
+
 ## [0.2.11] - 2026-04-04
 
 ### Added

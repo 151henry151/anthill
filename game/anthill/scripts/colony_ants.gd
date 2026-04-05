@@ -6,6 +6,8 @@ const _Chunk := preload("res://scripts/world/chunk_data.gd")
 
 @export var ant_count: int = 16
 @export var move_interval: float = 0.45
+## World units; must read at colony zoom (~4 px/voxel): sub-voxel boxes were invisible.
+@export var ant_body_size: Vector3 = Vector3(2.4, 1.6, 3.2)
 
 @onready var world: Node = $"../WorldManager"
 
@@ -31,11 +33,11 @@ func _spawn_one() -> void:
 			continue
 		var mi := MeshInstance3D.new()
 		var box := BoxMesh.new()
-		box.size = Vector3(0.32, 0.22, 0.48)
+		box.size = ant_body_size
 		mi.mesh = box
 		var mat := StandardMaterial3D.new()
-		mat.albedo_color = Color(0.22, 0.1, 0.06)
-		mat.roughness = 0.75
+		mat.albedo_color = Color(0.18, 0.07, 0.04)
+		mat.roughness = 0.65
 		mi.material_override = mat
 		add_child(mi)
 		mi.position = _ant_pos(wx, wy, wz)
@@ -56,8 +58,9 @@ func _surface_block_y(wx: int, wz: int) -> int:
 
 
 func _ant_pos(wx: int, wy: int, wz: int) -> Vector3:
-	# Voxel block fills [wy, wy+1); stand on top wy+1; box center half-height 0.11
-	return Vector3(float(wx) + 0.5, float(wy) + 1.0 + 0.11, float(wz) + 0.5)
+	# Surface at y = wy + 1; place box so its bottom sits on that plane.
+	var half_h: float = ant_body_size.y * 0.5
+	return Vector3(float(wx) + 0.5, float(wy) + 1.0 + half_h, float(wz) + 0.5)
 
 
 func _physics_process(delta: float) -> void:
