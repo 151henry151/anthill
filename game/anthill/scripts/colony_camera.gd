@@ -15,7 +15,8 @@ func _ready() -> void:
 	projection = PROJECTION_ORTHOGONAL
 	size = ortho_size
 	position = Vector3(look_at_xz.x, height, look_at_xz.y)
-	rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+	# Slight tilt so height steps and faces read as 3D; straight-down + unshaded reads as a flat sheet.
+	rotation_degrees = Vector3(-78.0, 0.0, 0.0)
 	current = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 

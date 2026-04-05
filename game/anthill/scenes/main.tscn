@@ -1,14 +1,24 @@
-[gd_scene load_steps=5 format=3 uid="uid://anthill_main"]
+[gd_scene load_steps=6 format=3 uid="uid://anthill_main"]
 
 [ext_resource type="Script" path="res://scripts/main_controller.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/world/world_manager.gd" id="2_world"]
 [ext_resource type="Script" path="res://scripts/colony_camera.gd" id="3_cam"]
+
+[sub_resource type="Environment" id="Environment_colony"]
+background_mode = 1
+background_color = Color(0.4, 0.55, 0.78, 1)
+ambient_light_source = 2
+ambient_light_color = Color(1, 1, 1, 1)
+ambient_light_energy = 0.42
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
 size = Vector3(192, 4, 192)
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_main")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_colony")
 
 [node name="WorldManager" type="Node" parent="."]
 script = ExtResource("2_world")

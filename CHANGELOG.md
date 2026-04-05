@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.8] - 2026-04-04
+
+### Fixed
+
+- **`scripts/main_controller.gd`**, **`scenes/main.tscn`**, **`scripts/colony_camera.gd`**: show voxel terrain as **lit** **`StandardMaterial3D`** with **vertex-color albedo**, **`WorldEnvironment`** ambient fill, and a **slightly tilted** orthographic camera so height steps read as **3D** instead of a **uniform flat** sand-colored field (common when the view is **straight down** and **unshaded**).
+
+### Removed
+
+- **`shaders/terrain_unshaded.gdshader`**: drop the **unshaded** terrain shader now that the project runs on **GL Compatibility** where **`StandardMaterial3D`** + **vertex colors** behave reliably.
+
 ## [0.2.7] - 2026-04-04
 
 ### Fixed
