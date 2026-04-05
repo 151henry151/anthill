@@ -50,9 +50,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.button_index == MOUSE_BUTTON_MIDDLE:
 			_panning = event.pressed
 		elif event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			if event.echo:
+			# `echo` exists on keys, not on `InputEventMouseButton` (Godot 4.2).
+			if not event.pressed:
 				return
-			# Wheel: use factor for smooth scroll; do not require `pressed` — some platforms differ.
 			var f: float = maxf(event.factor, 1.0)
 			var step: float = zoom_step * f
 			if event.button_index == MOUSE_BUTTON_WHEEL_UP:
@@ -146,17 +146,22 @@ func _required_ortho_size() -> float:
 		max_abs_y = maxf(max_abs_y, absf(local.y))
 	var need_y: float = 2.0 * max_abs_y
 	var need_x: float = (2.0 * max_abs_x) / aspect
-	return maxf(need_y, need_x)
+	var req: float = maxf(need_y, need_x)
+	# Guard bad frames (zero viewport, degenerate transform) from exploding `size`.
+	return clampf(req, min_zoom, 50000.0)
 
 
 func _apply_ortho_size_and_clip() -> void:
 	var req: float = _required_ortho_size()
-	var cap: float = maxf(max_zoom, req * 1.12)
-	size = clampf(maxf(_size_user, req), min_zoom, cap)
+	# Analytic bound + margin; projection/keep_aspect can differ slightly from `visible_rect` aspect.
+	var req_fit: float = req * 1.24
+	var cap: float = maxf(max_zoom, req_fit * 1.2)
+	size = clampf(maxf(_size_user, req_fit), min_zoom, cap)
 	_sync_clip_to_world_aabb()
-	# Frustum from projection + keep_aspect can differ slightly from the analytic `req`; grow until all corners fit.
-	var guard: int = 0
-	while guard < 72:
+	# Capped refinement: grow ortho `size` only until corners fit lateral frustum (no unbounded x1.028 loop).
+	var refine_cap: float = minf(cap, maxf(req_fit * 2.0, req * 2.2))
+	var step: int = 0
+	while step < 14:
 		var all_in: bool = true
 		for p in _world_aabb_corners():
 			if not is_position_in_frustum(p):
@@ -164,9 +169,12 @@ func _apply_ortho_size_and_clip() -> void:
 				break
 		if all_in:
 			break
-		size = minf(size * 1.028, 1.0e6)
+		var grown: float = minf(size * 1.035, refine_cap)
+		if grown <= size * 1.002:
+			break
+		size = grown
 		_sync_clip_to_world_aabb()
-		guard += 1
+		step += 1
 
 
 func _ground_pan_axes() -> Array[Vector3]:
@@ -196,7 +204,8 @@ func _sync_clip_to_world_aabb() -> void:
 		if d > 0.0:
 			min_front = minf(min_front, d)
 			max_front = maxf(max_front, d)
-	var margin: float = 256.0
+	# Extra slack so tilted views do not far-clip the farthest terrain corners.
+	var margin: float = 768.0
 	if max_front > 0.0:
 		far = max_front + margin
 	else:

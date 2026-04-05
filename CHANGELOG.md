@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.29] - 2026-04-05
+
+### Fixed
+
+- **`scripts/colony_camera.gd`**: remove invalid **`event.echo`** on **`InputEventMouseButton`** (restores **wheel** **zoom**); **only** **process** **wheel** **notches** with **`event.pressed`**.
+- **`scripts/colony_camera.gd`**: **clamp** **analytic** **required** **`size`**; **widen** **analytic** **margin**; **raise** **far** **margin** **past** **world** **corners** for **tilted** **views**.
+- **`scripts/colony_camera.gd`**: add **capped** **`is_position_in_frustum`** **refinement** (**≤14** **steps**, **≤~2×** **analytic** **fit**, **no** **1e6** **blow-up**) so **ortho** **side** **planes** **match** **engine** **after** **near/far** **sync**.
+
 ## [0.2.27] - 2026-04-05
 
 ### Fixed
