@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.17] - 2026-04-04
+
+### Fixed
+
+- **`scripts/main_controller.gd`**: call **`SandStep.step`** via the **`class_name`** (**`SandStep`**) instead of **`preload(...).step`**, which targets the **`Script`** resource and throws **Nonexistent function 'step' in base 'GDScript'** on **Godot 4.2**.
+
 ## [0.2.16] - 2026-04-04
 
 ### Fixed

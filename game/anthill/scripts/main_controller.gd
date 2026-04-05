@@ -1,6 +1,5 @@
 extends Node3D
 
-const _SandStep := preload("res://scripts/world/sand_step.gd")
 const _MeshBuilder := preload("res://scripts/world/mesh_builder.gd")
 
 @onready var world: Node = $WorldManager
@@ -27,7 +26,7 @@ func _ready() -> void:
 
 func _physics_process(_delta: float) -> void:
 	if not world.sand_idle:
-		_SandStep.step(world)
+		SandStep.step(world)
 	if world.take_mesh_dirty():
 		_rebuild_all_meshes()
 
