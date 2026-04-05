@@ -195,7 +195,9 @@ func _process_wing_shed(delta: float) -> void:
 	for w in _wing_meshes:
 		if is_instance_valid(w):
 			w.position.y -= delta * 0.04
-			w.modulate = Color(1, 1, 1, 1.0 - t)
+			var mat: StandardMaterial3D = w.material_override as StandardMaterial3D
+			if mat:
+				mat.albedo_color.a = maxf(0.0, 0.45 * (1.0 - t))
 	if t >= 1.0:
 		for w in _wing_meshes:
 			if is_instance_valid(w):
