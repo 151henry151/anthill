@@ -20,6 +20,7 @@ Godot **4.2+** game: **one voxel = one sand grain** in fiction (~3 mm; see `scri
 | `scripts/constants.gd` | Grain size fiction, block type ids |
 | `scripts/world/` | Chunk storage, procedural fill, meshing, sand step |
 | `scripts/colony_camera.gd` | Orthographic top-down pan/zoom |
+| `scripts/main_controller.gd` | Chunk mesh instances; spreads first full mesh build across frames (`initial_mesh_chunks_per_frame`) |
 | `scripts/entities/ant.gd` | Reserved for future AI ant mesh (not used as player) |
 | `scenes/loading_screen.tscn` | Boot UI: threaded load of `main.tscn` with a progress bar |
 | `scenes/main.tscn` | World, lights, floor collision, UI hint |

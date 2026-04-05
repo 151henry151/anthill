@@ -26,9 +26,8 @@ func _ready() -> void:
 	for cz in range(chunks_z):
 		for cx in range(chunks_x):
 			var ch = _Chunk.new(cx, cz)
-			_TerrainGen.fill_chunk(ch, _noise)
+			_TerrainGen.fill_chunk(ch, _noise, Callable(self, "_mark_sand_column_wx_wz"))
 			_chunks[Vector2i(cx, cz)] = ch
-	bootstrap_sand_columns()
 
 
 func get_chunk(cx: int, cz: int) -> Variant:
@@ -96,20 +95,6 @@ func _mark_sand_column_wx_wz(wx: int, wz: int) -> void:
 	if wx < 0 or wz < 0 or wx >= max_wx or wz >= max_wz:
 		return
 	_sand_columns[Vector2i(wx, wz)] = true
-
-
-## One-time after terrain gen: columns that contain any sand in the falling-sand Y band (O(cells) once, not per frame).
-func bootstrap_sand_columns() -> void:
-	var y_lo: int = maxi(_TerrainGen.SURFACE_BASE - 50, 1)
-	var y_hi: int = mini(_TerrainGen.SURFACE_BASE + 20, _Chunk.SIZE_Y)
-	var sx: int = chunks_x * _Chunk.SIZE_X
-	var sz: int = chunks_z * _Chunk.SIZE_Z
-	for x in range(sx):
-		for z in range(sz):
-			for y in range(y_lo, y_hi):
-				if get_block(x, y, z) == _Const.BLOCK_SAND:
-					_mark_sand_column_wx_wz(x, z)
-					break
 
 
 ## Pops columns to scan this tick; `set_block` refills for the next tick.

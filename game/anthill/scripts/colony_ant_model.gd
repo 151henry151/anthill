@@ -1,73 +1,74 @@
 extends RefCounted
 class_name ColonyAntModel
 
-## Procedural ant for colony view: hymenopteran layout (+Z = head), ~realistic proportions at small scale.
-## Local body length (gaster rear → head front) is **MODEL_BODY_LENGTH**; scale root by **~3** for **~3** voxels long.
-
+## Hymenopteran worker layout (+Z = head). **`MODEL_BODY_LENGTH`** ≈ body axis; scale × **`~3`** ≈ **~3** voxels.
 const MODEL_BODY_LENGTH := 1.0
-
-const _MatBody := 1.0
-const _MatLeg := 0.9
-const _MatAnt := 0.85
 
 
 func build_ant() -> Node3D:
 	var root := Node3D.new()
 	root.name = "ColonyAnt"
 
-	var mat_body: StandardMaterial3D = _mat_black(_MatBody)
-	var mat_leg: StandardMaterial3D = _mat_black(_MatLeg)
-	var mat_ant: StandardMaterial3D = _mat_black(_MatAnt)
+	var mat_body: StandardMaterial3D = _mat_exo(1.0)
+	var mat_leg: StandardMaterial3D = _mat_exo(0.92)
+	var mat_ant: StandardMaterial3D = _mat_exo(0.88)
 
-	# --- Body axis +Z = anterior (head). Sand plane y = 0; body clears the ground. ---
-	# Gaster (oval): largest segment, tapers toward waist
-	var gaster := _mk_sphere(0.14, mat_body)
-	gaster.position = Vector3(0.0, 0.11, -0.33)
-	gaster.scale = Vector3(1.05, 0.78, 1.25)
+	# Gaster — dorsally arched oval (Formicidae-like bulk)
+	var gaster := _mk_sphere(0.13, mat_body)
+	gaster.position = Vector3(0.0, 0.12, -0.34)
+	gaster.scale = Vector3(1.12, 0.72, 1.28)
 	root.add_child(gaster)
 
-	# Petiole “node” (narrow waist)
+	# Post-petiole scale (optional second node — many spp. have single petiole; reads as “wasp waist”)
+	var postpet := _mk_sphere(0.045, mat_body)
+	postpet.position = Vector3(0.0, 0.11, -0.21)
+	postpet.scale = Vector3(0.9, 0.75, 1.1)
+	root.add_child(postpet)
+
+	# Petiole
 	_add_cylinder(
-		root, Vector3(0.0, 0.11, -0.17), Vector3(90, 0, 0), 0.028, 0.09, mat_body
+		root, Vector3(0.0, 0.11, -0.165), Vector3(90, 0, 0), 0.024, 0.085, mat_body
 	)
 
-	# Thorax + propodeum (mesosoma)
-	var thorax := _mk_sphere(0.11, mat_body)
-	thorax.position = Vector3(0.0, 0.12, 0.02)
-	thorax.scale = Vector3(1.15, 0.88, 1.05)
+	# Thorax (alitrunk)
+	var thorax := _mk_sphere(0.098, mat_body)
+	thorax.position = Vector3(0.0, 0.125, 0.0)
+	thorax.scale = Vector3(1.18, 0.9, 1.12)
 	root.add_child(thorax)
 
-	# Head
-	var head := _mk_sphere(0.075, mat_body)
-	head.position = Vector3(0.0, 0.125, 0.36)
-	head.scale = Vector3(0.95, 0.92, 1.0)
+	# Head — subglobular
+	var head := _mk_sphere(0.068, mat_body)
+	head.position = Vector3(0.0, 0.128, 0.34)
+	head.scale = Vector3(0.98, 0.94, 1.05)
 	root.add_child(head)
 
-	# Compound eyes (lateral bumps)
-	var eye_l := _mk_sphere(0.028, mat_body)
-	eye_l.position = Vector3(-0.07, 0.14, 0.34)
+	# Eyes
+	var eye_l := _mk_sphere(0.022, mat_body)
+	eye_l.position = Vector3(-0.065, 0.138, 0.32)
 	root.add_child(eye_l)
-	var eye_r := _mk_sphere(0.028, mat_body)
-	eye_r.position = Vector3(0.07, 0.14, 0.34)
+	var eye_r := _mk_sphere(0.022, mat_body)
+	eye_r.position = Vector3(0.065, 0.138, 0.32)
 	root.add_child(eye_r)
 
-	# Mandibles (short chevrons)
-	_add_cylinder(root, Vector3(-0.038, 0.105, 0.448), Vector3(72, 0, -16), 0.018, 0.055, mat_body)
-	_add_cylinder(root, Vector3(0.038, 0.105, 0.448), Vector3(72, 0, 16), 0.018, 0.055, mat_body)
+	# Mandibles
+	_add_cylinder(root, Vector3(-0.032, 0.108, 0.418), Vector3(74, 0, -14), 0.014, 0.048, mat_body)
+	_add_cylinder(root, Vector3(0.032, 0.108, 0.418), Vector3(74, 0, 14), 0.014, 0.048, mat_body)
 
-	# Antennae: scape + funiculus (geniculate), thin
+	# Antennae — scape, pedicel, funiculus (3 segments, geniculate)
 	for sx in [-1.0, 1.0]:
-		var base := Vector3(sx * 0.06, 0.155, 0.39)
-		_add_cylinder(root, base, Vector3(15, sx * 38, 8), 0.018, 0.09, mat_ant)
-		var elbow := base + Vector3(sx * 0.1, 0.04, 0.06)
-		_add_cylinder(root, elbow, Vector3(22, sx * 12, 35), 0.012, 0.11, mat_ant)
+		var bx := Vector3(sx * 0.055, 0.15, 0.365)
+		_add_cylinder(root, bx, Vector3(12, sx * 42, 6), 0.014, 0.065, mat_ant)
+		var mid := bx + Vector3(sx * 0.08, 0.02, 0.04)
+		_add_cylinder(root, mid, Vector3(8, sx * 20, 18), 0.01, 0.035, mat_ant)
+		var tip := mid + Vector3(sx * 0.06, -0.01, 0.07)
+		_add_cylinder(root, tip, Vector3(18, sx * 8, 38), 0.008, 0.095, mat_ant)
 
-	# Six legs: three pairs on thorax (thin femur + tibia)
-	var leg_z: Array[float] = [-0.02, 0.04, 0.1]
-	var spread: Array[float] = [-8.0, 0.0, 10.0]
+	# Six legs — femur / tibia / tarsus
+	var leg_z: Array = [-0.03, 0.035, 0.095]
+	var spread: Array = [-10.0, 0.0, 12.0]
 	for i in range(3):
-		_leg_side(root, 1.0, leg_z[i], spread[i], mat_leg)
-		_leg_side(root, -1.0, leg_z[i], spread[i], mat_leg)
+		_leg_pair(root, 1.0, leg_z[i], spread[i], mat_leg)
+		_leg_pair(root, -1.0, leg_z[i], spread[i], mat_leg)
 
 	return root
 
@@ -82,32 +83,43 @@ static func _mk_sphere(radius: float, mat: Material) -> MeshInstance3D:
 	return mi
 
 
-static func _leg_side(root: Node3D, side: float, z: float, yaw_off: float, mat: Material) -> void:
-	# side: +1 = left (+X), -1 = right
-	var attach := Vector3(side * 0.11, 0.11, z)
-	# Femur (out and down)
+static func _leg_pair(root: Node3D, side: float, z: float, yaw_off: float, mat: Material) -> void:
+	var attach := Vector3(side * 0.102, 0.112, z)
+	# Femur
 	var fem := MeshInstance3D.new()
 	var cf := CylinderMesh.new()
-	cf.top_radius = 0.02
-	cf.bottom_radius = 0.024
-	cf.height = 0.16
+	cf.top_radius = 0.017
+	cf.bottom_radius = 0.021
+	cf.height = 0.13
 	fem.mesh = cf
 	fem.material_override = mat
-	fem.position = attach + Vector3(side * 0.04, -0.02, 0.0)
-	fem.rotation_degrees = Vector3(52.0 + yaw_off * 0.15, side * -22.0, side * 38.0)
+	fem.position = attach + Vector3(side * 0.035, -0.015, 0.0)
+	fem.rotation_degrees = Vector3(48.0 + yaw_off * 0.12, side * -24.0, side * 40.0)
 	root.add_child(fem)
-	# Tibia (to ground)
-	var tip := fem.position + Vector3(side * 0.1, -0.11, 0.04)
+	var fknee := fem.position + Vector3(side * 0.085, -0.095, 0.035)
+	# Tibia
 	var tib := MeshInstance3D.new()
 	var ct := CylinderMesh.new()
-	ct.top_radius = 0.016
-	ct.bottom_radius = 0.014
-	ct.height = 0.2
+	ct.top_radius = 0.014
+	ct.bottom_radius = 0.012
+	ct.height = 0.16
 	tib.mesh = ct
 	tib.material_override = mat
-	tib.position = tip
-	tib.rotation_degrees = Vector3(68.0 + yaw_off * 0.2, side * -12.0, side * 25.0)
+	tib.position = fknee
+	tib.rotation_degrees = Vector3(62.0 + yaw_off * 0.18, side * -14.0, side * 28.0)
 	root.add_child(tib)
+	var ttip := tib.position + Vector3(side * 0.06, -0.12, 0.03)
+	# Tarsus (foot)
+	var tar := MeshInstance3D.new()
+	var cta := CylinderMesh.new()
+	cta.top_radius = 0.01
+	cta.bottom_radius = 0.008
+	cta.height = 0.09
+	tar.mesh = cta
+	tar.material_override = mat
+	tar.position = ttip
+	tar.rotation_degrees = Vector3(78.0, side * -8.0, side * 15.0)
+	root.add_child(tar)
 
 
 static func _add_cylinder(
@@ -121,7 +133,7 @@ static func _add_cylinder(
 	var mi := MeshInstance3D.new()
 	var c := CylinderMesh.new()
 	c.top_radius = radius
-	c.bottom_radius = radius * 1.05
+	c.bottom_radius = radius * 1.04
 	c.height = height
 	mi.mesh = c
 	mi.material_override = mat
@@ -130,12 +142,15 @@ static func _add_cylinder(
 	parent.add_child(mi)
 
 
-## `shade` slightly scales emission so legs/antennae read apart from the body.
-static func _mat_black(shade: float = 1.0) -> StandardMaterial3D:
+## Dark cuticle: slight **metallic** + **emission** so ants stay readable on **sand** with scene lighting.
+static func _mat_exo(shade: float) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
-	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	m.albedo_color = Color(0.02, 0.02, 0.02)
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+	var a: float = 0.07 * shade
+	m.albedo_color = Color(a, a * 0.92, a * 0.88)
+	m.metallic = 0.22
+	m.roughness = 0.48
 	m.emission_enabled = true
-	var e: float = 0.22 * shade
-	m.emission = Color(e, e, e)
+	var e: float = 0.06 * shade
+	m.emission = Color(e * 0.9, e * 0.88, e * 0.85)
 	return m

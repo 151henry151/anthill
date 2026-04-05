@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.7] - 2026-04-05
+
+### Changed
+
+- **`scripts/world/terrain_gen.gd`**: optional **`on_sand_column_placed`** callback — mark each **sand** **column** once while **filling** chunks (replaces **`bootstrap_sand_columns()`** full-world scan).
+- **`scripts/world/world_manager.gd`**: remove **`bootstrap_sand_columns()`**; seed **`_sand_columns`** via **`fill_chunk`** callback.
+- **`scripts/main_controller.gd`**: build **initial chunk meshes** over several frames (**`initial_mesh_chunks_per_frame`**, default **10**) instead of one **`_ready`** burst to reduce the **post-loading-bar** stall.
+- **`scripts/colony_ant_model.gd`**: refine **exoskeleton** (**per-pixel** shading, **metallic**/**roughness**), **post-petiole**/**petiole**/**thorax**/**head**/**eyes**/**mandibles**, **three-segment** antennae, **femur**/**tibia**/**tarsus** legs.
+- **`scripts/colony_ants.gd`**: adjust **`_ANT_LOCAL_Y_MIN`** for the updated leg reach.
+- **`README.md`**: document **`main_controller.gd`** initial mesh batching.
+
 ## [0.3.6] - 2026-04-05
 
 ### Changed

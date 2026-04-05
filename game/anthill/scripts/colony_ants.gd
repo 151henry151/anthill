@@ -10,7 +10,7 @@ const _AntModelScript = preload("res://scripts/colony_ant_model.gd")
 ## Body length in model space is **`ColonyAntModel.MODEL_BODY_LENGTH`** (**1.0**); **`×` this scale** ≈ world length in voxels (**3** ≈ **3** blocks long).
 @export var ant_visual_scale: float = 3.0
 ## Minimum **Y** in ant local space (lowest vertex; negative = below root); keeps feet on **sand** after scaling.
-const _ANT_LOCAL_Y_MIN: float = -0.22
+const _ANT_LOCAL_Y_MIN: float = -0.28
 
 @onready var world: Node = $"../WorldManager"
 
