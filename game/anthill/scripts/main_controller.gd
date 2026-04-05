@@ -20,6 +20,8 @@ const _NestManagerScript = preload("res://scripts/nest_manager.gd")
 const _BuildPheromoneScript = preload("res://scripts/building_pheromone.gd")
 
 @export var initial_mesh_chunks_per_frame: int = 10
+## Larger batches while the terrain overlay is visible (faster splash; does not affect steady-state mesh budget).
+@export var initial_load_chunks_per_frame: int = 32
 ## Cap voxel mesh uploads per physics tick (sand/queen can dirty many chunks at once).
 @export var max_mesh_rebuilds_per_physics_frame: int = 8
 
@@ -27,6 +29,8 @@ var _sand_step: RefCounted
 @onready var world: Node = $WorldManager
 @onready var chunks_root: Node3D = $Chunks
 @onready var colony_ants: Node3D = $ColonyAnts
+@onready var _terrain_load_overlay: CanvasLayer = $TerrainLoadOverlay
+@onready var _terrain_load_bar: ProgressBar = $TerrainLoadOverlay/LoadingPanel/Center/VBox/ProgressBar
 @onready var _day_night: Node = $DayNightCycle
 
 var _chunk_meshes: Dictionary = {}
@@ -57,6 +61,7 @@ var _peak_workers: int = 0
 var _first_workers_emerged: bool = false
 var _colony_stage: String = "Founding"
 var _queen_alive: bool = true
+var _initial_terrain_ready: bool = false
 
 
 func _ready() -> void:
@@ -84,9 +89,9 @@ func _ready() -> void:
 			_chunk_meshes[Vector2i(cx, cz)] = mi
 	for k in _chunk_meshes:
 		_initial_mesh_keys.append(k)
-	_setup_systems()
-	if _day_night:
-		_day_night.set_game_tick(_game_tick)
+	colony_ants.process_mode = Node.PROCESS_MODE_DISABLED
+	if _terrain_load_bar:
+		_terrain_load_bar.value = 0.0
 	set_process(true)
 
 
@@ -183,16 +188,32 @@ func _surface_y(wx: int, wz: int) -> int:
 
 func _process(_delta: float) -> void:
 	if _initial_mesh_idx < _initial_mesh_keys.size():
-		var n: int = maxi(1, initial_mesh_chunks_per_frame)
+		var n: int = maxi(1, initial_load_chunks_per_frame)
 		var end_i: int = mini(_initial_mesh_idx + n, _initial_mesh_keys.size())
 		for i in range(_initial_mesh_idx, end_i):
 			_rebuild_chunk_mesh(_initial_mesh_keys[i])
 		_initial_mesh_idx = end_i
+		if _terrain_load_bar and not _initial_mesh_keys.is_empty():
+			_terrain_load_bar.value = 100.0 * float(_initial_mesh_idx) / float(_initial_mesh_keys.size())
 		return
+	if not _initial_terrain_ready:
+		_finish_initial_terrain_load()
 	set_process(false)
 
 
+func _finish_initial_terrain_load() -> void:
+	_setup_systems()
+	_initial_terrain_ready = true
+	if _terrain_load_overlay:
+		_terrain_load_overlay.queue_free()
+	colony_ants.process_mode = Node.PROCESS_MODE_INHERIT
+	if _day_night:
+		_day_night.set_game_tick(_game_tick)
+
+
 func _physics_process(_delta: float) -> void:
+	if not _initial_terrain_ready:
+		return
 	if _sand_step != null and not world.sand_idle:
 		_sand_step.step(world)
 	if world.take_mesh_dirty():
@@ -299,6 +320,8 @@ func _on_ant_eclosed(caste_destiny: String, pos: Vector3) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not _initial_terrain_ready:
+		return
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_X:
 			_toggle_xray()

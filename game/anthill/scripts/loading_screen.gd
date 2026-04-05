@@ -3,8 +3,8 @@ extends Control
 
 const MAIN_SCENE := "res://scenes/main.tscn"
 
-@onready var _bar: ProgressBar = $Center/VBox/ProgressBar
-@onready var _title: Label = $Center/VBox/Title
+@onready var _bar: ProgressBar = $LoadingPanel/Center/VBox/ProgressBar
+@onready var _title: Label = $LoadingPanel/Center/VBox/Title
 
 
 func _ready() -> void:
@@ -22,7 +22,6 @@ func _process(_delta: float) -> void:
 				_title.text = "ANTHILL"
 				_title.text += "\n(load error)"
 				return
-			_bar.value = 100.0
 			get_tree().change_scene_to_packed(scene)
 		ResourceLoader.THREAD_LOAD_IN_PROGRESS:
 			var p: float = 0.0

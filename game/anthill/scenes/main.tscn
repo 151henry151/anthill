@@ -1,10 +1,11 @@
-[gd_scene load_steps=7 format=3 uid="uid://anthill_main"]
+[gd_scene load_steps=8 format=3 uid="uid://anthill_main"]
 
 [ext_resource type="Script" path="res://scripts/main_controller.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/world/world_manager.gd" id="2_world"]
 [ext_resource type="Script" path="res://scripts/colony_camera.gd" id="3_cam"]
 [ext_resource type="Script" path="res://scripts/colony_ants.gd" id="4_ants"]
 [ext_resource type="Script" path="res://scripts/day_night_cycle.gd" id="5_daynight"]
+[ext_resource type="PackedScene" uid="uid://anthill_loading_panel" path="res://scenes/loading_panel.tscn" id="6_panel"]
 
 [sub_resource type="Environment" id="Environment_colony"]
 background_mode = 1
@@ -42,6 +43,17 @@ light_energy = 1.1
 
 [node name="ColonyCamera" type="Camera3D" parent="."]
 script = ExtResource("3_cam")
+
+[node name="TerrainLoadOverlay" type="CanvasLayer" parent="."]
+layer = 50
+
+[node name="LoadingPanel" parent="TerrainLoadOverlay" instance=ExtResource("6_panel")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="Floor" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 272, 206, 272)

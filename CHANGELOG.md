@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-04-05
+
+### Added
+
+- **`scenes/loading_panel.tscn`**: reusable splash UI (background, title, hero art, progress bar) for the first-load screen and the main scene overlay.
+
+### Changed
+
+- **`scripts/main_controller.gd`**: defer **`_setup_systems`** until all **initial chunk meshes** are built; skip **`_physics_process`** and block **`_unhandled_input`** until then; show **`TerrainLoadOverlay`** (same panel as the loading screen) with a **0–100%** bar driven by mesh build progress; disable **`ColonyAnts`** processing during the build; use a larger **`initial_load_chunks_per_frame`** (default **32**) for the splash-phase batch build.
+- **`scripts/loading_screen.gd`**, **`scenes/loading_screen.tscn`**: instance **`loading_panel.tscn`** instead of duplicating nodes; remove the forced **100%** bar jump before switching scenes.
+- **`scenes/main.tscn`**: add **`TerrainLoadOverlay`** (`CanvasLayer`) with an instanced **`loading_panel`**.
+
+## [0.5.3] - 2026-04-05
+
+### Changed
+
+- **`scenes/loading_screen.tscn`**: set **`texture_filter`** to **linear** on the loading root so splash art matches smooth previews (project **`default_texture_filter`** remains **nearest** for the rest of the UI).
+
 ## [0.5.2] - 2026-04-04
 
 ### Added
