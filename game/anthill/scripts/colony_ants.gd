@@ -4,7 +4,7 @@ extends Node3D
 const _Const := preload("res://scripts/constants.gd")
 const _Chunk := preload("res://scripts/world/chunk_data.gd")
 
-@export var ant_count: int = 10
+@export var ant_count: int = 72
 @export var move_interval: float = 0.45
 @export var sphere_radius: float = 3.5
 
@@ -24,7 +24,7 @@ func _ready() -> void:
 func _spawn_one() -> void:
 	var max_x: int = world.chunks_x * _Chunk.SIZE_X
 	var max_z: int = world.chunks_z * _Chunk.SIZE_Z
-	for attempt in range(100):
+	for attempt in range(400):
 		var wx: int = _rng.randi_range(2, max_x - 3)
 		var wz: int = _rng.randi_range(2, max_z - 3)
 		var wy: int = _surface_block_y(wx, wz)

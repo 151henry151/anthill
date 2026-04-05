@@ -1,9 +1,11 @@
 extends Camera3D
 ## Orthographic colony view: left-drag orbits the camera around a ground pivot; middle-drag pans; wheel zooms.
 
-@export var look_at_xz: Vector2 = Vector2(48.0, 48.0)
-## Distance from pivot to camera (world units).
-@export var orbit_radius: float = 75.0
+const _Chunk := preload("res://scripts/world/chunk_data.gd")
+
+@export var look_at_xz: Vector2 = Vector2(272.0, 272.0)
+## Distance from pivot to camera (world units); larger worlds need a wider default orbit.
+@export var orbit_radius: float = 120.0
 ## Azimuth around world Y through the pivot (degrees).
 @export var yaw_deg: float = 0.0
 ## Polar angle from +Y (0 = camera on +Y above pivot; larger = lower toward horizon).
@@ -22,6 +24,10 @@ var pivot: Vector3 = Vector3.ZERO
 
 
 func _ready() -> void:
+	var wm: Node = $"../WorldManager"
+	var half_x: float = float(wm.chunks_x * _Chunk.SIZE_X) * 0.5
+	var half_z: float = float(wm.chunks_z * _Chunk.SIZE_Z) * 0.5
+	look_at_xz = Vector2(half_x, half_z)
 	projection = PROJECTION_ORTHOGONAL
 	size = ortho_size
 	pivot = Vector3(look_at_xz.x, 0.0, look_at_xz.y)

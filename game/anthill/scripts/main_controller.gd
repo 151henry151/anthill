@@ -31,14 +31,21 @@ func _physics_process(_delta: float) -> void:
 	if _sand_step != null and not world.sand_idle:
 		_sand_step.step(world)
 	if world.take_mesh_dirty():
-		_rebuild_all_meshes()
+		for ck in world.get_and_clear_dirty_chunks():
+			_rebuild_chunk_mesh(ck)
 
 
 func _rebuild_all_meshes() -> void:
 	for k in _chunk_meshes:
-		var ch = world.get_chunk(k.x, k.y)
-		if ch == null:
-			continue
-		var mesh: ArrayMesh = _MeshBuilder.build_chunk_mesh(world, ch)
-		var mi: MeshInstance3D = _chunk_meshes[k]
-		mi.mesh = mesh
+		_rebuild_chunk_mesh(k)
+
+
+func _rebuild_chunk_mesh(k: Vector2i) -> void:
+	var ch = world.get_chunk(k.x, k.y)
+	if ch == null:
+		return
+	var mi: MeshInstance3D = _chunk_meshes.get(k)
+	if mi == null:
+		return
+	var mesh: ArrayMesh = _MeshBuilder.build_chunk_mesh(world, ch)
+	mi.mesh = mesh

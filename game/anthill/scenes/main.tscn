@@ -13,7 +13,7 @@ ambient_light_color = Color(1, 1, 1, 1)
 ambient_light_energy = 0.42
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
-size = Vector3(192, 4, 192)
+size = Vector3(1200, 4, 1200)
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_main")
@@ -27,7 +27,7 @@ script = ExtResource("2_world")
 [node name="Chunks" type="Node3D" parent="."]
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 48, 72, 40)
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 272, 100, 272)
 shadow_enabled = false
 light_energy = 1.1
 
@@ -35,7 +35,7 @@ light_energy = 1.1
 script = ExtResource("3_cam")
 
 [node name="Floor" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 48, -2, 48)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 272, -2, 272)
 collision_layer = 1
 collision_mask = 0
 

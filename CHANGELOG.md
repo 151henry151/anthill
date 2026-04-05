@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.21] - 2026-04-04
+
+### Added
+
+- **`scripts/world/world_manager.gd`**: track **`_dirty_chunks`** on **`set_block`** and expose **`get_and_clear_dirty_chunks()`** so mesh rebuilds touch **only** modified chunks (needed for larger worlds).
+
+### Changed
+
+- **`scripts/world/world_manager.gd`**: default **`chunks_x` / `chunks_z`** from **3** to **17** (~**32×** horizontal cell count vs **96×96**, ~**5.5×** longer per side).
+- **`scripts/main_controller.gd`**: rebuild **dirty chunks only** after sand moves; keep **full** rebuild in **`_ready`**.
+- **`scripts/colony_camera.gd`**: center **pivot** / **`look_at_xz`** from **`WorldManager`** extents; raise default **`orbit_radius`**.
+- **`scripts/colony_ants.gd`**: increase default **`ant_count`** to **72** for the larger surface.
+- **`scenes/main.tscn`**: enlarge / recenter **floor** collider and **DirectionalLight3D** for the bigger volume.
+
 ## [0.2.20] - 2026-04-04
 
 ### Fixed

@@ -8,11 +8,13 @@ const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
 var _chunks: Dictionary = {}
 var _noise: FastNoiseLite
 var _mesh_dirty: bool = false
+var _dirty_chunks: Dictionary = {}
 ## After falling sand settles, `SandStep` skips the full-world scan (major CPU save).
 var sand_idle: bool = false
 
-@export var chunks_x: int = 3
-@export var chunks_z: int = 3
+## ~sqrt(30)× prior 3×3 extent → ~30× horizontal cells; 17×32 = 544 units per side.
+@export var chunks_x: int = 17
+@export var chunks_z: int = 17
 
 
 func _ready() -> void:
@@ -66,6 +68,7 @@ func set_block(wx: int, wy: int, wz: int, id: int) -> void:
 	ch.set_b(lx, wy, lz, id)
 	_mesh_dirty = true
 	sand_idle = false
+	_dirty_chunks[Vector2i(cx, cz)] = true
 
 
 ## Clears the flag; call once per frame after stepping sand to decide whether to rebuild meshes.
@@ -73,6 +76,14 @@ func take_mesh_dirty() -> bool:
 	var was: bool = _mesh_dirty
 	_mesh_dirty = false
 	return was
+
+
+func get_and_clear_dirty_chunks() -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	for k in _dirty_chunks:
+		out.append(k)
+	_dirty_chunks.clear()
+	return out
 
 
 func world_bounds_aabb() -> AABB:
