@@ -18,8 +18,8 @@ const _Chunk := preload("res://scripts/world/chunk_data.gd")
 @export var orbit_sensitivity: float = 0.22
 @export var zoom_step: float = 8.0
 @export var min_zoom: float = 14.0
-## Ortho `size` is vertical world units; ~17×32 ≈ 544 — allow zooming out past full map width/height.
-@export var max_zoom: float = 720.0
+## Ortho `size` is vertical world units. Angled orbit needs **`size` ≥ ~770** so diagonal corners of a **544×544** ground fit (half-diagonal ≈ **385** → **`size`/2** must cover projection onto camera up).
+@export var max_zoom: float = 1600.0
 
 var pivot: Vector3 = Vector3.ZERO
 
@@ -31,6 +31,8 @@ func _ready() -> void:
 	look_at_xz = Vector2(half_x, half_z)
 	projection = PROJECTION_ORTHOGONAL
 	size = ortho_size
+	near = 0.05
+	_sync_far_to_zoom()
 	pivot = Vector3(look_at_xz.x, 0.0, look_at_xz.y)
 	_apply_orbit()
 	current = true
@@ -41,8 +43,10 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
 			size = clampf(size - zoom_step, min_zoom, max_zoom)
+			_sync_far_to_zoom()
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
 			size = clampf(size + zoom_step, min_zoom, max_zoom)
+			_sync_far_to_zoom()
 	if event is InputEventMouseMotion:
 		var motion: InputEventMouseMotion = event
 		var rel: Vector2 = motion.relative
@@ -91,3 +95,8 @@ func _ground_pan_axes() -> Array[Vector3]:
 	else:
 		f_h = f_h.normalized()
 	return [r_h, f_h]
+
+
+func _sync_far_to_zoom() -> void:
+	# Zooming out increases ortho footprint and depth span along the view axis; keep geometry inside [near, far].
+	far = maxf(12000.0, size * 40.0)

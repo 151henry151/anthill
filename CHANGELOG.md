@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.24] - 2026-04-05
+
+### Fixed
+
+- **`scripts/colony_camera.gd`**: raise **`max_zoom`** past **~770** so orthographic **vertical size** can cover **diagonal** ground corners when the camera is **yawed**; set **`near`** / scale **`far`** with **`size`** so depth clipping stays safe when zoomed out.
+
 ## [0.2.23] - 2026-04-04
 
 ### Fixed
