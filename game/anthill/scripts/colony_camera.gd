@@ -33,9 +33,10 @@ func _input(event: InputEvent) -> void:
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
 			size = clampf(size + zoom_step, min_zoom, max_zoom)
 	if event is InputEventMouseMotion:
+		var motion: InputEventMouseMotion = event
 		var pan_mask: int = MOUSE_BUTTON_MASK_LEFT | MOUSE_BUTTON_MASK_MIDDLE
-		if event.button_mask & pan_mask:
-			var rel := event.relative
+		if motion.button_mask & pan_mask:
+			var rel: Vector2 = motion.relative
 			rel.x = clampf(rel.x, -pan_relative_max, pan_relative_max)
 			rel.y = clampf(rel.y, -pan_relative_max, pan_relative_max)
 			var pan_scale: float = size * pan_pixels_to_world * pan_speed

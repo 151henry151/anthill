@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.14] - 2026-04-04
+
+### Fixed
+
+- **`scripts/colony_camera.gd`**: assign **`InputEventMouseMotion`** explicitly so **`relative`** is typed (**Godot 4.2** could not infer **`var rel := event.relative`** and failed to load the script, leaving **no camera / no terrain**).
+
 ## [0.2.13] - 2026-04-04
 
 ### Fixed
