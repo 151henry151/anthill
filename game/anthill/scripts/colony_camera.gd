@@ -1,16 +1,13 @@
 extends Camera3D
-## Orthographic colony view: left-drag orbits the camera around a ground pivot; middle-drag pans; wheel zooms.
+## Orthographic colony view: left-drag orbits around a ground pivot; middle-drag pans; wheel zooms.
 
 const _Chunk := preload("res://scripts/world/chunk_data.gd")
+const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
 
 @export var look_at_xz: Vector2 = Vector2(272.0, 272.0)
-## Distance from pivot to camera (world units); larger worlds need a wider default orbit.
 @export var orbit_radius: float = 120.0
-## Azimuth around world Y through the pivot (degrees).
 @export var yaw_deg: float = 0.0
-## Polar angle from +Y (0 = camera on +Y above pivot; larger = lower toward horizon).
 @export var orbit_phi_deg: float = 12.0
-## Vertical world units in view (Godot ortho `size` = full height). ~viewport_height / size ≈ pixels per grain tall.
 @export var ortho_size: float = 220.0
 @export var pan_speed: float = 0.28
 @export var pan_pixels_to_world: float = 0.011
@@ -18,16 +15,15 @@ const _Chunk := preload("res://scripts/world/chunk_data.gd")
 @export var orbit_sensitivity: float = 0.22
 @export var zoom_step: float = 8.0
 @export var min_zoom: float = 14.0
-## Upper bound for wheel intent; effective `size` may exceed this when the frustum must fit the world AABB.
 @export var max_zoom: float = 3200.0
 
 var pivot: Vector3 = Vector3.ZERO
-## Wheel-only target; effective `size` is at least what fits the world in the current frustum.
 var _size_user: float = 220.0
 var _orbiting: bool = false
 var _panning: bool = false
-## Wheel can fire pressed=true and/or pressed=false per notch; debounce so we zoom once per physical tick.
 var _last_wheel_ms: int = 0
+## World diagonal for orbit_radius and clip-plane sizing.
+var _world_diag: float = 800.0
 
 
 func _ready() -> void:
@@ -35,39 +31,43 @@ func _ready() -> void:
 	var half_x: float = float(wm.chunks_x * _Chunk.SIZE_X) * 0.5
 	var half_z: float = float(wm.chunks_z * _Chunk.SIZE_Z) * 0.5
 	look_at_xz = Vector2(half_x, half_z)
+	var max_x: float = float(wm.chunks_x * _Chunk.SIZE_X)
+	var max_z: float = float(wm.chunks_z * _Chunk.SIZE_Z)
+	_world_diag = Vector2(max_x, max_z).length()
+	orbit_radius = _world_diag * 0.8
 	projection = PROJECTION_ORTHOGONAL
 	keep_aspect = KEEP_HEIGHT
 	_size_user = ortho_size
-	pivot = Vector3(look_at_xz.x, 0.0, look_at_xz.y)
+	pivot = Vector3(look_at_xz.x, float(_TerrainGen.SURFACE_BASE), look_at_xz.y)
 	_apply_orbit()
 	current = true
-	# Avoid 3D physics picking consuming mouse events before gameplay `_input` runs reliably.
 	get_viewport().physics_object_picking = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 
-## Use `_input` (not `_unhandled_input`) so wheel and drags are seen even when the viewport/GUI pipeline would mark events handled later.
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			_orbiting = event.pressed
-		elif event.button_index == MOUSE_BUTTON_MIDDLE:
-			_panning = event.pressed
-		elif event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+		var mb: InputEventMouseButton = event
+		if mb.button_index == MOUSE_BUTTON_LEFT:
+			_orbiting = mb.pressed
+		elif mb.button_index == MOUSE_BUTTON_MIDDLE:
+			_panning = mb.pressed
+		elif mb.button_index == MOUSE_BUTTON_WHEEL_UP or mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			var now: int = Time.get_ticks_msec()
 			if now - _last_wheel_ms < 40:
 				return
 			_last_wheel_ms = now
-			var f: float = maxf(event.factor, 1.0)
+			var f: float = maxf(mb.factor, 1.0)
 			var step: float = zoom_step * f
-			if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			if mb.button_index == MOUSE_BUTTON_WHEEL_UP:
 				_size_user = clampf(_size_user - step, min_zoom, max_zoom)
 			else:
 				_size_user = clampf(_size_user + step, min_zoom, max_zoom)
 			_apply_orbit()
 			get_viewport().set_input_as_handled()
 	elif event is InputEventPanGesture:
-		var dz: float = clampf(-event.delta.y - event.delta.x, -4.0, 4.0)
+		var pg: InputEventPanGesture = event
+		var dz: float = clampf(-pg.delta.y - pg.delta.x, -4.0, 4.0)
 		if absf(dz) > 0.05:
 			_size_user = clampf(_size_user + dz * zoom_step * 0.28, min_zoom, max_zoom)
 			_apply_orbit()
@@ -81,16 +81,16 @@ func _input(event: InputEvent) -> void:
 		var rel: Vector2 = motion.relative
 		rel.x = clampf(rel.x, -pan_relative_max, pan_relative_max)
 		rel.y = clampf(rel.y, -pan_relative_max, pan_relative_max)
-		var pan_scale: float = size * pan_pixels_to_world * pan_speed
-		var basis_xz := _ground_pan_axes()
-		var right_h: Vector3 = basis_xz[0]
-		var forward_h: Vector3 = basis_xz[1]
 		if orbit_now:
 			yaw_deg -= rel.x * orbit_sensitivity
 			orbit_phi_deg = clampf(orbit_phi_deg + rel.y * orbit_sensitivity, 4.0, 89.0)
 			_apply_orbit()
 			get_viewport().set_input_as_handled()
 		elif pan_now:
+			var pan_scale: float = _size_user * pan_pixels_to_world * pan_speed
+			var axes := _ground_pan_axes()
+			var right_h: Vector3 = axes[0]
+			var forward_h: Vector3 = axes[1]
 			var delta: Vector3 = right_h * rel.x * pan_scale + forward_h * rel.y * pan_scale
 			pivot.x += delta.x
 			pivot.z += delta.z
@@ -110,73 +110,9 @@ func _apply_orbit() -> void:
 	)
 	position = pivot + off
 	look_at(pivot, Vector3.UP)
-	_apply_ortho_size_and_clip()
-
-
-## Match RenderingServer camera aspect: visible rect size, not always equal to window when stretch/scale differs.
-func _viewport_aspect() -> float:
-	var vp: Viewport = get_viewport()
-	var r: Vector2 = vp.get_visible_rect().size
-	if r.y <= 1e-6:
-		return 1.0
-	return r.x / r.y
-
-
-func _world_aabb_corners() -> Array[Vector3]:
-	var wm: Node = $"../WorldManager"
-	var max_x: float = float(wm.chunks_x * _Chunk.SIZE_X)
-	var max_z: float = float(wm.chunks_z * _Chunk.SIZE_Z)
-	var max_y: float = float(_Chunk.SIZE_Y)
-	return [
-		Vector3(0.0, 0.0, 0.0),
-		Vector3(max_x, 0.0, 0.0),
-		Vector3(0.0, 0.0, max_z),
-		Vector3(max_x, 0.0, max_z),
-		Vector3(0.0, max_y, 0.0),
-		Vector3(max_x, max_y, 0.0),
-		Vector3(0.0, max_y, max_z),
-		Vector3(max_x, max_y, max_z),
-	]
-
-
-func _required_ortho_size() -> float:
-	var inv: Transform3D = global_transform.affine_inverse()
-	var aspect: float = _viewport_aspect()
-	var max_abs_x: float = 0.0
-	var max_abs_y: float = 0.0
-	for p in _world_aabb_corners():
-		var local: Vector3 = inv * p
-		max_abs_x = maxf(max_abs_x, absf(local.x))
-		max_abs_y = maxf(max_abs_y, absf(local.y))
-	var need_y: float = 2.0 * max_abs_y
-	var need_x: float = (2.0 * max_abs_x) / aspect
-	var req: float = maxf(need_y, need_x)
-	return clampf(req, min_zoom, 50000.0)
-
-
-func _apply_ortho_size_and_clip() -> void:
-	var req: float = _required_ortho_size()
-	# Extra margin for projection vs. analytic aspect; refinement catches the rest.
-	var req_fit: float = req * 1.38
-	var cap: float = maxf(max_zoom, req_fit * 1.45)
-	size = clampf(maxf(_size_user, req_fit), min_zoom, cap)
-	_sync_clip_to_world_aabb()
-	var refine_cap: float = minf(cap, maxf(req_fit * 3.0, req * 3.2))
-	var step: int = 0
-	while step < 28:
-		var all_in: bool = true
-		for p in _world_aabb_corners():
-			if not is_position_in_frustum(p):
-				all_in = false
-				break
-		if all_in:
-			break
-		var grown: float = minf(size * 1.028, refine_cap)
-		if grown <= size * 1.001:
-			break
-		size = grown
-		_sync_clip_to_world_aabb()
-		step += 1
+	size = _size_user
+	near = 0.01
+	far = orbit_radius * 2.0 + _world_diag
 
 
 func _ground_pan_axes() -> Array[Vector3]:
@@ -193,25 +129,3 @@ func _ground_pan_axes() -> Array[Vector3]:
 	else:
 		f_h = f_h.normalized()
 	return [r_h, f_h]
-
-
-func _sync_clip_to_world_aabb() -> void:
-	var corners: Array[Vector3] = _world_aabb_corners()
-	var cam_pos: Vector3 = global_position
-	var forward: Vector3 = -global_transform.basis.z
-	var min_front: float = INF
-	var max_front: float = -INF
-	for p in corners:
-		var d: float = (p - cam_pos).dot(forward)
-		if d > 0.0:
-			min_front = minf(min_front, d)
-			max_front = maxf(max_front, d)
-	var margin: float = 2048.0
-	if max_front > 0.0:
-		far = max_front + margin
-	else:
-		far = maxf(12000.0, size * 40.0)
-	if min_front < INF and min_front > 0.0:
-		near = minf(0.05, maxf(0.001, min_front * 0.25))
-	else:
-		near = 0.05

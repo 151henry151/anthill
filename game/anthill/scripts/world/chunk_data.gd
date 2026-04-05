@@ -2,7 +2,7 @@ extends RefCounted
 class_name VoxelChunk
 
 const SIZE_X := 32
-const SIZE_Y := 48
+const SIZE_Y := 256
 const SIZE_Z := 32
 
 var cx: int

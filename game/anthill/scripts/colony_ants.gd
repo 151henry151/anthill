@@ -46,7 +46,8 @@ func _spawn_one() -> void:
 
 
 func _surface_block_y(wx: int, wz: int) -> int:
-	for y in range(_Chunk.SIZE_Y - 2, -1, -1):
+	var ceiling: int = mini(_Chunk.SIZE_Y - 2, 240)
+	for y in range(ceiling, -1, -1):
 		if world.get_block(wx, y, wz) != _Const.BLOCK_AIR and world.get_block(wx, y + 1, wz) == _Const.BLOCK_AIR:
 			return y
 	return -1

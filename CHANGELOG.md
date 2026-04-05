@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-05
+
+### Changed
+
+- **`scripts/world/chunk_data.gd`**: increase **`SIZE_Y`** from **48** to **256** (~11× deeper voxel columns; subsurface extends ~210 layers instead of ~18).
+- **`scripts/world/terrain_gen.gd`**: move surface from **y≈18** to **y≈210** (`SURFACE_BASE` constant); widen sand layer to **40** layers above stone; skip air-only Y layers during generation for speed.
+- **`scripts/world/sand_step.gd`**: constrain falling-sand scan to the surface band (`SURFACE_BASE ± 50/20`) instead of the full 256-tall column.
+- **`scripts/world/mesh_builder.gd`**: restrict mesh face iteration to the surface Y band (`SURFACE_BASE ± 50/20`) so deep enclosed stone produces no geometry.
+- **`scripts/colony_ants.gd`**: cap `_surface_block_y` scan ceiling at **240** to avoid scanning the full 256-tall column per ant.
+- **`scenes/main.tscn`**: reposition **Floor** collider and **DirectionalLight3D** for the higher surface level.
+
+### Fixed
+
+- **`scripts/colony_camera.gd`**: remove forced world-AABB fit and `is_position_in_frustum` refinement loop that caused **zoom level to jump** when orbiting; set **`size = _size_user`** directly so wheel zoom is always applied.
+- **`scripts/colony_camera.gd`**: compute **`pan_scale`** from **`_size_user`** (not the engine-overridden `size`) so middle-drag pan moves predictably.
+- **`scripts/colony_camera.gd`**: set **`orbit_radius`** from the horizontal world diagonal and generous **`far`** clip so corners are not depth-clipped at oblique orthographic angles.
+- **`scripts/colony_camera.gd`**: place pivot at **surface Y** (`SURFACE_BASE`) so the camera orbits around the visible terrain, not underground.
+
 ## [0.2.30] - 2026-04-05
 
 ### Fixed
