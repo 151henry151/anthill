@@ -6,6 +6,7 @@ var _day_label: Label
 var _queen_label: Label
 var _food_label: Label
 var _pop_label: Label
+var _mode_label: Label
 var _panel: PanelContainer
 
 var game_day: int = 0
@@ -15,6 +16,8 @@ var sugar: float = 0.0
 var protein: float = 0.0
 var worker_count: int = 0
 var brood_count: int = 0
+var xray_active: bool = false
+var fast_forward: bool = false
 
 
 func _ready() -> void:
@@ -34,6 +37,7 @@ func _ready() -> void:
 	_queen_label = _mk_label(vbox)
 	_food_label = _mk_label(vbox)
 	_pop_label = _mk_label(vbox)
+	_mode_label = _mk_label(vbox)
 	_panel.position = Vector2(10, 40)
 	_update_display()
 
@@ -66,3 +70,9 @@ func _update_display() -> void:
 	_queen_label.text = "Queen: %s (%.0f%%)" % [qc, queen_energy * 100.0]
 	_food_label.text = "Sugar: %.0f%% | Protein: %.0f%%" % [sugar * 100.0, protein * 100.0]
 	_pop_label.text = "%d workers | %d brood" % [worker_count, brood_count]
+	var modes: Array[String] = []
+	if fast_forward:
+		modes.append("[F] FAST >>")
+	if xray_active:
+		modes.append("[X] X-RAY")
+	_mode_label.text = "  ".join(modes) if not modes.is_empty() else ""

@@ -183,6 +183,12 @@ const XRAY_SAND_ALPHA := 0.18
 const XRAY_DEPTH_FADE_RANGE := 80.0
 
 # ---------------------------------------------------------------------------
+# Fast-forward
+# ---------------------------------------------------------------------------
+## Engine time scale when fast-forward is active.
+const FAST_FORWARD_SCALE := 10.0
+
+# ---------------------------------------------------------------------------
 # Worker movement intervals (seconds between steps)
 # ---------------------------------------------------------------------------
 const WORKER_MOVE_INTERVAL := 0.45

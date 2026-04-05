@@ -48,6 +48,7 @@ var _rng: RandomNumberGenerator
 
 var _mesh_pending: Dictionary = {}
 var _xray_active: bool = false
+var _fast_forward: bool = false
 var _mat_xray: StandardMaterial3D
 var _game_tick: int = 0
 var _game_day: int = 0
@@ -237,6 +238,8 @@ func _update_hud() -> void:
 		var counts: Dictionary = _brood_manager.get_counts()
 		brood_total = int(counts["total"])
 	_peak_workers = maxi(_peak_workers, workers)
+	_hud.xray_active = _xray_active
+	_hud.fast_forward = _fast_forward
 	_hud.update_data(_game_day, _colony_stage, queen_energy, sugar, protein, workers, brood_total)
 
 
@@ -275,6 +278,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_X:
 			_toggle_xray()
+		elif event.keycode == KEY_F:
+			_toggle_fast_forward()
+
+
+func _toggle_fast_forward() -> void:
+	_fast_forward = not _fast_forward
+	Engine.time_scale = _Const.FAST_FORWARD_SCALE if _fast_forward else 1.0
 
 
 func _toggle_xray() -> void:
