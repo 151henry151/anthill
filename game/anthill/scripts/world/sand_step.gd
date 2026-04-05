@@ -6,6 +6,8 @@ const _Chunk := preload("res://scripts/world/chunk_data.gd")
 
 
 static func step(world: Node) -> void:
+	if world is WorldManager and world.sand_idle:
+		return
 	var sx: int = world.chunks_x * _Chunk.SIZE_X
 	var sy: int = _Chunk.SIZE_Y
 	var sz: int = world.chunks_z * _Chunk.SIZE_Z
@@ -16,6 +18,10 @@ static func step(world: Node) -> void:
 				if world.get_block(x, y, z) == _Const.BLOCK_SAND:
 					if world.get_block(x, y - 1, z) == _Const.BLOCK_AIR:
 						moves.append(Vector3i(x, y, z))
+	if moves.is_empty():
+		if world is WorldManager:
+			world.sand_idle = true
+		return
 	moves.shuffle()
 	for p in moves:
 		if world.get_block(p.x, p.y, p.z) != _Const.BLOCK_SAND:

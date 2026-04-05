@@ -26,7 +26,8 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	_SandStep.step(world)
+	if not world.sand_idle:
+		_SandStep.step(world)
 	if world.take_mesh_dirty():
 		_rebuild_all_meshes()
 

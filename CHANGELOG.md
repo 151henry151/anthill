@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.16] - 2026-04-04
+
+### Fixed
+
+- **`scripts/world/sand_step.gd`**, **`scripts/world/world_manager.gd`**, **`scripts/main_controller.gd`**: after falling sand **stops moving**, set **`sand_idle`** and **skip** the **full-world scan** each tick (previously **~432k `get_block` calls per physics frame** at **60 Hz**, pegging **~100%** of one **CPU** core).
+- **`project.godot`**: cap **`run/max_fps`** at **60**, enable **vsync**, set **`physics_ticks_per_second`** to **30** to reduce steady-state load.
+
 ## [0.2.15] - 2026-04-04
 
 ### Added

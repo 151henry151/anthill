@@ -8,6 +8,8 @@ const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
 var _chunks: Dictionary = {}
 var _noise: FastNoiseLite
 var _mesh_dirty: bool = false
+## After falling sand settles, `SandStep` skips the full-world scan (major CPU save).
+var sand_idle: bool = false
 
 @export var chunks_x: int = 3
 @export var chunks_z: int = 3
@@ -63,6 +65,7 @@ func set_block(wx: int, wy: int, wz: int, id: int) -> void:
 	var ch = _chunks[Vector2i(cx, cz)]
 	ch.set_b(lx, wy, lz, id)
 	_mesh_dirty = true
+	sand_idle = false
 
 
 ## Clears the flag; call once per frame after stepping sand to decide whether to rebuild meshes.
