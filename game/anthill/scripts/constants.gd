@@ -193,7 +193,8 @@ const FAST_FORWARD_SCALE := 30.0
 # ---------------------------------------------------------------------------
 const WORKER_MOVE_INTERVAL := 0.45
 const QUEEN_SEARCH_MOVE_INTERVAL := 0.8
-const QUEEN_DIG_INTERVAL := 0.3
+## Per-voxel dig cycle uses **`WORKER_MOVE_INTERVAL`** for path steps; dig-act uses this sub-tick interval.
+const QUEEN_DIG_ACT_TICK_INTERVAL := 0.45
 
 # ---------------------------------------------------------------------------
 # Opening cinematic timings (seconds)

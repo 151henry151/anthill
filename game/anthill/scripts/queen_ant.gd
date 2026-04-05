@@ -43,9 +43,27 @@ var _search_duration: float = 15.0
 var _search_dir: Vector2 = Vector2.ZERO
 
 ## Digging state
-var _dig_target: Vector3i = Vector3i.ZERO
+enum _QueenDigSub { APPROACH, DIG_ACT, CARRY_UP }
+
+const _QUEEN_DIG_SENTINEL := Vector3i(-99999, -99999, -99999)
+const _NEIGH6: Array[Vector3i] = [
+	Vector3i(1, 0, 0), Vector3i(-1, 0, 0),
+	Vector3i(0, 1, 0), Vector3i(0, -1, 0),
+	Vector3i(0, 0, 1), Vector3i(0, 0, -1),
+]
+
 var _dig_phase: int = 0  # 0=shaft, 1=chamber, 2=seal
 var _dig_timer: float = 0.0
+var _dig_sub: int = _QueenDigSub.APPROACH
+var _dig_path: Array[Vector3i] = []
+var _dig_path_idx: int = 0
+var _pending_voxel: Vector3i = Vector3i.ZERO
+var _dig_act_ticks: int = 0
+var _dig_act_max_ticks: int = 1
+## Integer cell the queen occupies during excavation (pathfinding / carry).
+var _queen_cell: Vector3i = Vector3i.ZERO
+var _shaft_layer_queue: Array[Vector3i] = []
+var _carry_visual: MeshInstance3D
 var _founding_chamber_center: Vector3i = Vector3i.ZERO
 var _shaft_start_xz: Vector2i = Vector2i.ZERO
 ## Surface block Y at shaft center when digging starts (stable for whole shaft; avoids `get_surface_y` jumping after the hole is carved).
@@ -66,6 +84,17 @@ var _nest_manager: Node
 const _ANT_LOCAL_Y_MIN: float = -0.28
 
 
+## Inclusive range [lo, hi) for shaft dx/dz so an even `FOUNDING_SHAFT_WIDTH` is centered on `(_wx, _wz)`.
+func _founding_shaft_lo() -> int:
+	var w: int = _Const.FOUNDING_SHAFT_WIDTH
+	return -w / 2 + 1
+
+
+func _founding_shaft_hi() -> int:
+	var w: int = _Const.FOUNDING_SHAFT_WIDTH
+	return w / 2 + 1
+
+
 func setup(world: Node, nest_manager: Node = null) -> void:
 	_world = world
 	_nest_manager = nest_manager
@@ -81,6 +110,17 @@ func _build_queen_mesh() -> void:
 	_ant_mesh = _ant_builder.build_ant()
 	_ant_mesh.scale = Vector3.ONE * _Const.QUEEN_VISUAL_SCALE
 	add_child(_ant_mesh)
+	_carry_visual = MeshInstance3D.new()
+	var carry_mesh := BoxMesh.new()
+	carry_mesh.size = Vector3(0.55, 0.55, 0.55)
+	_carry_visual.mesh = carry_mesh
+	var carry_mat := StandardMaterial3D.new()
+	carry_mat.albedo_color = Color(0.92, 0.82, 0.62)
+	carry_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_carry_visual.material_override = carry_mat
+	_carry_visual.position = Vector3(0, 0.55, 0.45)
+	_carry_visual.visible = false
+	_ant_mesh.add_child(_carry_visual)
 	_add_wings()
 
 
@@ -126,6 +166,11 @@ func _surface_y(wx: int, wz: int) -> int:
 	if _world.has_method("get_surface_y"):
 		return _world.get_surface_y(wx, wz)
 	return _SurfaceQuery.surface_block_y(_world, wx, wz)
+
+
+## While true, `main_controller` skips falling-sand so loose sand cannot refill the shaft between dig ticks.
+func sand_physics_suppressed() -> bool:
+	return state == QueenState.DIGGING
 
 
 func _physics_process(delta: float) -> void:
@@ -256,48 +301,264 @@ func _begin_digging() -> void:
 		sy0 = _TerrainGen.SURFACE_BASE - 1
 	_shaft_top_y = sy0
 	_shaft_depth_dug = 0
+	_shaft_layer_queue.clear()
 	_dig_phase = 0
 	_dig_timer = 0.0
+	position = Vector3(float(_wx) + 0.5, float(_shaft_top_y) + 0.5, float(_wz) + 0.5)
+	_queen_cell = Vector3i(_wx, _shaft_top_y, _wz)
 	_set_state(QueenState.DIGGING)
+	var first: Vector3i = _pop_next_dig_voxel()
+	if first == _QUEEN_DIG_SENTINEL:
+		_seal_entrance()
+		return
+	_start_dig_cycle(first)
 
 
 func _process_digging(delta: float) -> void:
 	_dig_timer += delta
-	if _dig_timer < _Const.QUEEN_DIG_INTERVAL:
-		return
-	_dig_timer = 0.0
+	match _dig_sub:
+		_QueenDigSub.APPROACH:
+			if _dig_timer < _Const.WORKER_MOVE_INTERVAL:
+				return
+			_dig_timer = 0.0
+			_step_approach()
+		_QueenDigSub.DIG_ACT:
+			if _dig_timer < _Const.QUEEN_DIG_ACT_TICK_INTERVAL:
+				return
+			_dig_timer = 0.0
+			_dig_act_ticks += 1
+			if _dig_act_ticks >= _dig_act_max_ticks:
+				_complete_dig_act()
+		_QueenDigSub.CARRY_UP:
+			if _dig_timer < _Const.WORKER_MOVE_INTERVAL:
+				return
+			_dig_timer = 0.0
+			_step_carry_up()
 
-	if _dig_phase == 0:
-		_dig_shaft_step()
-	elif _dig_phase == 1:
-		_dig_chamber_step()
-	elif _dig_phase == 2:
+
+func _start_dig_cycle(v: Vector3i) -> void:
+	_pending_voxel = v
+	var goals: Dictionary = {}
+	for off in _NEIGH6:
+		var n: Vector3i = v + off
+		if _world.get_block(n.x, n.y, n.z) == _Const.BLOCK_AIR:
+			goals[n] = true
+	if goals.is_empty():
+		_dig_sub = _QueenDigSub.DIG_ACT
+		_queen_cell = v
+		_apply_queen_cell_pos()
+		_begin_dig_act_ticks()
+		return
+	if goals.has(_queen_cell):
+		_dig_sub = _QueenDigSub.DIG_ACT
+		_queen_cell = v
+		_apply_queen_cell_pos()
+		_begin_dig_act_ticks()
+		return
+	var path: Array[Vector3i] = _bfs_path_air(_queen_cell, goals)
+	if path.is_empty():
+		_dig_sub = _QueenDigSub.DIG_ACT
+		_queen_cell = v
+		_apply_queen_cell_pos()
+		_begin_dig_act_ticks()
+		return
+	_dig_path = path
+	_dig_path_idx = 0
+	_dig_sub = _QueenDigSub.APPROACH
+	_dig_timer = _Const.WORKER_MOVE_INTERVAL
+
+
+func _step_approach() -> void:
+	if _dig_path_idx >= _dig_path.size():
+		_dig_sub = _QueenDigSub.DIG_ACT
+		_queen_cell = _pending_voxel
+		_apply_queen_cell_pos()
+		_begin_dig_act_ticks()
+		return
+	var prev: Vector3i = _queen_cell
+	var next: Vector3i = _dig_path[_dig_path_idx]
+	_dig_path_idx += 1
+	_queen_cell = next
+	_apply_queen_cell_pos()
+	var dx: int = next.x - prev.x
+	var dz: int = next.z - prev.z
+	if _ant_mesh and (dx != 0 or dz != 0):
+		_ant_mesh.rotation.y = atan2(float(dx), float(dz))
+
+
+func _begin_dig_act_ticks() -> void:
+	_dig_act_ticks = 0
+	_dig_timer = _Const.QUEEN_DIG_ACT_TICK_INTERVAL
+	var bt: int = _world.get_block(_pending_voxel.x, _pending_voxel.y, _pending_voxel.z)
+	if _nest_manager:
+		_dig_act_max_ticks = maxi(1, _nest_manager.dig_duration_for(bt))
+	else:
+		_dig_act_max_ticks = maxi(1, _Const.DIG_ACT_DURATION_TICKS)
+
+
+func _complete_dig_act() -> void:
+	var v: Vector3i = _pending_voxel
+	if _world.get_block(v.x, v.y, v.z) != _Const.BLOCK_AIR:
+		_world.set_block(v.x, v.y, v.z, _Const.BLOCK_AIR)
+		if _nest_manager:
+			_nest_manager.on_voxel_removed(v)
+	if _carry_visual:
+		_carry_visual.visible = true
+	_queen_cell = v
+	_apply_queen_cell_pos()
+	_start_carry_up(v)
+
+
+func _start_carry_up(from_air: Vector3i) -> void:
+	if _nest_manager and _nest_manager.has_method("get_path_to_surface"):
+		_dig_path = _nest_manager.get_path_to_surface(from_air)
+	else:
+		_dig_path = []
+	_dig_path_idx = 0
+	_dig_sub = _QueenDigSub.CARRY_UP
+	_dig_timer = _Const.WORKER_MOVE_INTERVAL
+	if _dig_path.is_empty():
+		_deposit_and_continue()
+
+
+func _step_carry_up() -> void:
+	if _dig_path_idx >= _dig_path.size():
+		_deposit_and_continue()
+		return
+	var prev: Vector3i = _queen_cell
+	var next: Vector3i = _dig_path[_dig_path_idx]
+	_dig_path_idx += 1
+	_queen_cell = next
+	_apply_queen_cell_pos()
+	var dx: int = next.x - prev.x
+	var dz: int = next.z - prev.z
+	if _ant_mesh and (dx != 0 or dz != 0):
+		_ant_mesh.rotation.y = atan2(float(dx), float(dz))
+
+
+func _deposit_and_continue() -> void:
+	var dep: Vector3i = _choose_queen_deposit_pos()
+	if _world.get_block(dep.x, dep.y, dep.z) == _Const.BLOCK_AIR:
+		_world.set_block(dep.x, dep.y, dep.z, _Const.BLOCK_SAND)
+	if _carry_visual:
+		_carry_visual.visible = false
+	var sy: int = _surface_y(dep.x, dep.z)
+	if sy >= 0:
+		var surface_top: float = float(sy) + 1.0
+		position = Vector3(
+			float(dep.x) + 0.5,
+			surface_top - _ANT_LOCAL_Y_MIN * _Const.QUEEN_VISUAL_SCALE,
+			float(dep.z) + 0.5
+		)
+		_queen_cell = Vector3i(dep.x, sy + 1, dep.z)
+	var next_v: Vector3i = _pop_next_dig_voxel()
+	if next_v == _QUEEN_DIG_SENTINEL:
 		_seal_entrance()
+		return
+	_start_dig_cycle(next_v)
 
 
-func _dig_shaft_step() -> void:
-	if _shaft_depth_dug >= _Const.FOUNDING_SHAFT_DEPTH:
+func _choose_queen_deposit_pos() -> Vector3i:
+	var r: int = _Const.SPOIL_DEPOSIT_RADIUS
+	for _i in range(40):
+		var dx: int = _rng.randi_range(-r, r)
+		var dz: int = _rng.randi_range(-r, r)
+		if absi(dx) < 2 and absi(dz) < 2:
+			continue
+		var wx: int = _shaft_start_xz.x + dx
+		var wz: int = _shaft_start_xz.y + dz
+		var sy: int = _surface_y(wx, wz)
+		if sy < 0:
+			continue
+		return Vector3i(wx, sy + 1, wz)
+	var sy0: int = _surface_y(_shaft_start_xz.x, _shaft_start_xz.y)
+	if sy0 < 0:
+		sy0 = _TerrainGen.SURFACE_BASE
+	return Vector3i(_shaft_start_xz.x + 3, sy0 + 1, _shaft_start_xz.y)
+
+
+func _apply_queen_cell_pos() -> void:
+	position = Vector3(
+		float(_queen_cell.x) + 0.5,
+		float(_queen_cell.y) + 0.5,
+		float(_queen_cell.z) + 0.5
+	)
+
+
+func _bfs_path_air(from: Vector3i, goals: Dictionary) -> Array[Vector3i]:
+	if goals.has(from):
+		return []
+	var q: Array[Vector3i] = [from]
+	var came_from: Dictionary = {}
+	came_from[from] = from
+	var head: int = 0
+	while head < q.size():
+		var cur: Vector3i = q[head]
+		head += 1
+		for off in _NEIGH6:
+			var n: Vector3i = cur + off
+			if came_from.has(n):
+				continue
+			if _world.get_block(n.x, n.y, n.z) != _Const.BLOCK_AIR:
+				continue
+			came_from[n] = cur
+			if goals.has(n):
+				return _reconstruct_bfs_path(came_from, from, n)
+			q.append(n)
+	return []
+
+
+func _reconstruct_bfs_path(came_from: Dictionary, from: Vector3i, to: Vector3i) -> Array[Vector3i]:
+	var out: Array[Vector3i] = []
+	var cur: Vector3i = to
+	while cur != from:
+		out.push_front(cur)
+		cur = came_from[cur]
+	return out
+
+
+func _refill_shaft_queue_if_needed() -> void:
+	var lo: int = _founding_shaft_lo()
+	var hi: int = _founding_shaft_hi()
+	while _shaft_layer_queue.is_empty() and _shaft_depth_dug < _Const.FOUNDING_SHAFT_DEPTH:
+		var y: int = _shaft_top_y - _shaft_depth_dug
+		if y < 1:
+			_shaft_depth_dug += 1
+			continue
+		for dx in range(lo, hi):
+			for dz in range(lo, hi):
+				var v := Vector3i(_shaft_start_xz.x + dx, y, _shaft_start_xz.y + dz)
+				if _world.get_block(v.x, v.y, v.z) != _Const.BLOCK_AIR:
+					_shaft_layer_queue.append(v)
+		if _shaft_layer_queue.is_empty():
+			_shaft_depth_dug += 1
+
+
+func _pop_next_shaft_voxel() -> Vector3i:
+	_refill_shaft_queue_if_needed()
+	if _shaft_layer_queue.is_empty():
+		return _QUEEN_DIG_SENTINEL
+	return _shaft_layer_queue.pop_front()
+
+
+func _pop_next_dig_voxel() -> Vector3i:
+	if _dig_phase == 0:
+		var v: Vector3i = _pop_next_shaft_voxel()
+		if v != _QUEEN_DIG_SENTINEL:
+			return v
 		_prepare_chamber_dig()
-		return
-	var target_y: int = _shaft_top_y - _shaft_depth_dug
-	if target_y < 1:
-		_prepare_chamber_dig()
-		return
-	var hw: int = _Const.FOUNDING_SHAFT_WIDTH / 2
-	for dx in range(-hw, hw):
-		for dz in range(-hw, hw):
-			var wx: int = _shaft_start_xz.x + dx
-			var wz: int = _shaft_start_xz.y + dz
-			if _world.get_block(wx, target_y, wz) != _Const.BLOCK_AIR:
-				_world.set_block(wx, target_y, wz, _Const.BLOCK_AIR)
-				if _nest_manager:
-					_nest_manager.compact_around(Vector3i(wx, target_y, wz))
-	_shaft_depth_dug += 1
-	position = Vector3(float(_shaft_start_xz.x) + 0.5, float(target_y) + 0.5, float(_shaft_start_xz.y) + 0.5)
+		_dig_phase = 1
+	if _dig_phase == 1:
+		while _chamber_dig_idx < _chamber_voxels_to_dig.size():
+			var c: Vector3i = _chamber_voxels_to_dig[_chamber_dig_idx]
+			_chamber_dig_idx += 1
+			if _world.get_block(c.x, c.y, c.z) != _Const.BLOCK_AIR:
+				return c
+		_dig_phase = 2
+	return _QUEEN_DIG_SENTINEL
 
 
 func _prepare_chamber_dig() -> void:
-	_dig_phase = 1
 	var sy: int = _shaft_top_y
 	var shaft_bottom_y: int = sy - _shaft_depth_dug + 1
 	var ch_size: Vector3i = _Const.FOUNDING_CHAMBER_SIZE
@@ -313,24 +574,12 @@ func _prepare_chamber_dig() -> void:
 	_chamber_dig_idx = 0
 
 
-func _dig_chamber_step() -> void:
-	if _chamber_dig_idx >= _chamber_voxels_to_dig.size():
-		_dig_phase = 2
-		return
-	var p: Vector3i = _chamber_voxels_to_dig[_chamber_dig_idx]
-	if _world.get_block(p.x, p.y, p.z) != _Const.BLOCK_AIR:
-		_world.set_block(p.x, p.y, p.z, _Const.BLOCK_AIR)
-		if _nest_manager:
-			_nest_manager.compact_around(p)
-	_chamber_dig_idx += 1
-	position = Vector3(float(p.x) + 0.5, float(p.y) + 0.5, float(p.z) + 0.5)
-
-
 func _seal_entrance() -> void:
 	# Plug the full shaft mouth with packed sand so loose sand physics cannot refill the shaft.
-	var hw: int = _Const.FOUNDING_SHAFT_WIDTH / 2
-	for dx in range(-hw, hw):
-		for dz in range(-hw, hw):
+	var lo: int = _founding_shaft_lo()
+	var hi: int = _founding_shaft_hi()
+	for dx in range(lo, hi):
+		for dz in range(lo, hi):
 			var wx: int = _shaft_start_xz.x + dx
 			var wz: int = _shaft_start_xz.y + dz
 			if _world.get_block(wx, _shaft_top_y, wz) == _Const.BLOCK_AIR:

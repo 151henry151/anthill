@@ -233,7 +233,12 @@ func _finish_initial_terrain_load() -> void:
 func _physics_process(_delta: float) -> void:
 	if not _initial_terrain_ready:
 		return
-	if _sand_step != null and not world.sand_idle:
+	var suppress_sand: bool = (
+		is_instance_valid(_queen)
+		and _queen.has_method("sand_physics_suppressed")
+		and _queen.sand_physics_suppressed()
+	)
+	if _sand_step != null and not world.sand_idle and not suppress_sand:
 		_sand_step.step(world)
 	if world.take_mesh_dirty():
 		for ck in world.get_and_clear_dirty_chunks():

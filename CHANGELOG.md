@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.9] - 2026-04-04
+
+### Changed
+
+- **`scripts/world/terrain_gen.gd`**: fill subsurface sand columns with **`BLOCK_PACKED_SAND`** instead of **`BLOCK_SAND`**; document sand-column callback for sand-like blocks.
+- **`scripts/main_controller.gd`**: skip **`sand_step`** while the queen’s **`sand_physics_suppressed()`** is true.
+- **`scripts/queen_ant.gd`**: excavate the founding shaft and chamber **one voxel per trip** — approach through air when possible, multi-tick dig act, carry mesh while ascending **`get_path_to_surface`**, deposit loose **`BLOCK_SAND`** near the nest, then return for the next block (replacing whole-layer shaft removal and instant chamber clearing).
+- **`scripts/constants.gd`**: replace **`QUEEN_DIG_INTERVAL`** with **`QUEEN_DIG_ACT_TICK_INTERVAL`** for queen dig-act timing alongside **`WORKER_MOVE_INTERVAL`** path steps.
+
+## [0.5.8] - 2026-04-05
+
+### Changed
+
+- **`scripts/world/terrain_gen.gd`**: fill procedural terrain with **`BLOCK_PACKED_SAND`** instead of **`BLOCK_SAND`** so the initial world is entirely packed sand; loose sand remains for ant-placed voxels (e.g. spoil deposits).
+
+## [0.5.7] - 2026-04-05
+
+### Fixed
+
+- **`scripts/queen_ant.gd`**, **`scripts/main_controller.gd`**: suppress **falling-sand** (`sand_step`) while the queen is in **`DIGGING`** so loose sand cannot refill excavated voxels between dig ticks (sand ran every physics frame; digging runs on a longer interval).
+
+## [0.5.6] - 2026-04-05
+
+### Fixed
+
+- **`scripts/queen_ant.gd`**: center the founding **shaft** footprint on **`(_wx, _wz)`** (even **`FOUNDING_SHAFT_WIDTH`**) so excavation aligns with the queen’s cell-center position; snap the queen to the first shaft layer when entering **DIGGING** and prime **`_dig_timer`** so the first dig runs on the next physics tick instead of after a full dig interval.
+
 ## [0.5.5] - 2026-04-05
 
 ### Fixed

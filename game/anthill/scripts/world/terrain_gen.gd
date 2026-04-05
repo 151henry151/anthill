@@ -9,7 +9,8 @@ const _Chunk := preload("res://scripts/world/chunk_data.gd")
 ## ~40 layers of sand above stone; stone extends down to y=0.
 const SURFACE_BASE := 210
 
-## Fills the chunk. If **`on_sand_column_placed`** is set, it is called **once per world XZ** the first time a **sand** block is written in that column (used to seed falling-sand columns without a second full-world scan).
+## Fills the chunk. Subsurface fill uses **`BLOCK_PACKED_SAND`** so bulk terrain is stable under falling-sand physics; loose **`BLOCK_SAND`** is only created by ants (e.g. spoil).
+## If **`on_sand_column_placed`** is set, it is called **once per world XZ** the first time a sand-like block is written in that column (used to seed falling-sand columns without a second full-world scan).
 static func fill_chunk(chunk: RefCounted, noise: FastNoiseLite, on_sand_column_placed: Callable = Callable()) -> void:
 	var sx: int = _Chunk.SIZE_X
 	var sy: int = _Chunk.SIZE_Y
@@ -25,7 +26,7 @@ static func fill_chunk(chunk: RefCounted, noise: FastNoiseLite, on_sand_column_p
 				chunk.set_b(lx, ly, lz, _Const.BLOCK_STONE)
 			var marked: bool = false
 			for ly in range(stone_top, h):
-				chunk.set_b(lx, ly, lz, _Const.BLOCK_SAND)
+				chunk.set_b(lx, ly, lz, _Const.BLOCK_PACKED_SAND)
 				if not marked and on_sand_column_placed.is_valid():
 					on_sand_column_placed.call(wx, wz)
 					marked = true
