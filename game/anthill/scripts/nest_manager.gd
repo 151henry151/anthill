@@ -127,26 +127,23 @@ func get_nest_air_volume() -> int:
 
 
 func choose_deposit_position(entrance: Vector3i) -> Vector3i:
-	var best_score: float = -INF
+	## Prefer the **lowest** surface in the annulus so spoil spreads into a broad heap instead of stacking on
+	## the same high-pheromone columns (previous max-pheromone scoring produced 1×1 “skyscrapers”).
+	var best_sy: int = 999999
 	var best_pos: Vector3i = Vector3i(entrance.x + 3, entrance.y, entrance.z)
 	var radius: int = _Const.SPOIL_DEPOSIT_RADIUS
-	for _i in range(20):
+	for _i in range(48):
 		var off: Vector2i = _SpoilDeposit.random_offset_disk(_rng, radius, _Const.SPOIL_DEPOSIT_INNER_CLEAR)
-		var dx: int = off.x
-		var dz: int = off.y
-		var wx: int = entrance.x + dx
-		var wz: int = entrance.z + dz
+		var wx: int = entrance.x + off.x
+		var wz: int = entrance.z + off.y
 		var sy: int = _SurfaceQuery.surface_block_y(_world, wx, wz)
 		if sy < 0:
 			continue
 		if sy - _TerrainGen.SURFACE_BASE > _Const.MAX_SPOIL_HEIGHT:
 			continue
-		var score: float = 0.0
-		if _building_pheromone:
-			score += _building_pheromone.get_build_pheromone(Vector3i(wx, sy + 1, wz)) * 3.0
-		score += _rng.randf_range(-0.5, 0.5)
-		if score > best_score:
-			best_score = score
+		var score: float = float(sy) + _rng.randf_range(0.0, 0.15)
+		if score < float(best_sy):
+			best_sy = sy
 			best_pos = Vector3i(wx, sy + 1, wz)
 	return best_pos
 

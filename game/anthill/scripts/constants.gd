@@ -96,8 +96,8 @@ const PHEROMONE_MINIMUM_THRESHOLD := 0.005
 ## How much food an ant carries per trip (fraction of source supply).
 const FOOD_CARRY_AMOUNT := 0.04
 ## Number of food sources spawned at game start.
-const FOOD_SOURCE_COUNT_MIN := 3
-const FOOD_SOURCE_COUNT_MAX := 6
+const FOOD_SOURCE_COUNT_MIN := 12
+const FOOD_SOURCE_COUNT_MAX := 24
 ## Aphid colony replenish rate per physics tick (fraction of max_supply).
 const APHID_REPLENISH_RATE := 0.0001
 
@@ -124,11 +124,11 @@ const PACKED_SAND_COLOR := Color(0.72, 0.60, 0.38)
 const DIG_ACT_DURATION_TICKS := 3
 ## Ticks to wait when blocked in narrow tunnel.
 const TUNNEL_YIELD_TICKS := 5
-## Radius from entrance for spoil deposits.
-const SPOIL_DEPOSIT_RADIUS := 12
+## Radius from entrance for spoil deposits (annulus outer radius; larger → wider mound ring).
+const SPOIL_DEPOSIT_RADIUS := 24
 ## Minimum distance from nest center for spoil samples (disk sampling; world units ≈ voxels).
-const SPOIL_DEPOSIT_INNER_CLEAR := 2.0
-## Max extra height of spoil pile above surface.
+const SPOIL_DEPOSIT_INNER_CLEAR := 3.5
+## Max extra height of spoil pile above baseline surface at a column (rejects deposit targets that are already tall).
 const MAX_SPOIL_HEIGHT := 6
 ## Max simultaneous diggers (performance limit).
 const MAX_NEST_BUILDERS := 8
@@ -199,8 +199,8 @@ const XRAY_DEPTH_FADE_RANGE := 80.0
 # ---------------------------------------------------------------------------
 # Fast-forward
 # ---------------------------------------------------------------------------
-## **[F]** cycles: **1×** → **10×** → **30×** → **60×** → **120×** → **1×** …
-const FAST_FORWARD_SPEEDS: Array[float] = [10.0, 30.0, 60.0, 120.0]
+## **[F]** cycles: **1×** → **10×** → **30×** → **60×** → **120×** → **500×** → **1×** …
+const FAST_FORWARD_SPEEDS: Array[float] = [10.0, 30.0, 60.0, 120.0, 500.0]
 
 # ---------------------------------------------------------------------------
 # Worker movement intervals (seconds between steps)

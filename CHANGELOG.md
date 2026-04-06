@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.18] - 2026-04-05
+
+### Changed
+
+- **`scripts/constants.gd`**, **`scenes/main.tscn`**: append **500×** to **`FAST_FORWARD_SPEEDS`** and the on-screen **[F]** hint.
+- **`scripts/constants.gd`**: quadruple **food source** spawn range (**12–24** instead of **3–6**).
+- **`scripts/constants.gd`**: widen spoil **annulus** (**`SPOIL_DEPOSIT_RADIUS`** **24**, **`SPOIL_DEPOSIT_INNER_CLEAR`** **3.5**) for a broader surface ring around the entrance.
+- **`scripts/nest_manager.gd`**: choose worker spoil deposits by **lowest surface height** among random disk samples (remove **maximize building-pheromone** scoring that stacked sand on single columns).
+- **`scripts/queen_ant.gd`**: choose queen spoil deposits with the same **lowest-surface** rule and **`MAX_SPOIL_HEIGHT`** filtering.
+
 ## [0.5.16] - 2026-04-05
 
 ### Changed

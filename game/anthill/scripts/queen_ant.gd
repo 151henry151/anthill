@@ -462,6 +462,9 @@ func _deposit_and_continue() -> void:
 func _choose_queen_deposit_pos() -> Vector3i:
 	var r: int = _Const.SPOIL_DEPOSIT_RADIUS
 	var inner_clear: float = _Const.SPOIL_DEPOSIT_INNER_CLEAR
+	var best_score: float = INF
+	var best: Vector3i = Vector3i.ZERO
+	var found: bool = false
 	for _i in range(_Const.QUEEN_SPOIL_DEPOSIT_SAMPLES):
 		var off: Vector2i = _SpoilDeposit.random_offset_disk(_rng, r, inner_clear)
 		var wx: int = _shaft_start_xz.x + off.x
@@ -469,7 +472,15 @@ func _choose_queen_deposit_pos() -> Vector3i:
 		var sy: int = _surface_y(wx, wz)
 		if sy < 0:
 			continue
-		return Vector3i(wx, sy + 1, wz)
+		if sy - _TerrainGen.SURFACE_BASE > _Const.MAX_SPOIL_HEIGHT:
+			continue
+		var score: float = float(sy) + _rng.randf_range(0.0, 0.15)
+		if score < best_score:
+			best_score = score
+			best = Vector3i(wx, sy + 1, wz)
+			found = true
+	if found:
+		return best
 	var sy0: int = _surface_y(_shaft_start_xz.x, _shaft_start_xz.y)
 	if sy0 < 0:
 		sy0 = _TerrainGen.SURFACE_BASE
