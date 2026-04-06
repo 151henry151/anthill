@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.16] - 2026-04-05
+
+### Changed
+
+- **`scripts/constants.gd`**: set **`QUEEN_LARVA_FEED_ENERGY_PER_LARVA_PER_TICK`** to **0** so larva provisioning is not double-charged against reserves (the previous non-zero value drained the queen orders of magnitude faster than **`QUEEN_CLAUSTRAL_ENERGY_DRAIN`** when many larvae existed).
+- **`scripts/constants.gd`**: extend **claustral** survival budget from **~40** to **~55 ant-days** so the queen can survive until the first **egg → larva → pupa → eclosion** window (~34 ant-days after the first worker-destined eggs).
+
 ## [0.5.15] - 2026-04-05
 
 ### Fixed
