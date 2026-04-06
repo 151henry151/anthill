@@ -50,13 +50,14 @@ func spawn_worker(pos: Vector3, is_nanitic: bool) -> void:
 	var state: int = 0  # EMERGING
 	var carry_vis := MeshInstance3D.new()
 	var carry_mesh := BoxMesh.new()
-	carry_mesh.size = Vector3(0.25, 0.25, 0.25)
+	var inv_sc: float = 1.0 / sc
+	carry_mesh.size = Vector3.ONE * inv_sc * 0.8
 	carry_vis.mesh = carry_mesh
 	var carry_mat := StandardMaterial3D.new()
 	carry_mat.albedo_color = Color(0.92, 0.82, 0.62)
 	carry_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	carry_vis.material_override = carry_mat
-	carry_vis.position = Vector3(0, 0.4, 0.3)
+	carry_vis.position = Vector3(0, 0.12, 0.42) * inv_sc * 2.5
 	carry_vis.visible = false
 	ant.add_child(carry_vis)
 	_ants.append({

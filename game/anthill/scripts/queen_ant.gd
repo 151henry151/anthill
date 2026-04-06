@@ -115,13 +115,14 @@ func _build_queen_mesh() -> void:
 	add_child(_ant_mesh)
 	_carry_visual = MeshInstance3D.new()
 	var carry_mesh := BoxMesh.new()
-	carry_mesh.size = Vector3(0.55, 0.55, 0.55)
+	var inv_scale: float = 1.0 / _Const.QUEEN_VISUAL_SCALE
+	carry_mesh.size = Vector3.ONE * inv_scale
 	_carry_visual.mesh = carry_mesh
 	var carry_mat := StandardMaterial3D.new()
 	carry_mat.albedo_color = Color(0.92, 0.82, 0.62)
 	carry_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_carry_visual.material_override = carry_mat
-	_carry_visual.position = Vector3(0, 0.55, 0.45)
+	_carry_visual.position = Vector3(0, 0.12, 0.45) * inv_scale * 3.0
 	_carry_visual.visible = false
 	_ant_mesh.add_child(_carry_visual)
 	_add_wings()

@@ -6,9 +6,9 @@ const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
 
 @export var look_at_xz: Vector2 = Vector2(272.0, 272.0)
 @export var orbit_radius: float = 120.0
-@export var yaw_deg: float = 0.0
-@export var orbit_phi_deg: float = 12.0
-@export var ortho_size: float = 220.0
+@export var yaw_deg: float = 25.0
+@export var orbit_phi_deg: float = 35.0
+@export var ortho_size: float = 420.0
 @export var pan_speed: float = 0.28
 @export var pan_pixels_to_world: float = 0.011
 @export var pan_relative_max: float = 72.0
