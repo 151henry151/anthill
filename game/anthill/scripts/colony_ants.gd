@@ -27,6 +27,7 @@ var building_pheromone: Node
 var _task_assign_timer: int = 0
 const _TASK_ASSIGN_INTERVAL := 300
 ## Extended states: 11=DIGGING_APPROACH 12=DIGGING_ACT 13=CARRYING_TO_SURFACE 14=DEPOSITING
+## **`entrance_clear`** on **`11..12`**: dig **nest shaft** plug (sand / packed sand), then resume **`post_entrance_state`**.
 var _digger_count: int = 0
 
 
@@ -77,6 +78,8 @@ func spawn_worker(pos: Vector3, is_nanitic: bool) -> void:
 		"carry_visual": carry_vis,
 		"path_to_surface": [] as Array[Vector3i],
 		"path_idx": 0,
+		"entrance_clear": false,
+		"post_entrance_state": 1,
 	})
 
 
@@ -107,6 +110,18 @@ func _physics_process(delta: float) -> void:
 
 
 func _assign_tasks() -> void:
+	## Prefer one **resting** worker near the nest to open a blocked shaft (same tick budget as other assignments).
+	if nest_manager and _entrance_needs_clearing():
+		for a in _ants:
+			if int(a["state"]) != 1:
+				continue
+			if _dist_to(a, nest_entrance) >= _Const.WORKER_ENTRANCE_CLEAR_ENGAGE_DIST:
+				continue
+			a["entrance_clear"] = true
+			a["post_entrance_state"] = 1
+			a["dig_target"] = Vector3i.ZERO
+			a["state"] = 11
+			break
 	_digger_count = 0
 	for a in _ants:
 		var st: int = int(a["state"])
@@ -190,6 +205,12 @@ func _step_resting(_a: Dictionary) -> void:
 
 
 func _step_brood_care(a: Dictionary) -> void:
+	if nest_manager and _entrance_needs_clearing() and _dist_to(a, nest_entrance) < _Const.WORKER_ENTRANCE_CLEAR_ENGAGE_DIST:
+		a["entrance_clear"] = true
+		a["post_entrance_state"] = 2
+		a["dig_target"] = Vector3i.ZERO
+		a["state"] = 11
+		return
 	_move_toward(a, nest_chamber)
 
 
@@ -232,8 +253,19 @@ func _step_foraging_recruit(a: Dictionary) -> void:
 
 
 func _step_returning(a: Dictionary) -> void:
-	_move_toward(a, nest_entrance)
 	var d: float = _dist_to(a, nest_entrance)
+	if (
+		nest_manager
+		and _entrance_needs_clearing()
+		and d < _Const.WORKER_ENTRANCE_CLEAR_ENGAGE_DIST
+	):
+		a["entrance_clear"] = true
+		a["post_entrance_state"] = 7
+		a["dig_target"] = Vector3i.ZERO
+		a["state"] = 11
+		return
+	_move_toward(a, nest_entrance)
+	d = _dist_to(a, nest_entrance)
 	if d < _Const.WORKER_NEST_ARRIVAL_MAX_DIST:
 		if food_store and bool(a.get("carrying_food", false)):
 			food_store.add_food(String(a["food_type"]), _Const.FOOD_CARRY_AMOUNT)
@@ -242,14 +274,7 @@ func _step_returning(a: Dictionary) -> void:
 		a["return_stuck"] = 0
 		a["state"] = 8  # TROPHALLAXIS
 		return
-	var stuck: int = int(a.get("return_stuck", 0)) + 1
-	a["return_stuck"] = stuck
-	if (
-		stuck >= _Const.WORKER_ENTRANCE_DIG_AFTER_STUCK_STEPS
-		and d < _Const.WORKER_ENTRANCE_DIG_MAX_DIST
-	):
-		if _try_excavate_entrance_sand_one():
-			a["return_stuck"] = 0
+	a["return_stuck"] = int(a.get("return_stuck", 0)) + 1
 
 
 func _step_trophallaxis(a: Dictionary) -> void:
@@ -258,17 +283,28 @@ func _step_trophallaxis(a: Dictionary) -> void:
 
 func _step_digging_approach(a: Dictionary) -> void:
 	if nest_manager == null:
-		a["state"] = 1
+		a["entrance_clear"] = false
+		a["state"] = int(a.get("post_entrance_state", 1))
 		return
-	var target: Variant = a.get("dig_target", Vector3i.ZERO) as Vector3i
+	var target: Vector3i = a.get("dig_target", Vector3i.ZERO) as Vector3i
 	if target == Vector3i.ZERO:
-		var t: Variant = nest_manager.get_dig_target(a["node"])
-		if t == null:
-			a["state"] = 1
-			return
-		target = t as Vector3i
-		a["dig_target"] = target
-		nest_manager.reserve_voxel(target, a["node"])
+		if bool(a.get("entrance_clear", false)):
+			var et: Vector3i = _get_entrance_dig_target()
+			if et == Vector3i.ZERO:
+				a["entrance_clear"] = false
+				a["state"] = int(a.get("post_entrance_state", 1))
+				return
+			target = et
+			a["dig_target"] = target
+			nest_manager.reserve_voxel(target, a["node"])
+		else:
+			var t: Variant = nest_manager.get_dig_target(a["node"])
+			if t == null:
+				a["state"] = 1
+				return
+			target = t as Vector3i
+			a["dig_target"] = target
+			nest_manager.reserve_voxel(target, a["node"])
 	_move_toward(a, target)
 	if _dist_to(a, target) < 2.0:
 		a["state"] = 12
@@ -289,8 +325,12 @@ func _step_digging_act(a: Dictionary) -> void:
 		world.set_block(target.x, target.y, target.z, _Const.BLOCK_AIR)
 		nest_manager.on_voxel_removed(target)
 		nest_manager.release_voxel(target)
-		a["carrying_voxel"] = true
 		a["dig_target"] = Vector3i.ZERO
+		a["dig_ticks"] = 0
+		if bool(a.get("entrance_clear", false)):
+			a["state"] = 11
+			return
+		a["carrying_voxel"] = true
 		var cv: MeshInstance3D = a.get("carry_visual") as MeshInstance3D
 		if cv:
 			cv.visible = true
@@ -397,24 +437,36 @@ func _dist_to(a: Dictionary, target: Vector3i) -> float:
 	return sqrt(dx * dx + dz * dz)
 
 
-## Remove one **loose sand** voxel near the nest shaft (surface plug or rim) so workers can complete **returning**.
-func _try_excavate_entrance_sand_one() -> bool:
-	if nest_entrance == Vector3i.ZERO:
-		return false
-	for dx in range(-2, 3):
-		for dz in range(-2, 3):
+func _entrance_needs_clearing() -> bool:
+	return _get_entrance_dig_target() != Vector3i.ZERO
+
+
+## Topmost **sand / packed sand** voxel in the founding **shaft footprint** (clear highest plug first).
+func _get_entrance_dig_target() -> Vector3i:
+	if nest_entrance == Vector3i.ZERO or nest_chamber == Vector3i.ZERO or nest_manager == null:
+		return Vector3i.ZERO
+	var best_y: int = -999999
+	var best: Vector3i = Vector3i.ZERO
+	var hw: int = _Const.FOUNDING_SHAFT_WIDTH / 2
+	var y_floor: int = maxi(1, nest_chamber.y - 24)
+	for dx in range(-hw, hw + 1):
+		for dz in range(-hw, hw + 1):
 			var wx: int = nest_entrance.x + dx
 			var wz: int = nest_entrance.z + dz
 			var sy: int = _surface_y(wx, wz)
 			if sy < 0:
 				continue
-			for y in range(sy, sy - 16, -1):
-				if world.get_block(wx, y, wz) == _Const.BLOCK_SAND:
-					world.set_block(wx, y, wz, _Const.BLOCK_AIR)
-					if nest_manager:
-						nest_manager.on_voxel_removed(Vector3i(wx, y, wz))
-					return true
-	return false
+			for y in range(sy, y_floor - 1, -1):
+				var bt: int = world.get_block(wx, y, wz)
+				if bt == _Const.BLOCK_AIR:
+					continue
+				if bt == _Const.BLOCK_SAND or bt == _Const.BLOCK_PACKED_SAND:
+					if y > best_y:
+						best_y = y
+						best = Vector3i(wx, y, wz)
+					break
+				break
+	return best if best_y > -900000 else Vector3i.ZERO
 
 
 func _step_random_walk(a: Dictionary) -> void:

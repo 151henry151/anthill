@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.22] - 2026-04-05
+
+### Changed
+
+- **`scripts/constants.gd`**: replace stuck-step **instant** excavation with **`WORKER_ENTRANCE_CLEAR_ENGAGE_DIST`** only.
+- **`scripts/colony_ants.gd`**: detect **sand / packed sand** in the founding **shaft footprint** and route workers through **dig** states (duration, `on_voxel_removed`) until the shaft no longer needs clearing; **returning**, **brood care** (near nest), and **resting** (near nest) can engage; resume **`post_entrance_state`** when done.
+
 ## [0.5.21] - 2026-04-05
 
 ### Changed
