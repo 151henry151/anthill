@@ -233,12 +233,23 @@ func _step_foraging_recruit(a: Dictionary) -> void:
 
 func _step_returning(a: Dictionary) -> void:
 	_move_toward(a, nest_entrance)
-	if _dist_to(a, nest_entrance) < 3:
+	var d: float = _dist_to(a, nest_entrance)
+	if d < _Const.WORKER_NEST_ARRIVAL_MAX_DIST:
 		if food_store and bool(a.get("carrying_food", false)):
 			food_store.add_food(String(a["food_type"]), _Const.FOOD_CARRY_AMOUNT)
 		a["carrying_food"] = false
 		a["food_type"] = ""
+		a["return_stuck"] = 0
 		a["state"] = 8  # TROPHALLAXIS
+		return
+	var stuck: int = int(a.get("return_stuck", 0)) + 1
+	a["return_stuck"] = stuck
+	if (
+		stuck >= _Const.WORKER_ENTRANCE_DIG_AFTER_STUCK_STEPS
+		and d < _Const.WORKER_ENTRANCE_DIG_MAX_DIST
+	):
+		if _try_excavate_entrance_sand_one():
+			a["return_stuck"] = 0
 
 
 func _step_trophallaxis(a: Dictionary) -> void:
@@ -344,6 +355,7 @@ func _check_food_nearby(a: Dictionary) -> void:
 				a["food_type"] = fs.food_type
 				fs.is_known_to_colony = true
 				a["state"] = 7  # RETURNING
+				a["return_stuck"] = 0
 				if pheromone_field:
 					pheromone_field.deposit(wx, wz, _Const.PHEROMONE_DEPOSIT_AMOUNT)
 			return
@@ -383,6 +395,26 @@ func _dist_to(a: Dictionary, target: Vector3i) -> float:
 	var dx: float = float(int(a["wx"]) - target.x)
 	var dz: float = float(int(a["wz"]) - target.z)
 	return sqrt(dx * dx + dz * dz)
+
+
+## Remove one **loose sand** voxel near the nest shaft (surface plug or rim) so workers can complete **returning**.
+func _try_excavate_entrance_sand_one() -> bool:
+	if nest_entrance == Vector3i.ZERO:
+		return false
+	for dx in range(-2, 3):
+		for dz in range(-2, 3):
+			var wx: int = nest_entrance.x + dx
+			var wz: int = nest_entrance.z + dz
+			var sy: int = _surface_y(wx, wz)
+			if sy < 0:
+				continue
+			for y in range(sy, sy - 16, -1):
+				if world.get_block(wx, y, wz) == _Const.BLOCK_SAND:
+					world.set_block(wx, y, wz, _Const.BLOCK_AIR)
+					if nest_manager:
+						nest_manager.on_voxel_removed(Vector3i(wx, y, wz))
+					return true
+	return false
 
 
 func _step_random_walk(a: Dictionary) -> void:

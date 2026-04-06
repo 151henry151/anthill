@@ -361,6 +361,8 @@ func _on_founding_chamber_ready(chamber_center: Vector3i) -> void:
 		_nest_manager.setup(world, chamber_center, _building_pheromone)
 	colony_ants.nest_entrance = Vector3i(chamber_center.x, _TerrainGen.SURFACE_BASE, chamber_center.z)
 	colony_ants.nest_chamber = chamber_center
+	## Used by **`sand_step`** to keep lateral spill from landing on the nest mouth ring.
+	world.set("nest_spill_exclude_xz", Vector2i(chamber_center.x, chamber_center.z))
 
 
 func _on_ant_eclosed(caste_destiny: String, pos: Vector3) -> void:

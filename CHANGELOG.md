@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.20] - 2026-04-05
+
+### Changed
+
+- **`scripts/constants.gd`**: add **`NEST_SPILL_LATERAL_EXCLUDE_RADIUS`**, **`WORKER_NEST_ARRIVAL_MAX_DIST`**, and **`WORKER_ENTRANCE_DIG_*`** for nest mouth / returning behavior.
+- **`scripts/main_controller.gd`**: set **`world.nest_spill_exclude_xz`** when the founding chamber is ready for sand spill exclusion.
+- **`scripts/world/sand_step.gd`**: skip lateral-spill **destinations** inside the nest exclusion disk so spill sand does not land in the shaft mouth ring.
+- **`scripts/colony_ants.gd`**: widen **returning** completion distance; after prolonged stuck near the nest, remove one **loose sand** voxel in a small grid around the entrance to unplug.
+
 ## [0.5.19] - 2026-04-05
 
 ### Changed

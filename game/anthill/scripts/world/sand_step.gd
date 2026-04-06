@@ -83,6 +83,8 @@ func _try_lateral_spill_column(world: Node, wx: int, wz: int, y_lo: int, y_hi: i
 		var nz: int = wz + d.y
 		if nx < 1 or nz < 1 or nx >= max_x - 1 or nz >= max_z - 1:
 			continue
+		if _nest_spill_dest_forbidden(world, nx, nz):
+			continue
 		var sy: int = world.get_surface_y(nx, nz)
 		if sy < 0:
 			continue
@@ -100,3 +102,14 @@ func _try_lateral_spill_column(world: Node, wx: int, wz: int, y_lo: int, y_hi: i
 		return
 	world.set_block(wx, y_top, wz, _Const.BLOCK_AIR)
 	world.set_block(best_nx, best_py, best_nz, _Const.BLOCK_SAND)
+
+
+func _nest_spill_dest_forbidden(world: Node, nx: int, nz: int) -> bool:
+	var v: Variant = world.get("nest_spill_exclude_xz")
+	if v == null:
+		return false
+	var c: Vector2i = v as Vector2i
+	var r: int = _Const.NEST_SPILL_LATERAL_EXCLUDE_RADIUS
+	var dx: int = nx - c.x
+	var dz: int = nz - c.y
+	return dx * dx + dz * dz <= r * r

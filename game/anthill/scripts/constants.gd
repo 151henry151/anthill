@@ -19,6 +19,14 @@ const BLOCK_PACKED_SAND := 3
 
 ## Contiguous **loose sand** voxels in one column above this count trigger lateral spill (one top grain per column per sand step).
 const SAND_LATERAL_SPILL_STACK_LIMIT := 6
+## Lateral spill does not **deposit** onto surface columns within this XZ radius of **`nest_spill_exclude_xz`** (reduces plugging the shaft mouth).
+const NEST_SPILL_LATERAL_EXCLUDE_RADIUS := 5
+## Workers within this horizontal distance of **`nest_entrance`** complete **returning** (covers shaft + spoil ring; a tight radius strands workers on the mound rim).
+const WORKER_NEST_ARRIVAL_MAX_DIST := 10.0
+## After this many **returning** move steps without a successful arrival, try to remove one **loose sand** voxel near the nest (unplug).
+const WORKER_ENTRANCE_DIG_AFTER_STUCK_STEPS := 200
+## Excavation only runs if the worker is still within this horizontal distance of the nest.
+const WORKER_ENTRANCE_DIG_MAX_DIST := 14.0
 
 # ---------------------------------------------------------------------------
 # Game time scale  (Lasius niger biology compressed into playable real-time)
