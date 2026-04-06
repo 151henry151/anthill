@@ -20,6 +20,7 @@ var protein: float = 0.0
 var worker_count: int = 0
 var brood_count: int = 0
 var xray_active: bool = false
+var pheromone_overlay_active: bool = false
 ## **1.0** = normal; **>1** shows fast-forward in the mode line.
 var fast_forward_multiplier: float = 1.0
 
@@ -86,7 +87,9 @@ func _update_display() -> void:
 	_pop_label.text = "%d workers | %d brood" % [worker_count, brood_count]
 	var modes: Array[String] = []
 	if fast_forward_multiplier > 1.001:
-		modes.append("[F] FAST %.0fx >>" % fast_forward_multiplier)
+		modes.append("%.0fx >>" % fast_forward_multiplier)
 	if xray_active:
 		modes.append("[X] X-RAY")
+	if pheromone_overlay_active:
+		modes.append("[P] TRAILS")
 	_mode_label.text = "  ".join(modes) if not modes.is_empty() else ""

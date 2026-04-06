@@ -54,8 +54,11 @@ var _rng: RandomNumberGenerator
 
 var _mesh_pending: Dictionary = {}
 var _xray_active: bool = false
+var _pheromone_overlay_active: bool = false
 ## **0** = 1×, **1…N** = **`FAST_FORWARD_SPEEDS[i−1]`**.
 var _ff_tier: int = 0
+var _trail_overlay_meshes: Array[MeshInstance3D] = []
+var _trail_overlay_timer: int = 0
 var _mat_xray: StandardMaterial3D
 var _game_tick: int = 0
 var _game_day: int = 0
@@ -332,6 +335,7 @@ func _physics_process(_delta: float) -> void:
 		budget -= 1
 	PerfTrace.set_mesh_rebuild_usec(Time.get_ticks_usec() - t_rebuild, rebuild_n)
 	_update_colony_stage()
+	_update_trail_overlay()
 	_update_hud()
 	PerfTrace.set_systems_usec(Time.get_ticks_usec() - t_sys)
 	PerfTrace.set_context(
@@ -377,6 +381,7 @@ func _update_hud() -> void:
 		brood_total = int(counts["total"])
 	_peak_workers = maxi(_peak_workers, workers)
 	_hud.xray_active = _xray_active
+	_hud.pheromone_overlay_active = _pheromone_overlay_active
 	_hud.fast_forward_multiplier = _ff_time_scale()
 	_hud.update_data(
 		_game_day,
@@ -430,7 +435,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_X:
 			_toggle_xray()
 		elif event.keycode == KEY_F:
-			_toggle_fast_forward()
+			_speed_up()
+		elif event.keycode == KEY_S:
+			_speed_down()
+		elif event.keycode == KEY_P:
+			_toggle_pheromone_overlay()
 
 
 func _ff_time_scale() -> float:
@@ -453,10 +462,67 @@ func _mesh_rebuild_budget() -> int:
 	return cap
 
 
-func _toggle_fast_forward() -> void:
-	var n: int = _Const.FAST_FORWARD_SPEEDS.size() + 1
-	_ff_tier = (_ff_tier + 1) % n
+func _speed_up() -> void:
+	var max_tier: int = _Const.FAST_FORWARD_SPEEDS.size()
+	if _ff_tier < max_tier:
+		_ff_tier += 1
 	Engine.time_scale = _ff_time_scale()
+
+
+func _speed_down() -> void:
+	if _ff_tier > 0:
+		_ff_tier -= 1
+	Engine.time_scale = _ff_time_scale()
+
+
+func _toggle_pheromone_overlay() -> void:
+	_pheromone_overlay_active = not _pheromone_overlay_active
+	if not _pheromone_overlay_active:
+		_clear_trail_overlay()
+
+
+func _clear_trail_overlay() -> void:
+	for mi in _trail_overlay_meshes:
+		if is_instance_valid(mi):
+			mi.queue_free()
+	_trail_overlay_meshes.clear()
+
+
+func _update_trail_overlay() -> void:
+	if not _pheromone_overlay_active or _pheromone_field == null:
+		return
+	_trail_overlay_timer += 1
+	if _trail_overlay_timer < 15:
+		return
+	_trail_overlay_timer = 0
+	_clear_trail_overlay()
+	var grid: Dictionary = _pheromone_field.get_grid()
+	var cs: float = float(_Const.PHEROMONE_CELL_SIZE)
+	var mat_trail := StandardMaterial3D.new()
+	mat_trail.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat_trail.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat_trail.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat_trail.render_priority = 2
+	var quad := PlaneMesh.new()
+	quad.size = Vector2(cs, cs)
+	for cell in grid:
+		var conc: float = float(grid[cell])
+		if conc < 0.01:
+			continue
+		var wx: float = float(cell.x) * cs + cs * 0.5
+		var wz: float = float(cell.y) * cs + cs * 0.5
+		var sy: int = world.get_surface_y(int(wx), int(wz))
+		if sy < 0:
+			continue
+		var mi := MeshInstance3D.new()
+		mi.mesh = quad
+		var m := mat_trail.duplicate() as StandardMaterial3D
+		var alpha: float = clampf(conc * 2.0, 0.1, 0.7)
+		m.albedo_color = Color(0.2, 0.85, 0.3, alpha)
+		mi.material_override = m
+		mi.position = Vector3(wx, float(sy) + 1.05, wz)
+		add_child(mi)
+		_trail_overlay_meshes.append(mi)
 
 
 func _toggle_xray() -> void:

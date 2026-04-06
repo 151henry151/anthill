@@ -24,6 +24,10 @@ var _panning: bool = false
 var _last_wheel_ms: int = 0
 ## World diagonal for orbit_radius and clip-plane sizing.
 var _world_diag: float = 800.0
+## Keyboard pan/orbit rates (units per second).
+@export var kb_pan_speed: float = 180.0
+@export var kb_orbit_speed: float = 60.0
+@export var kb_zoom_step: float = 20.0
 
 
 func _ready() -> void:
@@ -97,6 +101,46 @@ func _input(event: InputEvent) -> void:
 			pivot.z += delta.z
 			_apply_orbit()
 			get_viewport().set_input_as_handled()
+
+
+func _process(delta: float) -> void:
+	var ctrl: bool = Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_META)
+	if ctrl:
+		var orbit_d := Vector2.ZERO
+		if Input.is_key_pressed(KEY_LEFT):
+			orbit_d.x += 1.0
+		if Input.is_key_pressed(KEY_RIGHT):
+			orbit_d.x -= 1.0
+		if Input.is_key_pressed(KEY_UP):
+			orbit_d.y -= 1.0
+		if Input.is_key_pressed(KEY_DOWN):
+			orbit_d.y += 1.0
+		if orbit_d != Vector2.ZERO:
+			yaw_deg += orbit_d.x * kb_orbit_speed * delta
+			orbit_phi_deg = clampf(orbit_phi_deg + orbit_d.y * kb_orbit_speed * delta, 4.0, 89.0)
+			_apply_orbit()
+		if Input.is_key_pressed(KEY_EQUAL):
+			_size_user = clampf(_size_user - kb_zoom_step * delta * 30.0, min_zoom, max_zoom)
+			_apply_orbit()
+		if Input.is_key_pressed(KEY_MINUS):
+			_size_user = clampf(_size_user + kb_zoom_step * delta * 30.0, min_zoom, max_zoom)
+			_apply_orbit()
+	else:
+		var pan_d := Vector2.ZERO
+		if Input.is_key_pressed(KEY_LEFT):
+			pan_d.x -= 1.0
+		if Input.is_key_pressed(KEY_RIGHT):
+			pan_d.x += 1.0
+		if Input.is_key_pressed(KEY_UP):
+			pan_d.y -= 1.0
+		if Input.is_key_pressed(KEY_DOWN):
+			pan_d.y += 1.0
+		if pan_d != Vector2.ZERO:
+			var axes := _ground_pan_axes()
+			var move: Vector3 = axes[0] * pan_d.x + axes[1] * pan_d.y
+			pivot.x += move.x * kb_pan_speed * delta
+			pivot.z += move.z * kb_pan_speed * delta
+			_apply_orbit()
 
 
 func _apply_orbit() -> void:
