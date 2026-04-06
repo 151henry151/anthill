@@ -148,11 +148,23 @@ func _assign_tasks() -> void:
 			old_idle.append(a)
 	for a in young_idle:
 		a["state"] = 2  # BROOD_CARE
+	var sugar_level: float = food_store.sugar if food_store else 0.0
+	var protein_level: float = food_store.protein if food_store else 0.0
+	var sugar_deficit: float = maxf(0.0, _Const.FOOD_STORE_TARGET_SUGAR - sugar_level)
+	var protein_deficit: float = maxf(0.0, _Const.FOOD_STORE_TARGET_PROTEIN - protein_level)
+	var food_urgency: float = clampf((sugar_deficit + protein_deficit) / _Const.FOOD_STORE_TARGET_SUGAR, 0.0, 1.0)
+	var forage_prob: float = lerpf(_Const.MIN_FORAGER_FRACTION, 0.65, food_urgency)
+	var dig_prob: float = 0.0
+	if need_diggers and food_urgency < 0.5:
+		dig_prob = 0.35
+	elif need_diggers:
+		dig_prob = 0.15
 	for a in old_idle:
-		if need_diggers and _digger_count < _Const.MAX_NEST_BUILDERS and _rng.randf() < 0.5:
+		var roll: float = _rng.randf()
+		if roll < dig_prob and _digger_count < _Const.MAX_NEST_BUILDERS:
 			a["state"] = 11  # DIGGING_APPROACH
 			_digger_count += 1
-		elif _rng.randf() < 0.6:
+		elif roll < dig_prob + forage_prob:
 			a["state"] = 4  # FORAGING_DEPART
 		else:
 			a["state"] = 1  # RESTING
@@ -221,22 +233,42 @@ func _step_nest_building(a: Dictionary) -> void:
 
 func _step_foraging_depart(a: Dictionary) -> void:
 	_move_away_from(a, nest_entrance)
-	if _dist_to(a, nest_entrance) > 30:
-		a["state"] = 5  # FORAGING_SCOUT
+	if _dist_to(a, nest_entrance) > 8:
+		if _detect_trail(a):
+			a["state"] = 6  # FORAGING_RECRUIT
+		else:
+			a["state"] = 5  # FORAGING_SCOUT
 
 
 func _step_foraging_scout(a: Dictionary) -> void:
-	_step_random_walk(a)
+	# Correlated random walk with outward bias from nest.
+	var wx: int = int(a["wx"])
+	var wz: int = int(a["wz"])
+	var dx_out: int = signi(wx - nest_entrance.x)
+	var dz_out: int = signi(wz - nest_entrance.z)
+	if dx_out == 0 and dz_out == 0:
+		dx_out = 1 if _rng.randf() > 0.5 else -1
+	var dx: int = dx_out if _rng.randf() < 0.4 else _rng.randi_range(-1, 1)
+	var dz: int = dz_out if _rng.randf() < 0.4 else _rng.randi_range(-1, 1)
+	if dx == 0 and dz == 0:
+		dx = 1 if _rng.randf() > 0.5 else -1
+	_try_move(a, dx, dz)
+	if _detect_trail(a):
+		a["state"] = 6  # FORAGING_RECRUIT
+		return
 	_check_food_nearby(a)
 
 
 func _step_foraging_recruit(a: Dictionary) -> void:
 	if pheromone_field == null:
-		_step_random_walk(a)
-		_check_food_nearby(a)
+		a["state"] = 5
 		return
 	var wx: int = int(a["wx"])
 	var wz: int = int(a["wz"])
+	var here: float = pheromone_field.sample(wx, wz)
+	if here < _Const.PHEROMONE_RECRUIT_THRESHOLD * 0.5:
+		a["state"] = 5  # Lost trail, revert to scout
+		return
 	var heading: float = (a["node"] as Node3D).rotation.y
 	var samples: Array[float] = pheromone_field.sample_directional(wx, wz, heading)
 	var best_idx: int = 0
@@ -246,7 +278,7 @@ func _step_foraging_recruit(a: Dictionary) -> void:
 			best_val = samples[i]
 			best_idx = i
 	var angle_off: float = (float(best_idx) - 1.0) * 0.5
-	var move_angle: float = heading + angle_off + _rng.randf_range(-0.2, 0.2)
+	var move_angle: float = heading + angle_off + _rng.randf_range(-0.15, 0.15)
 	var dx: int = int(round(sin(move_angle)))
 	var dz: int = int(round(cos(move_angle)))
 	_try_move(a, dx, dz)
@@ -266,6 +298,16 @@ func _step_returning(a: Dictionary) -> void:
 		a["state"] = 11
 		return
 	_move_toward(a, nest_entrance)
+	# Deposit trail pheromone every step while returning with food.
+	if pheromone_field and bool(a.get("carrying_food", false)):
+		var wx: int = int(a["wx"])
+		var wz: int = int(a["wz"])
+		var deposit_amt: float = _Const.PHEROMONE_BASE_DEPOSIT
+		var d_to_nest: float = _dist_to(a, nest_entrance)
+		var d_total: float = d_to_nest + 30.0
+		var food_proximity: float = clampf(1.0 - d_to_nest / d_total, 0.0, 1.0)
+		deposit_amt += _Const.PHEROMONE_DISTANCE_BONUS * food_proximity
+		pheromone_field.deposit(wx, wz, deposit_amt)
 	d = _dist_to(a, nest_entrance)
 	if d < _Const.WORKER_NEST_ARRIVAL_MAX_DIST:
 		if food_store and bool(a.get("carrying_food", false)):
@@ -376,6 +418,19 @@ func _step_depositing(a: Dictionary) -> void:
 		var sc: float = float(a.get("scale", _Const.WORKER_VISUAL_SCALE))
 		ant.position = _ant_pos(int(a["wx"]), sy, int(a["wz"]), sc)
 	a["state"] = 11
+
+
+func _detect_trail(a: Dictionary) -> bool:
+	if pheromone_field == null:
+		return false
+	var wx: int = int(a["wx"])
+	var wz: int = int(a["wz"])
+	var r: int = _Const.PHEROMONE_SENSE_RADIUS
+	for dx in range(-r, r + 1, 2):
+		for dz in range(-r, r + 1, 2):
+			if pheromone_field.sample(wx + dx, wz + dz) >= _Const.PHEROMONE_RECRUIT_THRESHOLD:
+				return true
+	return false
 
 
 func _check_food_nearby(a: Dictionary) -> void:

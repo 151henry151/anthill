@@ -99,14 +99,31 @@ const CALLOW_DARKEN_TICKS := 3 * TICKS_PER_ANT_DAY
 # ---------------------------------------------------------------------------
 ## Each pheromone cell covers this many voxels on a side.
 const PHEROMONE_CELL_SIZE := 2
-## Amount deposited per cell per deposit event.
+## Base deposit per step while RETURNING with food.
+const PHEROMONE_BASE_DEPOSIT := 0.08
+## Extra deposit amount close to food source.
+const PHEROMONE_DISTANCE_BONUS := 0.12
+## Legacy single-event deposit (food pickup burst).
 const PHEROMONE_DEPOSIT_AMOUNT := 0.15
 ## Multiplicative factor applied every evaporation tick.
 const PHEROMONE_EVAPORATION_RATE := 0.97
 ## Physics ticks between evaporation passes.
-const PHEROMONE_EVAPORATION_INTERVAL_TICKS := 60
+const PHEROMONE_EVAPORATION_INTERVAL_TICKS := 30
+## Min concentration to trigger trail-following mode.
+const PHEROMONE_RECRUIT_THRESHOLD := 0.02
 ## Cells below this are removed.
 const PHEROMONE_MINIMUM_THRESHOLD := 0.005
+## Voxels ahead an ant can sense trail.
+const PHEROMONE_SENSE_RADIUS := 4
+
+# ---------------------------------------------------------------------------
+# Foraging task balance
+# ---------------------------------------------------------------------------
+const FOOD_STORE_TARGET_SUGAR := 200.0
+const FOOD_STORE_TARGET_PROTEIN := 150.0
+const MIN_FORAGER_FRACTION := 0.15
+const SCOUT_MAX_TURN_DEG_PER_STEP := 25.0
+const SCOUT_MIN_SEARCH_RADIUS := 15.0
 
 # ---------------------------------------------------------------------------
 # Food sources  (finite, spoil over time; new ones spawn at random intervals)
@@ -189,15 +206,21 @@ const QUEEN_PERMANENT_CHAMBER_DIAMETER := 14
 # ---------------------------------------------------------------------------
 # Dig target scoring weights
 # ---------------------------------------------------------------------------
-const DEPTH_WEIGHT := 0.8
-const TUNNEL_CONTINUE_BONUS := 2.0
+## Capped entry shaft pull (strong to get below surface, then levels off).
+const SHAFT_TARGET_DEPTH := 14
+const DEPTH_WEIGHT_ENTRY := 1.2
+## Pull toward blueprint chamber depths (Gaussian-like attraction).
+const DEPTH_WEIGHT_CHAMBER := 2.0
+const DEPTH_ATTRACTION_FALLOFF := 0.15
+## Horizontal gallery expansion.
+const MAX_GALLERY_RADIUS := 20
+const HORIZONTAL_WEIGHT := 1.8
+const TUNNEL_CONTINUE_BONUS := 2.5
 const CROWDING_PENALTY := 5.0
-const NOISE_AMPLITUDE := 0.3
+const NOISE_AMPLITUDE := 0.5
 const BLUEPRINT_WEIGHT := 1.5
 const RADIAL_OUTWARD_BIAS := 2.0
-const TUNNEL_EXTEND_BIAS := 2.5
-## Voxels of open volume that trigger branching transition.
-const CHAMBER_THRESHOLD := 400
+const TUNNEL_EXTEND_BIAS := 3.0
 
 # ---------------------------------------------------------------------------
 # Building pheromone

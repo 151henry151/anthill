@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-04-06
+
+### Fixed
+
+- **`scripts/nest_manager.gd`**: replace unbounded linear `DEPTH_WEIGHT` dig scoring with capped entry-shaft pull (`DEPTH_WEIGHT_ENTRY` × min(depth, `SHAFT_TARGET_DEPTH`)), horizontal expansion bias (`HORIZONTAL_WEIGHT` × normalized distance from shaft), and depth-triggered branching (horizontal mode activates once shaft reaches `SHAFT_TARGET_DEPTH` instead of waiting for `CHAMBER_THRESHOLD` volume). Nests now form a short vertical shaft then branch into horizontal galleries instead of diving to maximum depth.
+- **`scripts/nest_manager.gd`**: initialize `_rng` in `bind_world()` so `get_path_to_surface()` does not crash when called before `setup()`.
+- **`scripts/colony_ants.gd`**: deposit trail pheromone every movement step while in RETURNING state with food (was only deposited in `_step_random_walk` which RETURNING never called). Deposit amount scales with proximity to food source (`PHEROMONE_BASE_DEPOSIT` + `PHEROMONE_DISTANCE_BONUS` × food_proximity).
+- **`scripts/colony_ants.gd`**: add scout-to-recruit transition — departing and scouting ants sample pheromone in a `PHEROMONE_SENSE_RADIUS`-voxel area and switch to FORAGING_RECRUIT when concentration exceeds `PHEROMONE_RECRUIT_THRESHOLD`. Recruits revert to scout when trail concentration drops below half threshold.
+- **`scripts/colony_ants.gd`**: replace pure random walk in FORAGING_SCOUT with correlated random walk biased 40% outward from nest, producing realistic fan-out search pattern.
+- **`scripts/colony_ants.gd`**: replace fixed 50%/60% dig/forage probability in task assignment with food-aware ratios — `food_urgency` (0–1) based on deficit from `FOOD_STORE_TARGET_SUGAR`/`FOOD_STORE_TARGET_PROTEIN` drives forager fraction from 15% (stores full) to 65% (stores empty); digging capped at 15% when food is urgent.
+
+### Changed
+
+- **`scripts/constants.gd`**: replace `DEPTH_WEIGHT` (0.8) with `SHAFT_TARGET_DEPTH` (14), `DEPTH_WEIGHT_ENTRY` (1.2), `DEPTH_WEIGHT_CHAMBER` (2.0), `DEPTH_ATTRACTION_FALLOFF` (0.15), `MAX_GALLERY_RADIUS` (20), `HORIZONTAL_WEIGHT` (1.8). Add `PHEROMONE_BASE_DEPOSIT` (0.08), `PHEROMONE_DISTANCE_BONUS` (0.12), `PHEROMONE_RECRUIT_THRESHOLD` (0.02), `PHEROMONE_SENSE_RADIUS` (4), `FOOD_STORE_TARGET_SUGAR` (200), `FOOD_STORE_TARGET_PROTEIN` (150), `MIN_FORAGER_FRACTION` (0.15), `SCOUT_MAX_TURN_DEG_PER_STEP` (25), `SCOUT_MIN_SEARCH_RADIUS` (15). Reduce `PHEROMONE_EVAPORATION_INTERVAL_TICKS` from 60 to 30. Increase `TUNNEL_CONTINUE_BONUS` to 2.5, `NOISE_AMPLITUDE` to 0.5, `TUNNEL_EXTEND_BIAS` to 3.0.
+
 ## [0.5.26] - 2026-04-06
 
 ### Added

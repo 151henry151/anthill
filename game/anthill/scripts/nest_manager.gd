@@ -22,6 +22,9 @@ var _building_pheromone: Node
 ## Call as soon as the node exists — **before** the queen digs (she invokes **`compact_around`** during the shaft/chamber phase). Full **`setup`** still runs at **`founding_chamber_ready`** with the real chamber center.
 func bind_world(world: Node) -> void:
 	_world = world
+	if _rng == null:
+		_rng = RandomNumberGenerator.new()
+		_rng.randomize()
 
 
 func setup(world: Node, founding_chamber: Vector3i, building_pheromone: Node) -> void:
@@ -83,7 +86,8 @@ func get_dig_target(ant: Node3D) -> Variant:
 	var best_score: float = -INF
 	var best_voxel: Variant = null
 	var sample_count: int = mini(_dig_front.size(), 60)
-	var surface_y: float = float(_TerrainGen.SURFACE_BASE)
+	var surface_y: int = _TerrainGen.SURFACE_BASE
+	var shaft_deep_enough: bool = _deepest_air_y() <= (surface_y - _Const.SHAFT_TARGET_DEPTH)
 	for _i in range(sample_count):
 		var idx: int = _rng.randi_range(0, _dig_front.size() - 1)
 		var v: Vector3i = _dig_front[idx]
@@ -93,25 +97,42 @@ func get_dig_target(ant: Node3D) -> Variant:
 		if bt != _Const.BLOCK_SAND and bt != _Const.BLOCK_PACKED_SAND:
 			continue
 		var score: float = 0.0
-		score += _Const.DEPTH_WEIGHT * (surface_y - float(v.y))
+		var depth: int = surface_y - v.y
+		# Capped entry pull: strong for first SHAFT_TARGET_DEPTH voxels, then flat.
+		var entry_pull: float = float(mini(depth, _Const.SHAFT_TARGET_DEPTH)) * _Const.DEPTH_WEIGHT_ENTRY
+		score += entry_pull
+		# Horizontal expansion bias (reward galleries extending outward from shaft).
+		var dx_h: float = float(v.x - queen_chamber.x)
+		var dz_h: float = float(v.z - queen_chamber.z)
+		var horiz_dist: float = sqrt(dx_h * dx_h + dz_h * dz_h)
+		if shaft_deep_enough and horiz_dist > 1.0:
+			var normalized: float = minf(horiz_dist / float(_Const.MAX_GALLERY_RADIUS), 1.0)
+			score += _Const.HORIZONTAL_WEIGHT * normalized * (1.0 - normalized) * 4.0
+		# Tunnel continuation: reward extending existing tunnels.
 		var air_count: int = 0
 		for offset in [Vector3i(1,0,0), Vector3i(-1,0,0), Vector3i(0,0,1), Vector3i(0,0,-1)]:
 			if _world.get_block(v.x + offset.x, v.y + offset.y, v.z + offset.z) == _Const.BLOCK_AIR:
 				air_count += 1
 		if air_count <= 1:
 			score += _Const.TUNNEL_CONTINUE_BONUS
-		if _nest_air_volume < _Const.CHAMBER_THRESHOLD:
-			var dx: float = float(v.x - queen_chamber.x)
-			var dz: float = float(v.z - queen_chamber.z)
-			score += _Const.RADIAL_OUTWARD_BIAS * sqrt(dx * dx + dz * dz) * 0.05
-		else:
-			if air_count <= 1:
-				score += _Const.TUNNEL_EXTEND_BIAS
+		# After shaft is deep enough, strongly prefer horizontal extension.
+		if shaft_deep_enough and air_count <= 1:
+			score += _Const.TUNNEL_EXTEND_BIAS
 		score += _rng.randf_range(-_Const.NOISE_AMPLITUDE, _Const.NOISE_AMPLITUDE)
 		if score > best_score:
 			best_score = score
 			best_voxel = v
 	return best_voxel
+
+
+func _deepest_air_y() -> int:
+	if queen_chamber == Vector3i.ZERO:
+		return _TerrainGen.SURFACE_BASE
+	var deepest: int = queen_chamber.y
+	for v in _dig_front:
+		if v.y < deepest:
+			deepest = v.y
+	return deepest
 
 
 func reserve_voxel(voxel: Vector3i, ant: Node3D) -> void:
