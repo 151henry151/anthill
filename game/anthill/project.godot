@@ -37,3 +37,5 @@ common/physics_ticks_per_second=30
 
 textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
+; 0=disabled, 1=2x, 2=4x, 3=8x — MSAA smooths mesh edges (less jaggy voxels).
+anti_aliasing/quality/msaa_3d=2

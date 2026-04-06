@@ -241,10 +241,33 @@ func _physics_process(_delta: float) -> void:
 		and _queen.sand_physics_suppressed()
 	)
 	var sand_us: int = 0
-	if _sand_step != null and not world.sand_idle and not suppress_sand:
-		var t_sand := Time.get_ticks_usec()
-		_sand_step.step(world)
-		sand_us = Time.get_ticks_usec() - t_sand
+	## **`Engine.time_scale`** scales **`delta`** for nodes but does **not** add extra physics callbacks per real second, so tick-based sim ( **`_game_tick += 1`** ) must advance **`round(time_scale)`** sub-steps per frame to make **[F]** fast-forward affect ant-days and brood.
+	var sim_steps: int = maxi(1, int(round(Engine.time_scale)))
+	sim_steps = mini(sim_steps, _Const.FAST_FORWARD_SIM_STEPS_CAP)
+	var t_sys := Time.get_ticks_usec()
+	for _k in range(sim_steps):
+		if _sand_step != null and not world.sand_idle and not suppress_sand:
+			var t_s2 := Time.get_ticks_usec()
+			_sand_step.step(world)
+			sand_us += Time.get_ticks_usec() - t_s2
+		_game_tick += 1
+		if _day_night:
+			_day_night.set_game_tick(_game_tick)
+		_game_day = _game_tick / _Const.TICKS_PER_ANT_DAY
+		var worker_n: int = colony_ants.get_worker_count() if colony_ants else 0
+		if is_instance_valid(_queen) and _queen.has_method("care_for_brood"):
+			_queen.care_for_brood(worker_n)
+		if worker_n > 0 and _brood_manager and _brood_manager.has_method("feed_all_larvae"):
+			_brood_manager.call("feed_all_larvae", _Const.WORKER_BROOD_CARE_PER_TICK)
+		if _brood_manager:
+			_brood_manager.tick()
+		if _pheromone_field:
+			_pheromone_field.tick()
+		if _building_pheromone:
+			_building_pheromone.tick()
+		for fs in _food_sources:
+			if is_instance_valid(fs):
+				fs.tick()
 	PerfTrace.set_sand_usec(sand_us)
 	var t_meshq := Time.get_ticks_usec()
 	if world.take_mesh_dirty():
@@ -262,28 +285,8 @@ func _physics_process(_delta: float) -> void:
 		rebuild_n += 1
 		budget -= 1
 	PerfTrace.set_mesh_rebuild_usec(Time.get_ticks_usec() - t_rebuild, rebuild_n)
-	var t_sys := Time.get_ticks_usec()
-	_game_tick += 1
-	if _day_night:
-		_day_night.set_game_tick(_game_tick)
-	_game_day = _game_tick / _Const.TICKS_PER_ANT_DAY
-	var worker_n: int = colony_ants.get_worker_count() if colony_ants else 0
-	if is_instance_valid(_queen) and _queen.has_method("care_for_brood"):
-		_queen.care_for_brood(worker_n)
-	if worker_n > 0 and _brood_manager and _brood_manager.has_method("feed_all_larvae"):
-		_brood_manager.call("feed_all_larvae", _Const.WORKER_BROOD_CARE_PER_TICK)
-	if _brood_manager:
-		_brood_manager.tick()
-	if _pheromone_field:
-		_pheromone_field.tick()
-	if _building_pheromone:
-		_building_pheromone.tick()
-	for fs in _food_sources:
-		if is_instance_valid(fs):
-			fs.tick()
 	_update_colony_stage()
-	if _game_tick % 60 == 0:
-		_update_hud()
+	_update_hud()
 	PerfTrace.set_systems_usec(Time.get_ticks_usec() - t_sys)
 	PerfTrace.set_context(
 		_game_tick,

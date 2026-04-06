@@ -178,7 +178,8 @@ func sand_physics_suppressed() -> bool:
 
 func _physics_process(delta: float) -> void:
 	var t0 := Time.get_ticks_usec()
-	age_ticks += 1
+	var sim_steps: int = maxi(1, mini(int(round(Engine.time_scale)), _Const.FAST_FORWARD_SIM_STEPS_CAP))
+	age_ticks += sim_steps
 	match state:
 		QueenState.FLYING_IN:
 			_process_fly_in(delta)
@@ -189,9 +190,11 @@ func _physics_process(delta: float) -> void:
 		QueenState.DIGGING:
 			_process_digging(delta)
 		QueenState.CLAUSTRAL:
-			_process_claustral(delta)
+			for _i in range(sim_steps):
+				_process_claustral_step()
 		QueenState.ESTABLISHED:
-			_process_established(delta)
+			for _i in range(sim_steps):
+				_process_established_step()
 	PerfTrace.set_queen_usec(Time.get_ticks_usec() - t0)
 
 
@@ -612,7 +615,9 @@ func _seal_entrance() -> void:
 	founding_chamber_ready.emit(_founding_chamber_center)
 
 
-func _process_claustral(_delta: float) -> void:
+func _process_claustral_step() -> void:
+	if energy_reserve <= 0.0:
+		return
 	energy_reserve -= _Const.QUEEN_CLAUSTRAL_ENERGY_DRAIN_PER_TICK
 	if energy_reserve <= 0.0:
 		energy_reserve = 0.0
@@ -638,7 +643,7 @@ func _lay_claustral_eggs() -> void:
 		egg_laid.emit(worker_count, false)
 
 
-func _process_established(_delta: float) -> void:
+func _process_established_step() -> void:
 	_egg_timer_ticks += 1
 	if _egg_timer_ticks >= _Const.QUEEN_ESTABLISHED_EGG_INTERVAL_TICKS:
 		var batch: int = _rng.randi_range(4, 10)

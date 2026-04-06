@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.23] - 2026-04-05
+
+### Fixed
+
+- **`scripts/main_controller.gd`**: advance **`round(Engine.time_scale)`** simulation sub-steps per physics frame so **[F]** fast-forward changes ant-days and colony ticks ( **`Engine.time_scale`** alone only scaled **`delta`**, not tick-based sim).
+- **`scripts/queen_ant.gd`**: run **claustral** / **established** egg and energy logic once per sub-step to match **`main_controller`**.
+- **`scripts/constants.gd`**: add **`FAST_FORWARD_SIM_STEPS_CAP`** to bound sub-steps per frame.
+
+### Changed
+
+- **`project.godot`**: enable **4× MSAA** for 3D (**`anti_aliasing/quality/msaa_3d`**).
+
 ## [0.5.22] - 2026-04-05
 
 ### Changed
