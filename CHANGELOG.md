@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.25] - 2026-04-04
+
+### Changed
+
+- **`scripts/constants.gd`**: remove **500×** and **1000×** from **`FAST_FORWARD_SPEEDS`**; set **`FAST_FORWARD_SIM_STEPS_CAP`** to **120** to match the maximum **[F]** tier.
+- **`scenes/main.tscn`**: shorten the on-screen **[F]** hint to match the fast-forward cycle.
+
 ## [0.5.24] - 2026-04-04
 
 ### Fixed

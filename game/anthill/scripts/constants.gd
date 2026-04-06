@@ -208,10 +208,10 @@ const XRAY_DEPTH_FADE_RANGE := 80.0
 # ---------------------------------------------------------------------------
 # Fast-forward
 # ---------------------------------------------------------------------------
-## **[F]** cycles: **1×** → **10×** → **30×** → **60×** → **120×** → **500×** → **1000×** → **1×** …
-const FAST_FORWARD_SPEEDS: Array[float] = [10.0, 30.0, 60.0, 120.0, 500.0, 1000.0]
-## Max simulation sub-steps per physics frame (**`round(Engine.time_scale)`**); avoids pathological frame times if **`time_scale`** is huge.
-const FAST_FORWARD_SIM_STEPS_CAP := 4000
+## **[F]** cycles: **1×** → **10×** → **30×** → **60×** → **120×** → **1×** …
+const FAST_FORWARD_SPEEDS: Array[float] = [10.0, 30.0, 60.0, 120.0]
+## Max simulation sub-steps per physics frame (**`round(Engine.time_scale)`**); matches max **[F]** tier so fast-forward stays stable.
+const FAST_FORWARD_SIM_STEPS_CAP := 120
 
 # ---------------------------------------------------------------------------
 # Worker movement intervals (seconds between steps)
