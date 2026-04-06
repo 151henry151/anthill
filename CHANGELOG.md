@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.19] - 2026-04-05
+
+### Changed
+
+- **`scripts/constants.gd`**: add **`SAND_LATERAL_SPILL_STACK_LIMIT`** for loose-sand column height.
+- **`scripts/world/sand_step.gd`**: after gravity, spill one top grain per column to the **lowest** valid lateral neighbor at or below the current top when contiguous **loose sand** exceeds the limit (reduces vertical **1×1** towers).
+
 ## [0.5.18] - 2026-04-05
 
 ### Changed

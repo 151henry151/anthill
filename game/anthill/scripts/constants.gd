@@ -17,6 +17,9 @@ const BLOCK_SAND := 1
 const BLOCK_STONE := 2
 const BLOCK_PACKED_SAND := 3
 
+## Contiguous **loose sand** voxels in one column above this count trigger lateral spill (one top grain per column per sand step).
+const SAND_LATERAL_SPILL_STACK_LIMIT := 6
+
 # ---------------------------------------------------------------------------
 # Game time scale  (Lasius niger biology compressed into playable real-time)
 # ---------------------------------------------------------------------------
