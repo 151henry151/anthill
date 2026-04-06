@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.24] - 2026-04-04
+
+### Fixed
+
+- **`scripts/queen_ant.gd`**: run **flying-in**, **wing shedding**, **searching**, and **digging** once per fast-forward sub-step so nest excavation keeps pace with the game clock.
+- **`scripts/colony_ants.gd`**: advance worker move timers per sub-step and allow **multiple** move steps per frame when the interval is exceeded.
+
 ## [0.5.23] - 2026-04-05
 
 ### Fixed

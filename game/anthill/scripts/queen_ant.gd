@@ -179,16 +179,22 @@ func sand_physics_suppressed() -> bool:
 func _physics_process(delta: float) -> void:
 	var t0 := Time.get_ticks_usec()
 	var sim_steps: int = maxi(1, mini(int(round(Engine.time_scale)), _Const.FAST_FORWARD_SIM_STEPS_CAP))
+	## Physics `delta` is fixed; game ticks use `sim_steps` in `main_controller`. Run fly / search / dig once
+	## per sub-step so timers can cross thresholds multiple times per frame (same pattern as claustral).
 	age_ticks += sim_steps
 	match state:
 		QueenState.FLYING_IN:
-			_process_fly_in(delta)
+			for _i in range(sim_steps):
+				_process_fly_in(delta)
 		QueenState.WING_SHEDDING:
-			_process_wing_shed(delta)
+			for _i in range(sim_steps):
+				_process_wing_shed(delta)
 		QueenState.SEARCHING:
-			_process_searching(delta)
+			for _i in range(sim_steps):
+				_process_searching(delta)
 		QueenState.DIGGING:
-			_process_digging(delta)
+			for _i in range(sim_steps):
+				_process_digging(delta)
 		QueenState.CLAUSTRAL:
 			for _i in range(sim_steps):
 				_process_claustral_step()

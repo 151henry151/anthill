@@ -95,17 +95,18 @@ func _ant_pos(wx: int, wy: int, wz: int, sc: float) -> Vector3:
 
 func _physics_process(delta: float) -> void:
 	var t0 := Time.get_ticks_usec()
-	_task_assign_timer += 1
+	var sim_steps: int = maxi(1, mini(int(round(Engine.time_scale)), _Const.FAST_FORWARD_SIM_STEPS_CAP))
+	_task_assign_timer += sim_steps
 	if _task_assign_timer >= _TASK_ASSIGN_INTERVAL:
 		_task_assign_timer = 0
 		_assign_tasks()
 	for a in _ants:
-		a["age_ticks"] = int(a["age_ticks"]) + 1
-		a["t"] = float(a["t"]) + delta
-		if float(a["t"]) < move_interval:
-			continue
-		a["t"] = 0.0
-		_step_ant(a)
+		a["age_ticks"] = int(a["age_ticks"]) + sim_steps
+		for _i in range(sim_steps):
+			a["t"] = float(a["t"]) + delta
+			while float(a["t"]) >= move_interval:
+				a["t"] -= move_interval
+				_step_ant(a)
 	PerfTrace.set_ants_usec(Time.get_ticks_usec() - t0)
 
 
