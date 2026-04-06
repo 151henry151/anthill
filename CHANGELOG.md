@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.21] - 2026-04-05
+
+### Changed
+
+- **`scripts/constants.gd`**, **`scenes/main.tscn`**: append **1000×** to **`FAST_FORWARD_SPEEDS`** and the on-screen **[F]** hint (testing).
+
 ## [0.5.20] - 2026-04-05
 
 ### Changed
