@@ -9,7 +9,6 @@ const _QueenScript = preload("res://scripts/queen_ant.gd")
 const _BroodScript = preload("res://scripts/brood_manager.gd")
 const _PheromoneScript = preload("res://scripts/pheromone_field.gd")
 const _FoodStoreScript = preload("res://scripts/colony_food_store.gd")
-const _FoodSourceScript = preload("res://scripts/food_source.gd")
 const _BroodRendererScript = preload("res://scripts/brood_renderer.gd")
 const _NestBuilderScript = preload("res://scripts/nest_builder.gd")
 const _HudScript = preload("res://scripts/colony_hud.gd")
@@ -45,6 +44,7 @@ var _brood_renderer: Node3D
 var _pheromone_field: Node
 var _food_store: Node
 var _food_sources: Array[Node3D] = []
+var _next_food_spawn_tick: int = 0
 var _nest_builder: Node
 var _nest_manager: Node
 var _building_pheromone: Node
@@ -172,27 +172,73 @@ func _setup_systems() -> void:
 	colony_ants.nest_manager = _nest_manager
 	colony_ants.building_pheromone = _building_pheromone
 
-	_spawn_food_sources()
+	_init_food_spawning()
 
 
-func _spawn_food_sources() -> void:
-	var count: int = _rng.randi_range(_Const.FOOD_SOURCE_COUNT_MIN, _Const.FOOD_SOURCE_COUNT_MAX)
+func _init_food_spawning() -> void:
+	_food_sources.clear()
+	_next_food_spawn_tick = _rng.randi_range(_Const.FOOD_SPAWN_FIRST_DELAY_MIN, _Const.FOOD_SPAWN_FIRST_DELAY_MAX)
+	colony_ants.food_sources = _food_sources
+
+
+func _food_spawn_ok_xy(wx: int, wz: int) -> bool:
+	var ne: Vector3i = colony_ants.nest_entrance
+	if ne != Vector3i.ZERO:
+		var dx: int = wx - ne.x
+		var dz: int = wz - ne.z
+		if dx * dx + dz * dz < _Const.FOOD_SPAWN_MIN_DIST_FROM_NEST * _Const.FOOD_SPAWN_MIN_DIST_FROM_NEST:
+			return false
+	return true
+
+
+func _try_spawn_food_source() -> bool:
+	if _food_sources.size() >= _Const.FOOD_MAX_ACTIVE_SOURCES:
+		return false
 	var max_x: int = world.chunks_x * _Chunk.SIZE_X
 	var max_z: int = world.chunks_z * _Chunk.SIZE_Z
+	var margin: int = 16
+	var x1: int = margin
+	var x2: int = maxi(x1 + 1, max_x - margin - 1)
+	var z1: int = margin
+	var z2: int = maxi(z1 + 1, max_z - margin - 1)
 	var types: Array[String] = ["aphid_colony", "dead_insect", "seed_cache"]
-	for i in range(count):
-		var wx: int = _rng.randi_range(20, max_x - 20)
-		var wz: int = _rng.randi_range(20, max_z - 20)
+	for _attempt in range(48):
+		var wx: int = _rng.randi_range(x1, x2)
+		var wz: int = _rng.randi_range(z1, z2)
+		if not _food_spawn_ok_xy(wx, wz):
+			continue
 		var sy: int = _surface_y(wx, wz)
 		if sy < 0:
 			continue
 		var fs := Node3D.new()
-		fs.name = "FoodSource_%d" % i
+		fs.name = "FoodSource_%d" % _game_tick
 		fs.set_script(load("res://scripts/food_source.gd"))
 		add_child(fs)
-		fs.setup(types[i % types.size()], wx, wz, sy)
+		fs.setup(types[_rng.randi_range(0, types.size() - 1)], wx, wz, sy, _rng)
+		var spoil_dur: int = _rng.randi_range(_Const.FOOD_SPOIL_DURATION_TICKS_MIN, _Const.FOOD_SPOIL_DURATION_TICKS_MAX)
+		if fs.has_method("begin_life"):
+			fs.begin_life(_game_tick, spoil_dur)
 		_food_sources.append(fs)
-	colony_ants.food_sources = _food_sources
+		return true
+	return false
+
+
+func _update_food_sources_at_tick() -> void:
+	for i in range(_food_sources.size() - 1, -1, -1):
+		var fs: Node3D = _food_sources[i]
+		if not is_instance_valid(fs):
+			_food_sources.remove_at(i)
+			continue
+		if fs.has_method("tick"):
+			fs.tick(_game_tick)
+		if fs.has_method("is_depleted") and fs.is_depleted():
+			fs.queue_free()
+			_food_sources.remove_at(i)
+	if _food_sources.size() < _Const.FOOD_MAX_ACTIVE_SOURCES and _game_tick >= _next_food_spawn_tick:
+		if _try_spawn_food_source():
+			_next_food_spawn_tick = _game_tick + _rng.randi_range(_Const.FOOD_SPAWN_INTERVAL_TICKS_MIN, _Const.FOOD_SPAWN_INTERVAL_TICKS_MAX)
+		else:
+			_next_food_spawn_tick = _game_tick + 120
 
 
 func _surface_y(wx: int, wz: int) -> int:
@@ -257,6 +303,8 @@ func _physics_process(_delta: float) -> void:
 		var worker_n: int = colony_ants.get_worker_count() if colony_ants else 0
 		if is_instance_valid(_queen) and _queen.has_method("care_for_brood"):
 			_queen.care_for_brood(worker_n)
+		if is_instance_valid(_queen) and _queen.has_method("apply_worker_trophallaxis"):
+			_queen.apply_worker_trophallaxis(_food_store, worker_n)
 		if worker_n > 0 and _brood_manager and _brood_manager.has_method("feed_all_larvae"):
 			_brood_manager.call("feed_all_larvae", _Const.WORKER_BROOD_CARE_PER_TICK)
 		if _brood_manager:
@@ -265,9 +313,7 @@ func _physics_process(_delta: float) -> void:
 			_pheromone_field.tick()
 		if _building_pheromone:
 			_building_pheromone.tick()
-		for fs in _food_sources:
-			if is_instance_valid(fs):
-				fs.tick()
+		_update_food_sources_at_tick()
 	PerfTrace.set_sand_usec(sand_us)
 	var t_meshq := Time.get_ticks_usec()
 	if world.take_mesh_dirty():

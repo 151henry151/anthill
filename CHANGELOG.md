@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.26] - 2026-04-06
+
+### Added
+
+- **`scripts/constants.gd`**: **`FOOD_*`** tuning for random food spawns, spoil durations, nest clearance, and visual scale limits; **`QUEEN_TROPHALLAXIS_*`** parameters for worker-to-queen feeding from colony stores.
+- **`scripts/main_controller.gd`**: spawn food sources at random intervals and positions; prune depleted or spoiled sources; respect **`FOOD_MAX_ACTIVE_SOURCES`**; call queen trophallaxis once per simulation tick.
+- **`scripts/food_source.gd`**: finite supply per patch, linear spoil decay and hard expiry, visuals that shrink and brown as food rots or is collected.
+- **`scripts/queen_ant.gd`**: **`apply_worker_trophallaxis`** — established queens gain **`energy_reserve`** from **`colony_food_store`** when workers are present (modeled on **stomodeal trophallaxis**).
+
 ## [0.5.25] - 2026-04-04
 
 ### Changed

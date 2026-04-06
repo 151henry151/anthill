@@ -70,6 +70,15 @@ const QUEEN_LARVA_FEED_PER_TICK := 0.00012
 const QUEEN_LARVA_FEED_ENERGY_PER_LARVA_PER_TICK := 0.0
 ## Trophallaxis-style topping when workers exist (foraging not modeled per-larva; stabilizes nutrition until a fuller food→brood loop exists).
 const WORKER_BROOD_CARE_PER_TICK := 0.00011
+## Workers regurgitate crop contents to nestmates (**stomodeal trophallaxis**); the queen is fed by workers and does not forage. Base food mass (colony-store units) moved toward the queen per tick, before scaling by worker count.
+const QUEEN_TROPHALLAXIS_BASE_PER_TICK := 0.000018
+## Extra trophallaxis capacity per **`sqrt(worker_count)`** (diminishing returns vs a naive linear headcount).
+const QUEEN_TROPHALLAXIS_PER_WORKER_SQRT := 0.0000055
+## Split of each tick’s trophallaxis **request** between sugar (carbohydrate) and protein.
+const QUEEN_TROPHALLAXIS_SUGAR_FRACTION := 0.52
+const QUEEN_TROPHALLAXIS_PROTEIN_FRACTION := 0.48
+## Converts colony-store mass taken by the queen into **`energy_reserve`** (0–1); tuned so full recovery from depletion takes on the order of many ant-days when stores are abundant.
+const QUEEN_TROPHALLAXIS_ENERGY_PER_UNIT_FOOD := 0.34
 ## Visual scale multiplier for queen vs worker model.
 const QUEEN_VISUAL_SCALE := 6.0
 ## Worker visual scale.
@@ -100,15 +109,35 @@ const PHEROMONE_EVAPORATION_INTERVAL_TICKS := 60
 const PHEROMONE_MINIMUM_THRESHOLD := 0.005
 
 # ---------------------------------------------------------------------------
-# Food sources
+# Food sources  (finite, spoil over time; new ones spawn at random intervals)
 # ---------------------------------------------------------------------------
 ## How much food an ant carries per trip (fraction of source supply).
 const FOOD_CARRY_AMOUNT := 0.04
-## Number of food sources spawned at game start.
-const FOOD_SOURCE_COUNT_MIN := 12
-const FOOD_SOURCE_COUNT_MAX := 24
-## Aphid colony replenish rate per physics tick (fraction of max_supply).
-const APHID_REPLENISH_RATE := 0.0001
+## Bounds on initial **supply** (aphid / insect / seed); scales visuals and rot rate baseline.
+const FOOD_APHID_SUPPLY_MIN := 0.38
+const FOOD_APHID_SUPPLY_MAX := 1.18
+const FOOD_INSECT_SUPPLY_MIN := 0.22
+const FOOD_INSECT_SUPPLY_MAX := 0.88
+const FOOD_SEED_SUPPLY_MIN := 0.18
+const FOOD_SEED_SUPPLY_MAX := 0.62
+## Random delay (simulation ticks) before the **first** spawn after load.
+const FOOD_SPAWN_FIRST_DELAY_MIN := 90
+const FOOD_SPAWN_FIRST_DELAY_MAX := 420
+## Random interval (ticks) between spawn attempts once the previous source has been scheduled.
+const FOOD_SPAWN_INTERVAL_TICKS_MIN := 400
+const FOOD_SPAWN_INTERVAL_TICKS_MAX := 2200
+## Cap active sources so the world does not fill indefinitely.
+const FOOD_MAX_ACTIVE_SOURCES := 36
+## Minimum horizontal distance (voxels) from **nest entrance** XZ when placing new sources (ignored until the nest exists).
+const FOOD_SPAWN_MIN_DIST_FROM_NEST := 28
+## Spoil duration: random lifetime in ticks; supply also decays by **`supply / duration`** per tick so uneaten food rots away.
+const FOOD_SPOIL_DURATION_TICKS_MIN := 2 * TICKS_PER_ANT_DAY
+const FOOD_SPOIL_DURATION_TICKS_MAX := 14 * TICKS_PER_ANT_DAY
+## Uniform scale range for the visual root at **full** supply (slight size variety).
+const FOOD_VISUAL_BASE_SCALE_MIN := 0.82
+const FOOD_VISUAL_BASE_SCALE_MAX := 1.12
+## At **depleted** supply the visual is scaled to this fraction of the current base scale.
+const FOOD_VISUAL_MIN_SCALE_RATIO := 0.14
 
 # ---------------------------------------------------------------------------
 # Colony food store thresholds

@@ -686,5 +686,27 @@ func care_for_brood(worker_count: int) -> void:
 	_brood_manager.call("feed_all_larvae", per)
 
 
+## Established colonies: workers pass crop contents to the queen (**trophallaxis**). Debits **`food_store`** and raises **`energy_reserve`** when workers and reserves are available.
+func apply_worker_trophallaxis(food_store: Node, worker_count: int) -> void:
+	if state != QueenState.ESTABLISHED:
+		return
+	if worker_count <= 0 or food_store == null:
+		return
+	if not food_store.has_method("consume"):
+		return
+	if energy_reserve >= 1.0:
+		return
+	var w: float = sqrt(float(max(1, worker_count)))
+	var max_mass: float = _Const.QUEEN_TROPHALLAXIS_BASE_PER_TICK + _Const.QUEEN_TROPHALLAXIS_PER_WORKER_SQRT * w
+	var want_sugar: float = max_mass * _Const.QUEEN_TROPHALLAXIS_SUGAR_FRACTION
+	var want_protein: float = max_mass * _Const.QUEEN_TROPHALLAXIS_PROTEIN_FRACTION
+	var s: float = float(food_store.consume("sugar", want_sugar))
+	var p: float = float(food_store.consume("protein", want_protein))
+	var gain: float = (s + p) * _Const.QUEEN_TROPHALLAXIS_ENERGY_PER_UNIT_FOOD
+	if gain <= 0.0:
+		return
+	energy_reserve = minf(1.0, energy_reserve + gain)
+
+
 func get_chamber_center() -> Vector3i:
 	return _founding_chamber_center
