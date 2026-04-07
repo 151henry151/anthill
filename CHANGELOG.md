@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`briefing.txt`**: synthesis of **Lasius niger** foraging feedback (attractive trail vs footprint hydrocarbon negative feedback).
+- **`Ant Foraging and Communication Simulation Data - Table 1.csv`**: reference table of pheromone types and behaviors for **L. niger** and comparison species.
+
 ## [0.6.2] - 2026-04-08
 
 ### Changed
