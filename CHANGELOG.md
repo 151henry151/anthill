@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-04-07
+
+### Fixed
+
+- **`scripts/colony_ants.gd`**: when a move hits the map edge or bad terrain, try wall slides (for diagonals) then a random valid neighbor instead of staying put — reduces worker clustering in world corners.
+
+### Changed
+
+- **`scripts/colony_ants.gd`**: **FORAGING_SCOUT** uses an unbiased random walk instead of a strong outward bias from the nest.
+
 ## [0.6.0] - 2026-04-06
 
 ### Fixed

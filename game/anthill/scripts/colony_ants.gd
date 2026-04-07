@@ -242,15 +242,9 @@ func _step_foraging_depart(a: Dictionary) -> void:
 
 
 func _step_foraging_scout(a: Dictionary) -> void:
-	# Correlated random walk with outward bias from nest.
-	var wx: int = int(a["wx"])
-	var wz: int = int(a["wz"])
-	var dx_out: int = signi(wx - nest_entrance.x)
-	var dz_out: int = signi(wz - nest_entrance.z)
-	if dx_out == 0 and dz_out == 0:
-		dx_out = 1 if _rng.randf() > 0.5 else -1
-	var dx: int = dx_out if _rng.randf() < 0.4 else _rng.randi_range(-1, 1)
-	var dz: int = dz_out if _rng.randf() < 0.4 else _rng.randi_range(-1, 1)
+	## Unbiased random walk (no net drift from the nest); search coverage comes from time and pheromone trails.
+	var dx: int = _rng.randi_range(-1, 1)
+	var dz: int = _rng.randi_range(-1, 1)
 	if dx == 0 and dz == 0:
 		dx = 1 if _rng.randf() > 0.5 else -1
 	_try_move(a, dx, dz)
@@ -536,23 +530,65 @@ func _step_random_walk(a: Dictionary) -> void:
 		pheromone_field.deposit(int(a["wx"]), int(a["wz"]), _Const.PHEROMONE_DEPOSIT_AMOUNT * 0.5)
 
 
-func _try_move(a: Dictionary, dx: int, dz: int) -> void:
-	var nwx: int = int(a["wx"]) + dx
-	var nwz: int = int(a["wz"]) + dz
+func _cell_walkable(nwx: int, nwz: int) -> bool:
 	var max_x: int = world.chunks_x * _Chunk.SIZE_X
 	var max_z: int = world.chunks_z * _Chunk.SIZE_Z
 	if nwx < 1 or nwz < 1 or nwx >= max_x - 1 or nwz >= max_z - 1:
-		return
+		return false
+	return _surface_y(nwx, nwz) >= 0
+
+
+func _apply_step_to(a: Dictionary, nwx: int, nwz: int, face_dx: int, face_dz: int) -> void:
 	var wy: int = _surface_y(nwx, nwz)
-	if wy < 0:
-		return
 	a["wx"] = nwx
 	a["wz"] = nwz
 	var ant: Node3D = a["node"]
 	var sc: float = float(a.get("scale", _Const.WORKER_VISUAL_SCALE))
 	ant.position = _ant_pos(nwx, wy, nwz, sc)
-	if dx != 0 or dz != 0:
-		ant.rotation.y = atan2(float(dx), float(dz))
+	if face_dx != 0 or face_dz != 0:
+		ant.rotation.y = atan2(float(face_dx), float(face_dz))
+
+
+func _try_apply_if_walkable(a: Dictionary, nwx: int, nwz: int, face_dx: int, face_dz: int) -> bool:
+	if not _cell_walkable(nwx, nwz):
+		return false
+	_apply_step_to(a, nwx, nwz, face_dx, face_dz)
+	return true
+
+
+func _shuffle_dir8() -> Array[Vector2i]:
+	var dirs: Array[Vector2i] = [
+		Vector2i(-1, -1), Vector2i(0, -1), Vector2i(1, -1),
+		Vector2i(-1, 0), Vector2i(1, 0),
+		Vector2i(-1, 1), Vector2i(0, 1), Vector2i(1, 1),
+	]
+	for i in range(7, 0, -1):
+		var j: int = _rng.randi_range(0, i)
+		var tmp: Vector2i = dirs[i]
+		dirs[i] = dirs[j]
+		dirs[j] = tmp
+	return dirs
+
+
+func _try_move(a: Dictionary, dx: int, dz: int) -> void:
+	var wx: int = int(a["wx"])
+	var wz: int = int(a["wz"])
+	var nwx: int = wx + dx
+	var nwz: int = wz + dz
+	if _try_apply_if_walkable(a, nwx, nwz, dx, dz):
+		return
+	## Diagonal blocked: try axis slides (wall-following).
+	if dx != 0 and dz != 0:
+		if _try_apply_if_walkable(a, wx, wz + dz, 0, dz):
+			return
+		if _try_apply_if_walkable(a, wx + dx, wz, dx, 0):
+			return
+	## Cardinal at an edge, or slides failed: pick any walkable neighbor (prevents corner clustering).
+	for d in _shuffle_dir8():
+		if d.x == dx and d.y == dz:
+			continue
+		if _try_apply_if_walkable(a, wx + d.x, wz + d.y, d.x, d.y):
+			return
 
 
 func get_worker_count() -> int:
