@@ -100,13 +100,13 @@ const CALLOW_DARKEN_TICKS := 3 * TICKS_PER_ANT_DAY
 ## Each pheromone cell covers this many voxels on a side.
 const PHEROMONE_CELL_SIZE := 2
 ## Base deposit per step while RETURNING with food.
-const PHEROMONE_BASE_DEPOSIT := 0.08
+const PHEROMONE_BASE_DEPOSIT := 0.12
 ## Extra deposit amount close to food source.
-const PHEROMONE_DISTANCE_BONUS := 0.12
+const PHEROMONE_DISTANCE_BONUS := 0.18
 ## Legacy single-event deposit (food pickup burst).
 const PHEROMONE_DEPOSIT_AMOUNT := 0.15
-## Multiplicative factor applied every evaporation tick.
-const PHEROMONE_EVAPORATION_RATE := 0.97
+## Multiplicative factor applied every evaporation tick (closer to 1.0 = slower evaporation).
+const PHEROMONE_EVAPORATION_RATE := 0.985
 ## Physics ticks between evaporation passes.
 const PHEROMONE_EVAPORATION_INTERVAL_TICKS := 30
 ## Min concentration to trigger trail-following mode.

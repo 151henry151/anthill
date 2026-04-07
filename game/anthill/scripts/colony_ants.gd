@@ -81,6 +81,9 @@ func spawn_worker(pos: Vector3, is_nanitic: bool) -> void:
 		"path_idx": 0,
 		"entrance_clear": false,
 		"post_entrance_state": 1,
+		"food_source_wx": 0,
+		"food_source_wz": 0,
+		"heading_rad": _rng.randf_range(0.0, TAU),
 	})
 
 
@@ -242,14 +245,32 @@ func _step_foraging_depart(a: Dictionary) -> void:
 
 
 func _step_foraging_scout(a: Dictionary) -> void:
-	## Unbiased random walk (no net drift from the nest); search coverage comes from time and pheromone trails.
-	var dx: int = _rng.randi_range(-1, 1)
-	var dz: int = _rng.randi_range(-1, 1)
+	## Correlated random walk: persist heading + outward bias from nest (Beckers et al. 1993).
+	var wx: int = int(a["wx"])
+	var wz: int = int(a["wz"])
+	var heading: float = float(a.get("heading_rad", _rng.randf_range(0.0, TAU)))
+	# Outward bias: blend 30% toward away-from-nest direction.
+	var out_x: float = float(wx - nest_entrance.x)
+	var out_z: float = float(wz - nest_entrance.z)
+	var out_len: float = sqrt(out_x * out_x + out_z * out_z)
+	if out_len > 2.0:
+		var out_angle: float = atan2(out_x, out_z)
+		var diff: float = out_angle - heading
+		while diff > PI:
+			diff -= TAU
+		while diff < -PI:
+			diff += TAU
+		heading += diff * 0.3
+	# Random turn ±25° (correlated persistence).
+	heading += _rng.randf_range(-0.44, 0.44)
+	a["heading_rad"] = heading
+	var dx: int = int(round(sin(heading)))
+	var dz: int = int(round(cos(heading)))
 	if dx == 0 and dz == 0:
 		dx = 1 if _rng.randf() > 0.5 else -1
 	_try_move(a, dx, dz)
 	if _detect_trail(a):
-		a["state"] = 6  # FORAGING_RECRUIT
+		a["state"] = 6
 		return
 	_check_food_nearby(a)
 
@@ -261,48 +282,66 @@ func _step_foraging_recruit(a: Dictionary) -> void:
 	var wx: int = int(a["wx"])
 	var wz: int = int(a["wz"])
 	var here: float = pheromone_field.sample(wx, wz)
-	if here < _Const.PHEROMONE_RECRUIT_THRESHOLD * 0.5:
-		a["state"] = 5  # Lost trail, revert to scout
+	if here < _Const.PHEROMONE_RECRUIT_THRESHOLD * 0.3:
+		a["state"] = 5
 		return
-	var heading: float = (a["node"] as Node3D).rotation.y
-	var samples: Array[float] = pheromone_field.sample_directional(wx, wz, heading)
-	var best_idx: int = 0
-	var best_val: float = samples[0]
-	for i in range(1, samples.size()):
-		if samples[i] > best_val:
-			best_val = samples[i]
-			best_idx = i
-	var angle_off: float = (float(best_idx) - 1.0) * 0.5
-	var move_angle: float = heading + angle_off + _rng.randf_range(-0.15, 0.15)
-	var dx: int = int(round(sin(move_angle)))
-	var dz: int = int(round(cos(move_angle)))
+	# Sample 5-direction arc oriented AWAY from nest (recruits walk toward food).
+	var out_x: float = float(wx - nest_entrance.x)
+	var out_z: float = float(wz - nest_entrance.z)
+	var base_heading: float = atan2(out_x, out_z) if (out_x * out_x + out_z * out_z) > 4.0 else float(a.get("heading_rad", 0.0))
+	var best_conc: float = -1.0
+	var best_angle: float = base_heading
+	var cs: int = _Const.PHEROMONE_CELL_SIZE
+	for angle_off in [-0.7, -0.35, 0.0, 0.35, 0.7]:
+		var a_rad: float = base_heading + angle_off
+		var sx: int = wx + int(round(sin(a_rad) * float(cs * 3)))
+		var sz: int = wz + int(round(cos(a_rad) * float(cs * 3)))
+		var c: float = pheromone_field.sample(sx, sz)
+		if c > best_conc:
+			best_conc = c
+			best_angle = a_rad
+	best_angle += _rng.randf_range(-0.12, 0.12)
+	a["heading_rad"] = best_angle
+	var dx: int = int(round(sin(best_angle)))
+	var dz: int = int(round(cos(best_angle)))
+	if dx == 0 and dz == 0:
+		dx = 1 if _rng.randf() > 0.5 else -1
 	_try_move(a, dx, dz)
 	_check_food_nearby(a)
 
 
 func _step_returning(a: Dictionary) -> void:
 	var d: float = _dist_to(a, nest_entrance)
-	if (
-		nest_manager
-		and _entrance_needs_clearing()
-		and d < _Const.WORKER_ENTRANCE_CLEAR_ENGAGE_DIST
-	):
+	if nest_manager and _entrance_needs_clearing() and d < _Const.WORKER_ENTRANCE_CLEAR_ENGAGE_DIST:
 		a["entrance_clear"] = true
 		a["post_entrance_state"] = 7
 		a["dig_target"] = Vector3i.ZERO
 		a["state"] = 11
 		return
-	_move_toward(a, nest_entrance)
-	# Deposit trail pheromone every step while returning with food.
+	# Home-vector navigation: move directly toward nest with minimal noise (±10°).
+	var wx: int = int(a["wx"])
+	var wz: int = int(a["wz"])
+	var to_nest_x: float = float(nest_entrance.x - wx)
+	var to_nest_z: float = float(nest_entrance.z - wz)
+	var home_angle: float = atan2(to_nest_x, to_nest_z)
+	home_angle += _rng.randf_range(-0.17, 0.17)
+	var dx: int = int(round(sin(home_angle)))
+	var dz: int = int(round(cos(home_angle)))
+	if dx == 0 and dz == 0:
+		dx = signi(nest_entrance.x - wx)
+	_try_move(a, dx, dz)
+	# Trail deposition: stronger near food source (where ant just came from), weaker near nest.
 	if pheromone_field and bool(a.get("carrying_food", false)):
-		var wx: int = int(a["wx"])
-		var wz: int = int(a["wz"])
-		var deposit_amt: float = _Const.PHEROMONE_BASE_DEPOSIT
+		var fsx: int = int(a.get("food_source_wx", wx))
+		var fsz: int = int(a.get("food_source_wz", wz))
+		var d_to_food: float = sqrt(float((wx - fsx) * (wx - fsx) + (wz - fsz) * (wz - fsz)))
 		var d_to_nest: float = _dist_to(a, nest_entrance)
-		var d_total: float = d_to_nest + 30.0
-		var food_proximity: float = clampf(1.0 - d_to_nest / d_total, 0.0, 1.0)
-		deposit_amt += _Const.PHEROMONE_DISTANCE_BONUS * food_proximity
-		pheromone_field.deposit(wx, wz, deposit_amt)
+		var total_path: float = d_to_food + d_to_nest
+		if total_path < 1.0:
+			total_path = 1.0
+		var food_proximity: float = clampf(1.0 - d_to_food / total_path, 0.0, 1.0)
+		var deposit_amt: float = _Const.PHEROMONE_BASE_DEPOSIT + _Const.PHEROMONE_DISTANCE_BONUS * food_proximity
+		pheromone_field.deposit(int(a["wx"]), int(a["wz"]), deposit_amt)
 	d = _dist_to(a, nest_entrance)
 	if d < _Const.WORKER_NEST_ARRIVAL_MAX_DIST:
 		if food_store and bool(a.get("carrying_food", false)):
@@ -310,13 +349,19 @@ func _step_returning(a: Dictionary) -> void:
 		a["carrying_food"] = false
 		a["food_type"] = ""
 		a["return_stuck"] = 0
-		a["state"] = 8  # TROPHALLAXIS
+		a["state"] = 8
 		return
 	a["return_stuck"] = int(a.get("return_stuck", 0)) + 1
 
 
 func _step_trophallaxis(a: Dictionary) -> void:
-	a["state"] = 1  # RESTING (simplified)
+	# Successful foragers immediately re-depart (real ants make repeated trips).
+	var fsx: int = int(a.get("food_source_wx", 0))
+	var fsz: int = int(a.get("food_source_wz", 0))
+	if fsx != 0 or fsz != 0:
+		a["state"] = 4  # FORAGING_DEPART (will detect trail and become recruit)
+	else:
+		a["state"] = 1  # RESTING
 
 
 func _step_digging_approach(a: Dictionary) -> void:
@@ -444,11 +489,13 @@ func _check_food_nearby(a: Dictionary) -> void:
 			if taken > 0.0:
 				a["carrying_food"] = true
 				a["food_type"] = fs.food_type
+				a["food_source_wx"] = fs.wx
+				a["food_source_wz"] = fs.wz
 				fs.is_known_to_colony = true
 				a["state"] = 7  # RETURNING
 				a["return_stuck"] = 0
 				if pheromone_field:
-					pheromone_field.deposit(wx, wz, _Const.PHEROMONE_DEPOSIT_AMOUNT)
+					pheromone_field.deposit(wx, wz, _Const.PHEROMONE_DEPOSIT_AMOUNT * 2.0)
 			return
 
 

@@ -37,6 +37,7 @@ func setup(world: Node, founding_chamber: Vector3i, building_pheromone: Node) ->
 	if sy < 0:
 		sy = _TerrainGen.SURFACE_BASE
 	nest_entrance = Vector3i(founding_chamber.x, sy, founding_chamber.z)
+	_deepest_air = founding_chamber.y
 	_interior_dirty = true
 	_rebuild_dig_front()
 
@@ -61,6 +62,8 @@ func on_voxel_removed(pos: Vector3i) -> void:
 	compact_around(pos)
 	_nest_air_volume += 1
 	_interior_dirty = true
+	if pos.y < _deepest_air:
+		_deepest_air = pos.y
 	if _dig_front_set.has(pos):
 		_dig_front_set.erase(pos)
 		_dig_front.erase(pos)
@@ -107,7 +110,12 @@ func get_dig_target(ant: Node3D) -> Variant:
 		var horiz_dist: float = sqrt(dx_h * dx_h + dz_h * dz_h)
 		if shaft_deep_enough and horiz_dist > 1.0:
 			var normalized: float = minf(horiz_dist / float(_Const.MAX_GALLERY_RADIUS), 1.0)
-			score += _Const.HORIZONTAL_WEIGHT * normalized * (1.0 - normalized) * 4.0
+			score += _Const.HORIZONTAL_WEIGHT * normalized * 4.0
+		# Same-depth bonus: prefer voxels at chamber depth (± 2 voxels).
+		if shaft_deep_enough:
+			var dy_from_chamber: int = absi(v.y - queen_chamber.y)
+			if dy_from_chamber <= 3:
+				score += 3.0
 		# Tunnel continuation: reward extending existing tunnels.
 		var air_count: int = 0
 		for offset in [Vector3i(1,0,0), Vector3i(-1,0,0), Vector3i(0,0,1), Vector3i(0,0,-1)]:
@@ -125,14 +133,15 @@ func get_dig_target(ant: Node3D) -> Variant:
 	return best_voxel
 
 
+var _deepest_air: int = 999999
+
+
 func _deepest_air_y() -> int:
+	if _deepest_air < 999999:
+		return _deepest_air
 	if queen_chamber == Vector3i.ZERO:
 		return _TerrainGen.SURFACE_BASE
-	var deepest: int = queen_chamber.y
-	for v in _dig_front:
-		if v.y < deepest:
-			deepest = v.y
-	return deepest
+	return queen_chamber.y
 
 
 func reserve_voxel(voxel: Vector3i, ant: Node3D) -> void:
