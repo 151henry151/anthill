@@ -245,34 +245,28 @@ func _step_foraging_depart(a: Dictionary) -> void:
 
 
 func _step_foraging_scout(a: Dictionary) -> void:
-	## Correlated random walk: persist heading + outward bias from nest (Beckers et al. 1993).
-	var wx: int = int(a["wx"])
-	var wz: int = int(a["wz"])
-	var heading: float = float(a.get("heading_rad", _rng.randf_range(0.0, TAU)))
-	# Outward bias: blend 30% toward away-from-nest direction.
-	var out_x: float = float(wx - nest_entrance.x)
-	var out_z: float = float(wz - nest_entrance.z)
-	var out_len: float = sqrt(out_x * out_x + out_z * out_z)
-	if out_len > 2.0:
-		var out_angle: float = atan2(out_x, out_z)
-		var diff: float = out_angle - heading
-		while diff > PI:
-			diff -= TAU
-		while diff < -PI:
-			diff += TAU
-		heading += diff * 0.3
-	# Random turn ±25° (correlated persistence).
-	heading += _rng.randf_range(-0.44, 0.44)
-	a["heading_rad"] = heading
-	var dx: int = int(round(sin(heading)))
-	var dz: int = int(round(cos(heading)))
-	if dx == 0 and dz == 0:
-		dx = 1 if _rng.randf() > 0.5 else -1
-	_try_move(a, dx, dz)
+	## Uniform Moore exploration until a trail is sensed (stochastic lattice search; cf. Hartman et al. 2024).
+	if _detect_trail(a):
+		a["state"] = 6
+		return
+	_moore_uniform_random_step(a)
 	if _detect_trail(a):
 		a["state"] = 6
 		return
 	_check_food_nearby(a)
+
+
+func _moore_uniform_random_step(a: Dictionary) -> void:
+	var wx: int = int(a["wx"])
+	var wz: int = int(a["wz"])
+	for d in _shuffle_dir8():
+		if _try_apply_if_walkable(a, wx + d.x, wz + d.y, d.x, d.y):
+			return
+	var dx: int = _rng.randi_range(-1, 1)
+	var dz: int = _rng.randi_range(-1, 1)
+	if dx == 0 and dz == 0:
+		dx = 1 if _rng.randf() > 0.5 else -1
+	_try_move(a, dx, dz)
 
 
 func _step_foraging_recruit(a: Dictionary) -> void:
@@ -285,29 +279,47 @@ func _step_foraging_recruit(a: Dictionary) -> void:
 	if here < _Const.PHEROMONE_RECRUIT_THRESHOLD * 0.3:
 		a["state"] = 5
 		return
-	# Sample 5-direction arc oriented AWAY from nest (recruits walk toward food).
-	var out_x: float = float(wx - nest_entrance.x)
-	var out_z: float = float(wz - nest_entrance.z)
-	var base_heading: float = atan2(out_x, out_z) if (out_x * out_x + out_z * out_z) > 4.0 else float(a.get("heading_rad", 0.0))
-	var best_conc: float = -1.0
-	var best_angle: float = base_heading
-	var cs: int = _Const.PHEROMONE_CELL_SIZE
-	for angle_off in [-0.7, -0.35, 0.0, 0.35, 0.7]:
-		var a_rad: float = base_heading + angle_off
-		var sx: int = wx + int(round(sin(a_rad) * float(cs * 3)))
-		var sz: int = wz + int(round(cos(a_rad) * float(cs * 3)))
-		var c: float = pheromone_field.sample(sx, sz)
-		if c > best_conc:
-			best_conc = c
-			best_angle = a_rad
-	best_angle += _rng.randf_range(-0.12, 0.12)
-	a["heading_rad"] = best_angle
-	var dx: int = int(round(sin(best_angle)))
-	var dz: int = int(round(cos(best_angle)))
-	if dx == 0 and dz == 0:
-		dx = 1 if _rng.randf() > 0.5 else -1
-	_try_move(a, dx, dz)
+	_step_tropotaxis_moore(a)
 	_check_food_nearby(a)
+
+
+## Tropotaxis: roulette over **walkable** Moore neighbors with weights **`floor + max(0, c_nb − c_here)`** (local gradient climbing).
+func _step_tropotaxis_moore(a: Dictionary) -> void:
+	if pheromone_field == null:
+		return
+	var wx: int = int(a["wx"])
+	var wz: int = int(a["wz"])
+	var here: float = pheromone_field.sample(wx, wz)
+	var weights: Array[float] = []
+	var dirs: Array[Vector2i] = []
+	for ox in range(-1, 2):
+		for oz in range(-1, 2):
+			if ox == 0 and oz == 0:
+				continue
+			var nwx: int = wx + ox
+			var nwz: int = wz + oz
+			if not _cell_walkable(nwx, nwz):
+				continue
+			var c_nb: float = pheromone_field.sample(nwx, nwz)
+			var w: float = _Const.PHEROMONE_TROPOTAXIS_FLOOR + maxf(0.0, c_nb - here)
+			weights.append(w)
+			dirs.append(Vector2i(ox, oz))
+	if dirs.is_empty():
+		_moore_uniform_random_step(a)
+		return
+	var total: float = 0.0
+	for w in weights:
+		total += w
+	var r: float = _rng.randf() * total
+	var acc: float = 0.0
+	for i in range(weights.size()):
+		acc += weights[i]
+		if r <= acc:
+			var d: Vector2i = dirs[i]
+			_try_move(a, d.x, d.y)
+			return
+	var d0: Vector2i = dirs[dirs.size() - 1]
+	_try_move(a, d0.x, d0.y)
 
 
 func _step_returning(a: Dictionary) -> void:

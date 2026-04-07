@@ -107,6 +107,8 @@ const PHEROMONE_DISTANCE_BONUS := 0.18
 const PHEROMONE_DEPOSIT_AMOUNT := 0.15
 ## Multiplicative factor applied every evaporation tick (closer to 1.0 = slower evaporation).
 const PHEROMONE_EVAPORATION_RATE := 0.985
+## Explicit Laplacian diffusion step on the trail grid each evaporation interval (**< 0.25** for 4-neighbor stability).
+const PHEROMONE_DIFFUSION_LAMBDA := 0.12
 ## Physics ticks between evaporation passes.
 const PHEROMONE_EVAPORATION_INTERVAL_TICKS := 30
 ## Min concentration to trigger trail-following mode.
@@ -115,6 +117,8 @@ const PHEROMONE_RECRUIT_THRESHOLD := 0.02
 const PHEROMONE_MINIMUM_THRESHOLD := 0.005
 ## Voxels ahead an ant can sense trail.
 const PHEROMONE_SENSE_RADIUS := 4
+## Minimum roulette weight for tropotaxis (flat field → near-uniform random walk among walkable Moore neighbors).
+const PHEROMONE_TROPOTAXIS_FLOOR := 0.001
 
 # ---------------------------------------------------------------------------
 # Foraging task balance

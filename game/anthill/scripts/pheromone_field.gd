@@ -1,10 +1,15 @@
 extends Node
-## 2D grid overlay of trail pheromone concentration on the world XZ plane.
+## 2D grid overlay of trail pheromone concentration on the world XZ plane. **Diffusion** between cells each update models spreading chemical; **evaporation** removes it.
 
 const _Const := preload("res://scripts/constants.gd")
 
 var _trail_grid: Dictionary = {}
 var _evap_timer: int = 0
+
+## 4-neighbor offsets on **pheromone cells** (not voxels).
+var _card4: Array[Vector2i] = [
+	Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1),
+]
 
 
 func deposit(wx: int, wz: int, amount: float) -> void:
@@ -33,6 +38,7 @@ func tick() -> void:
 	if _evap_timer < _Const.PHEROMONE_EVAPORATION_INTERVAL_TICKS:
 		return
 	_evap_timer = 0
+	_diffuse_laplacian_4()
 	var to_remove: Array[Vector2i] = []
 	for cell in _trail_grid:
 		_trail_grid[cell] = float(_trail_grid[cell]) * _Const.PHEROMONE_EVAPORATION_RATE
@@ -40,6 +46,28 @@ func tick() -> void:
 			to_remove.append(cell)
 	for cell in to_remove:
 		_trail_grid.erase(cell)
+
+
+func _diffuse_laplacian_4() -> void:
+	var lam: float = _Const.PHEROMONE_DIFFUSION_LAMBDA
+	if lam <= 0.0 or _trail_grid.is_empty():
+		return
+	var old: Dictionary = _trail_grid.duplicate(true)
+	var cells_set: Dictionary = {}
+	for c in old:
+		cells_set[c] = true
+		for d in _card4:
+			cells_set[c + d] = true
+	var new_grid: Dictionary = {}
+	for c in cells_set:
+		var v: float = float(old.get(c, 0.0))
+		var sum_nb: float = 0.0
+		for d in _card4:
+			sum_nb += float(old.get(c + d, 0.0))
+		var vn: float = (1.0 - 4.0 * lam) * v + lam * sum_nb
+		if vn >= _Const.PHEROMONE_MINIMUM_THRESHOLD * 0.5:
+			new_grid[c] = minf(vn, 1.0)
+	_trail_grid = new_grid
 
 
 func debug_trail_cell_count() -> int:

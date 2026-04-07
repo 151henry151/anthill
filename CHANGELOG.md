@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-04-08
+
+### Changed
+
+- **`scripts/constants.gd`**: add **`PHEROMONE_DIFFUSION_LAMBDA`** and **`PHEROMONE_TROPOTAXIS_FLOOR`**.
+- **`scripts/pheromone_field.gd`**: **4-neighbor Laplacian diffusion** on the trail grid each evaporation interval, then evaporation (spatial spreading of pheromone).
+- **`scripts/colony_ants.gd`**: **FORAGING_SCOUT** uses a **shuffled uniform Moore** step each move until a trail is sensed; **FORAGING_RECRUIT** uses **tropotaxis** (roulette weighted by **`floor + max(0, c_neighbor − c_here)`** on walkable Moore neighbors).
+
 ## [0.6.1] - 2026-04-07
 
 ### Fixed
