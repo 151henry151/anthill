@@ -17,6 +17,8 @@ var _rng: RandomNumberGenerator
 var _ant_builder: RefCounted
 ## External references set by main_controller.
 var pheromone_field: Node
+## Passive CHC footprint grid (negative chemotaxis); same cell size as **`pheromone_field`**.
+var footprint_field: Node
 var food_store: Node
 var food_sources: Array[Node3D] = []
 var nest_entrance: Vector3i = Vector3i.ZERO
@@ -245,15 +247,59 @@ func _step_foraging_depart(a: Dictionary) -> void:
 
 
 func _step_foraging_scout(a: Dictionary) -> void:
-	## Uniform Moore exploration until a trail is sensed (stochastic lattice search; cf. Hartman et al. 2024).
+	## Roulette-biased Moore exploration (prefer lower footprint, weak trail up-gradient) until recruitment trail is sensed.
 	if _detect_trail(a):
 		a["state"] = 6
 		return
-	_moore_uniform_random_step(a)
+	_moore_exploration_step(a)
 	if _detect_trail(a):
 		a["state"] = 6
 		return
 	_check_food_nearby(a)
+
+
+## Scout search: weighted Moore step — **lower neighbor footprint** and **trail gradient**; falls back to shuffled uniform if no footprint field.
+func _moore_exploration_step(a: Dictionary) -> void:
+	if footprint_field == null:
+		_moore_uniform_random_step(a)
+		return
+	var wx: int = int(a["wx"])
+	var wz: int = int(a["wz"])
+	var t_here: float = pheromone_field.sample(wx, wz) if pheromone_field else 0.0
+	var fp_here: float = footprint_field.sample(wx, wz)
+	var weights: Array[float] = []
+	var dirs: Array[Vector2i] = []
+	for ox in range(-1, 2):
+		for oz in range(-1, 2):
+			if ox == 0 and oz == 0:
+				continue
+			var nwx: int = wx + ox
+			var nwz: int = wz + oz
+			if not _cell_walkable(nwx, nwz):
+				continue
+			var t_nb: float = pheromone_field.sample(nwx, nwz) if pheromone_field else 0.0
+			var fp_nb: float = footprint_field.sample(nwx, nwz)
+			var w: float = _Const.FOOTPRINT_SCOUT_BASE_WEIGHT
+			w += _Const.FOOTPRINT_SCOUT_REPULSION_MULT * _Const.FOOTPRINT_REPULSION_WEIGHT * maxf(0.0, fp_here - fp_nb)
+			w += maxf(0.0, t_nb - t_here)
+			weights.append(w)
+			dirs.append(Vector2i(ox, oz))
+	if dirs.is_empty():
+		_moore_uniform_random_step(a)
+		return
+	var total: float = 0.0
+	for wv in weights:
+		total += wv
+	var r: float = _rng.randf() * total
+	var acc: float = 0.0
+	for i in range(weights.size()):
+		acc += weights[i]
+		if r <= acc:
+			var d: Vector2i = dirs[i]
+			_try_move(a, d.x, d.y)
+			return
+	var d0: Vector2i = dirs[dirs.size() - 1]
+	_try_move(a, d0.x, d0.y)
 
 
 func _moore_uniform_random_step(a: Dictionary) -> void:
@@ -283,13 +329,14 @@ func _step_foraging_recruit(a: Dictionary) -> void:
 	_check_food_nearby(a)
 
 
-## Tropotaxis: roulette over **walkable** Moore neighbors with weights **`floor + max(0, c_nb − c_here)`** (local gradient climbing).
+## Tropotaxis + footprint repulsion: **`floor + max(0, t_nb − t_here) + β·max(0, f_here − f_nb)`** on walkable Moore neighbors (**β** = **`FOOTPRINT_REPULSION_WEIGHT`**).
 func _step_tropotaxis_moore(a: Dictionary) -> void:
 	if pheromone_field == null:
 		return
 	var wx: int = int(a["wx"])
 	var wz: int = int(a["wz"])
 	var here: float = pheromone_field.sample(wx, wz)
+	var fp_here: float = footprint_field.sample(wx, wz) if footprint_field else 0.0
 	var weights: Array[float] = []
 	var dirs: Array[Vector2i] = []
 	for ox in range(-1, 2):
@@ -302,10 +349,13 @@ func _step_tropotaxis_moore(a: Dictionary) -> void:
 				continue
 			var c_nb: float = pheromone_field.sample(nwx, nwz)
 			var w: float = _Const.PHEROMONE_TROPOTAXIS_FLOOR + maxf(0.0, c_nb - here)
+			if footprint_field:
+				var fp_nb: float = footprint_field.sample(nwx, nwz)
+				w += _Const.FOOTPRINT_REPULSION_WEIGHT * maxf(0.0, fp_here - fp_nb)
 			weights.append(w)
 			dirs.append(Vector2i(ox, oz))
 	if dirs.is_empty():
-		_moore_uniform_random_step(a)
+		_moore_exploration_step(a)
 		return
 	var total: float = 0.0
 	for w in weights:
@@ -342,7 +392,7 @@ func _step_returning(a: Dictionary) -> void:
 	if dx == 0 and dz == 0:
 		dx = signi(nest_entrance.x - wx)
 	_try_move(a, dx, dz)
-	# Trail deposition: stronger near food source (where ant just came from), weaker near nest.
+	# **Recruitment trail** (fed return only): stronger near food source, weaker near nest; scale down when local trail is saturated.
 	if pheromone_field and bool(a.get("carrying_food", false)):
 		var fsx: int = int(a.get("food_source_wx", wx))
 		var fsz: int = int(a.get("food_source_wz", wz))
@@ -353,6 +403,7 @@ func _step_returning(a: Dictionary) -> void:
 			total_path = 1.0
 		var food_proximity: float = clampf(1.0 - d_to_food / total_path, 0.0, 1.0)
 		var deposit_amt: float = _Const.PHEROMONE_BASE_DEPOSIT + _Const.PHEROMONE_DISTANCE_BONUS * food_proximity
+		deposit_amt *= _trail_saturation_multiplier(int(a["wx"]), int(a["wz"]))
 		pheromone_field.deposit(int(a["wx"]), int(a["wz"]), deposit_amt)
 	d = _dist_to(a, nest_entrance)
 	if d < _Const.WORKER_NEST_ARRIVAL_MAX_DIST:
@@ -506,8 +557,10 @@ func _check_food_nearby(a: Dictionary) -> void:
 				fs.is_known_to_colony = true
 				a["state"] = 7  # RETURNING
 				a["return_stuck"] = 0
+				# **Recruitment trail** burst at pickup (fed worker only); saturation reduces runaway reinforcement.
 				if pheromone_field:
-					pheromone_field.deposit(wx, wz, _Const.PHEROMONE_DEPOSIT_AMOUNT * 2.0)
+					var burst: float = _Const.PHEROMONE_DEPOSIT_AMOUNT * 2.0 * _trail_saturation_multiplier(wx, wz)
+					pheromone_field.deposit(wx, wz, burst)
 			return
 
 
@@ -585,8 +638,10 @@ func _step_random_walk(a: Dictionary) -> void:
 	if dx == 0 and dz == 0:
 		dx = 1 if _rng.randf() > 0.5 else -1
 	_try_move(a, dx, dz)
+	# **Recruitment trail** while carrying in legacy random-walk state (fed path only).
 	if bool(a.get("carrying_food", false)) and pheromone_field:
-		pheromone_field.deposit(int(a["wx"]), int(a["wz"]), _Const.PHEROMONE_DEPOSIT_AMOUNT * 0.5)
+		var dep: float = _Const.PHEROMONE_DEPOSIT_AMOUNT * 0.5 * _trail_saturation_multiplier(int(a["wx"]), int(a["wz"]))
+		pheromone_field.deposit(int(a["wx"]), int(a["wz"]), dep)
 
 
 func _cell_walkable(nwx: int, nwz: int) -> bool:
@@ -606,6 +661,20 @@ func _apply_step_to(a: Dictionary, nwx: int, nwz: int, face_dx: int, face_dz: in
 	ant.position = _ant_pos(nwx, wy, nwz, sc)
 	if face_dx != 0 or face_dz != 0:
 		ant.rotation.y = atan2(float(face_dx), float(face_dz))
+	if footprint_field and footprint_field.has_method("deposit"):
+		footprint_field.deposit(nwx, nwz, _Const.FOOTPRINT_DEPOSIT_PER_STEP)
+
+
+## Scale **recruitment** deposit when local trail concentration is high (**Lasius niger**-style negative feedback on runaway attraction).
+func _trail_saturation_multiplier(wx: int, wz: int) -> float:
+	if pheromone_field == null:
+		return 1.0
+	var c: float = pheromone_field.sample(wx, wz)
+	var s0: float = _Const.TRAIL_SATURATION_START
+	if c <= s0:
+		return 1.0
+	var t: float = clampf((c - s0) / maxf(1e-6, 1.0 - s0), 0.0, 1.0)
+	return lerpf(1.0, _Const.TRAIL_SATURATION_MIN_DEPOSIT_SCALE, t)
 
 
 func _try_apply_if_walkable(a: Dictionary, nwx: int, nwz: int, face_dx: int, face_dz: int) -> bool:

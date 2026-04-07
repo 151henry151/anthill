@@ -9,8 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`scripts/footprint_field.gd`**: passive **cuticular hydrocarbon** footprint grid (slow decay, same resolution as recruitment trail).
 - **`briefing.txt`**: synthesis of **Lasius niger** foraging feedback (attractive trail vs footprint hydrocarbon negative feedback).
 - **`Ant Foraging and Communication Simulation Data - Table 1.csv`**: reference table of pheromone types and behaviors for **L. niger** and comparison species.
+
+### Changed
+
+- **`scripts/constants.gd`**: add **`FOOTPRINT_*`**, **`TRAIL_SATURATION_*`**, and related scout/tropotaxis tuning.
+- **`scripts/main_controller.gd`**: create **`FootprintField`**, assign **`colony_ants.footprint_field`**, tick footprint each sim tick.
+- **`scripts/colony_ants.gd`**: deposit footprint each successful step; **FORAGING_SCOUT** uses footprint- and trail-weighted Moore roulette; **FORAGING_RECRUIT** tropotaxis adds repulsion from higher neighbor footprint; scale **fed-worker** recruitment deposits by trail saturation; document recruitment-only deposits.
 
 ## [0.6.2] - 2026-04-08
 

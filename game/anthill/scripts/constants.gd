@@ -119,6 +119,26 @@ const PHEROMONE_MINIMUM_THRESHOLD := 0.005
 const PHEROMONE_SENSE_RADIUS := 4
 ## Minimum roulette weight for tropotaxis (flat field → near-uniform random walk among walkable Moore neighbors).
 const PHEROMONE_TROPOTAXIS_FLOOR := 0.001
+## When local **recruitment** concentration exceeds this, scale down further **fed-worker** deposits (counteracts runaway positive feedback; cf. *briefing.txt*).
+const TRAIL_SATURATION_START := 0.38
+## Multiplier applied to recruitment deposit at **full** saturation (**1.0** = no extra deposit).
+const TRAIL_SATURATION_MIN_DEPOSIT_SCALE := 0.22
+
+# ---------------------------------------------------------------------------
+# Footprint hydrocarbons (CHC) — passive marking, negative chemotaxis (Lasius niger)
+# ---------------------------------------------------------------------------
+## Deposited per successful worker step (tarsi); same grid resolution as **`PHEROMONE_CELL_SIZE`**.
+const FOOTPRINT_DEPOSIT_PER_STEP := 0.0035
+## Slow decay (persistent “hours–days” substrate marking in compressed ant-time).
+const FOOTPRINT_EVAPORATION_RATE := 0.997
+const FOOTPRINT_EVAPORATION_INTERVAL_TICKS := 90
+const FOOTPRINT_MINIMUM_THRESHOLD := 0.0002
+## Weight on **`max(0, f_here − f_nb)`** in combined scout/recruit roulette (repellent / negative feedback).
+const FOOTPRINT_REPULSION_WEIGHT := 2.2
+## Base roulette weight for **scout** exploration before footprint terms.
+const FOOTPRINT_SCOUT_BASE_WEIGHT := 0.002
+## Extra emphasis on footprint avoidance while **scouting** (vs recruit).
+const FOOTPRINT_SCOUT_REPULSION_MULT := 1.4
 
 # ---------------------------------------------------------------------------
 # Foraging task balance

@@ -42,6 +42,7 @@ var _queen: Node3D
 var _brood_manager: Node
 var _brood_renderer: Node3D
 var _pheromone_field: Node
+var _footprint_field: Node
 var _food_store: Node
 var _food_sources: Array[Node3D] = []
 var _next_food_spawn_tick: int = 0
@@ -128,6 +129,11 @@ func _setup_systems() -> void:
 	_pheromone_field.set_script(load("res://scripts/pheromone_field.gd"))
 	add_child(_pheromone_field)
 
+	_footprint_field = Node.new()
+	_footprint_field.name = "FootprintField"
+	_footprint_field.set_script(load("res://scripts/footprint_field.gd"))
+	add_child(_footprint_field)
+
 	_food_store = Node.new()
 	_food_store.name = "ColonyFoodStore"
 	_food_store.set_script(load("res://scripts/colony_food_store.gd"))
@@ -171,6 +177,7 @@ func _setup_systems() -> void:
 	_brood_manager.ant_eclosed.connect(_on_ant_eclosed)
 
 	colony_ants.pheromone_field = _pheromone_field
+	colony_ants.footprint_field = _footprint_field
 	colony_ants.food_store = _food_store
 	colony_ants.nest_manager = _nest_manager
 	colony_ants.building_pheromone = _building_pheromone
@@ -314,6 +321,8 @@ func _physics_process(_delta: float) -> void:
 			_brood_manager.tick()
 		if _pheromone_field:
 			_pheromone_field.tick()
+		if _footprint_field:
+			_footprint_field.tick()
 		if _building_pheromone:
 			_building_pheromone.tick()
 		_update_food_sources_at_tick()
