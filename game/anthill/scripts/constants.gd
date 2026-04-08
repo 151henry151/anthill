@@ -124,6 +124,10 @@ const TRAIL_SATIATED_DEPOSIT_PROBABILITY := 0.333333
 ## Laboratory spacing of discrete trail **spots** along the return path (mm); converted to voxels via **`MM_PER_UNIT`**.
 const TRAIL_SPOT_MIN_MM := 20.0
 const TRAIL_SPOT_MAX_MM := 40.0
+## Below this local trail concentration, CHC footprint uses **search-phase** weak attraction to explored substrate; at or above, **exploitation-phase** repellent term applies.
+const PHEROMONE_EXPLOITATION_THRESHOLD := 0.015
+## Weight on **`max(0, f_nb − f_here)`** in **search** phase (positive chemotaxis to recent exploration).
+const FOOTPRINT_SEARCH_ATTRACTION_WEIGHT := 0.35
 
 # ---------------------------------------------------------------------------
 # Pheromone overlay (scientific visualization — [P] field view)

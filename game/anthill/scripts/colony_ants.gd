@@ -339,7 +339,7 @@ func _step_foraging_recruit(a: Dictionary) -> void:
 	_check_food_nearby(a)
 
 
-## Tropotaxis + footprint repulsion: **`floor + max(0, t_nb − t_here) + β·max(0, f_here − f_nb)`** on walkable Moore neighbors (**β** = **`FOOTPRINT_REPULSION_WEIGHT`**).
+## Tropotaxis + **phase-dependent** CHC: **search** (low trail) weak attraction along **`f_nb − f_here`**; **exploitation** (high trail) repellent **`f_here − f_nb`**.
 func _step_tropotaxis_moore(a: Dictionary) -> void:
 	if pheromone_field == null:
 		return
@@ -347,6 +347,7 @@ func _step_tropotaxis_moore(a: Dictionary) -> void:
 	var wz: int = int(a["wz"])
 	var here: float = pheromone_field.sample(wx, wz)
 	var fp_here: float = footprint_field.sample(wx, wz) if footprint_field else 0.0
+	var exploit: bool = here >= _Const.PHEROMONE_EXPLOITATION_THRESHOLD
 	var weights: Array[float] = []
 	var dirs: Array[Vector2i] = []
 	for ox in range(-1, 2):
@@ -361,7 +362,10 @@ func _step_tropotaxis_moore(a: Dictionary) -> void:
 			var w: float = _Const.PHEROMONE_TROPOTAXIS_FLOOR + maxf(0.0, c_nb - here)
 			if footprint_field:
 				var fp_nb: float = footprint_field.sample(nwx, nwz)
-				w += _Const.FOOTPRINT_REPULSION_WEIGHT * maxf(0.0, fp_here - fp_nb)
+				if exploit:
+					w += _Const.FOOTPRINT_REPULSION_WEIGHT * maxf(0.0, fp_here - fp_nb)
+				else:
+					w += _Const.FOOTPRINT_SEARCH_ATTRACTION_WEIGHT * maxf(0.0, fp_nb - fp_here)
 			weights.append(w)
 			dirs.append(Vector2i(ox, oz))
 	if dirs.is_empty():

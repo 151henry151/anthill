@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.4] - 2026-04-04
+
+### Changed
+
+- **`scripts/constants.gd`**: add **`PHEROMONE_EXPLOITATION_THRESHOLD`** and **`FOOTPRINT_SEARCH_ATTRACTION_WEIGHT`** for CHC phase behavior.
+- **`scripts/colony_ants.gd`**: **FORAGING_RECRUIT** tropotaxis uses **search-phase** weak attraction to footprint gradients when local trail is low; **exploitation-phase** repellent when trail exceeds threshold.
+
 ## [0.6.3] - 2026-04-04
 
 ### Added
