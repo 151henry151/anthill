@@ -9,8 +9,8 @@ Self-contained **Godot 4.2** export (game data embedded in the executable with d
 **Run:**
 
 ```bash
-chmod +x anthill-0.7.10-linux.x86_64
-./anthill-0.7.10-linux.x86_64
+chmod +x anthill-0.7.11-linux.x86_64
+./anthill-0.7.11-linux.x86_64
 ```
 
 **Rebuild** (from repository root; requires **Godot 4.2.x** matching the project and **export templates** installed for that exact version, e.g. under `~/.local/share/godot/export_templates/<version>/`):
@@ -20,6 +20,18 @@ chmod +x anthill-0.7.10-linux.x86_64
 ```
 
 The output path is derived from **`game/anthill/project.godot`** **`config/version`**. Export preset: **`game/anthill/export_presets.cfg`** (preset name **`Linux`**).
+
+## Windows executable (`anthill-<version>-windows.exe`)
+
+**x86_64** Windows build (embedded PCK), produced with the same Godot version as the project. Can be built **from Linux** with matching export templates (no **rcedit** required; **`application/modify_resources`** is off in the preset so EXE metadata is not patched on cross-export).
+
+**Rebuild** (from repository root):
+
+```bash
+./scripts/export-windows.sh
+```
+
+Export preset: **`game/anthill/export_presets.cfg`** (preset name **`Windows`**). To customize icon / version resource on Windows, enable **`application/modify_resources`** in that preset and configure **rcedit** in the editor.
 
 ## `anthill` (shell launcher)
 

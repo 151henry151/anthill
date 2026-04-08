@@ -75,8 +75,8 @@ The **Ogg Theora** intro (**`game/anthill/assets/intro/intro.ogv`**) is tracked 
 | **`docs/reference/`** | Bibliography, specification text, briefing, CSV tables (not loaded at runtime). |
 | **`docs/cursor-agent-shell.md`** | Notes if the Cursor agent shell misbehaves. |
 | **`CHANGELOG.md`** | Versioned list of code and asset changes. |
-| **`releases/`** | Linux **`anthill-*-linux.x86_64`** export, repo-relative **`anthill`** launcher (see **`releases/README.md`**). |
-| **`scripts/install-godot4.sh`**, **`scripts/install-anthill.sh`**, **`scripts/export-linux.sh`** | Install Godot, install the **`anthill`** launcher system-wide, or build the Linux export binary. |
+| **`releases/`** | Linux **`anthill-*-linux.x86_64`** and Windows **`anthill-*-windows.exe`** exports, repo-relative **`anthill`** launcher (see **`releases/README.md`**). |
+| **`scripts/install-godot4.sh`**, **`scripts/install-anthill.sh`**, **`scripts/export-linux.sh`**, **`scripts/export-windows.sh`** | Install Godot, install the **`anthill`** launcher system-wide, or build Linux / Windows export binaries. |
 
 ## Citation and reuse
 
