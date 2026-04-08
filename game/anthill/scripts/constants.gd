@@ -144,6 +144,10 @@ const TROPOTAXIS_RATIO_GAIN := 0.26
 const TROPOTAXIS_HC_DENOM_SCALE := 1.12
 ## Per-worker crowding weight in the ratio **denominator** (neighbor patch).
 const TROPOTAXIS_CROWD_PER_ANT := 0.38
+## Reference **return-segment** length (ticks) for recruitment deposit scaling (**shorter** segment ⇒ higher multiplier, capped).
+const FORAGING_RTT_REFERENCE_TICKS := 420
+const FORAGING_RTT_SCALE_MIN := 0.42
+const FORAGING_RTT_SCALE_MAX := 1.85
 ## Append **`user://validation/`** CSV logs when **true**.
 const VALIDATION_EXPORT_ENABLED := true
 const VALIDATION_EXPORT_INTERVAL_TICKS := 60
