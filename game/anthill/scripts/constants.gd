@@ -148,6 +148,13 @@ const TROPOTAXIS_CROWD_PER_ANT := 0.38
 const FORAGING_RTT_REFERENCE_TICKS := 420
 const FORAGING_RTT_SCALE_MIN := 0.42
 const FORAGING_RTT_SCALE_MAX := 1.85
+## Footprint ≥ this ⇒ **home-range** / well-trodden substrate (**faster** steps during scout/recruit).
+const HOME_RANGE_FOOTPRINT_THRESHOLD := 0.038
+## Multiply move interval on **marked** substrate (**< 1** ⇒ faster movement).
+const FORAGING_MARKED_INTERVAL_MULT := 0.87
+## **Naive** workers on **unmarked** substrate: random interval stretch (zigzag / slower search).
+const NAIVE_ZIGZAG_INTERVAL_MIN := 1.08
+const NAIVE_ZIGZAG_INTERVAL_MAX := 1.42
 ## Append **`user://validation/`** CSV logs when **true**.
 const VALIDATION_EXPORT_ENABLED := true
 const VALIDATION_EXPORT_INTERVAL_TICKS := 60

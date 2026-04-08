@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.9] - 2026-04-04
+
+### Changed
+
+- **`scripts/constants.gd`**: add **`FORAGING_RTT_*`** round-trip scaling parameters.
+- **`scripts/colony_ants.gd`**: record **`trip_pickup_age`** at food pickup; scale return-path recruitment deposits by **`FORAGING_RTT_REFERENCE_TICKS / segment_ticks`** (capped); clear **`trip_pickup_age`** at nest arrival.
+
 ## [0.6.8] - 2026-04-04
 
 ### Changed

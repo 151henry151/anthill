@@ -103,8 +103,34 @@ func spawn_worker(pos: Vector3, is_nanitic: bool) -> void:
 		"memory_quality": 0.0,
 		"last_food_quality": 1.0,
 		"trip_pickup_age": -1,
+		"is_experienced_forager": false,
+		"move_interval_eff": _Const.WORKER_MOVE_INTERVAL,
 	})
 	_next_worker_sim_id += 1
+
+
+func _is_substrate_home_range_marked(wx: int, wz: int) -> bool:
+	if footprint_field == null:
+		return false
+	return footprint_field.sample(wx, wz) >= _Const.HOME_RANGE_FOOTPRINT_THRESHOLD
+
+
+func _refresh_move_interval(a: Dictionary) -> void:
+	var base: float = _Const.WORKER_MOVE_INTERVAL
+	var st: int = int(a["state"])
+	if st != 5 and st != 6:
+		a["move_interval_eff"] = base
+		return
+	var wx: int = int(a["wx"])
+	var wz: int = int(a["wz"])
+	var marked: bool = _is_substrate_home_range_marked(wx, wz)
+	var exp: bool = bool(a.get("is_experienced_forager", false))
+	var eff: float = base
+	if marked:
+		eff *= _Const.FORAGING_MARKED_INTERVAL_MULT
+	if not exp and not marked:
+		eff *= _rng.randf_range(_Const.NAIVE_ZIGZAG_INTERVAL_MIN, _Const.NAIVE_ZIGZAG_INTERVAL_MAX)
+	a["move_interval_eff"] = eff
 
 
 func _surface_y(wx: int, wz: int) -> int:
@@ -128,9 +154,11 @@ func _physics_process(delta: float) -> void:
 		a["age_ticks"] = int(a["age_ticks"]) + sim_steps
 		for _i in range(sim_steps):
 			a["t"] = float(a["t"]) + delta
-			while float(a["t"]) >= move_interval:
-				a["t"] -= move_interval
+			while float(a["t"]) >= float(a.get("move_interval_eff", move_interval)):
+				var eff: float = float(a.get("move_interval_eff", move_interval))
+				a["t"] -= eff
 				_step_ant(a)
+				_refresh_move_interval(a)
 	PerfTrace.set_ants_usec(Time.get_ticks_usec() - t0)
 
 
@@ -444,6 +472,7 @@ func _step_returning(a: Dictionary) -> void:
 	if d < _Const.WORKER_NEST_ARRIVAL_MAX_DIST:
 		if food_store and bool(a.get("carrying_food", false)):
 			food_store.add_food(String(a["food_type"]), _Const.FOOD_CARRY_AMOUNT)
+			a["is_experienced_forager"] = true
 		a["carrying_food"] = false
 		a["food_type"] = ""
 		a["trip_pickup_age"] = -1
@@ -944,6 +973,9 @@ func get_ant_inspector_snapshot(a: Dictionary) -> Dictionary:
 		"memory_wz": int(a.get("memory_wz", 0)),
 		"memory_quality": float(a.get("memory_quality", 0.0)),
 		"last_food_quality": float(a.get("last_food_quality", 1.0)),
+		"is_experienced_forager": bool(a.get("is_experienced_forager", false)),
+		"move_interval_eff": float(a.get("move_interval_eff", _Const.WORKER_MOVE_INTERVAL)),
+		"rtt_multiplier": _foraging_rtt_multiplier(a),
 	}
 
 
