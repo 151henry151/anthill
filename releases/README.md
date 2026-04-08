@@ -1,14 +1,31 @@
 # Releases
 
-This directory holds **distribution helpers** for the current tree. The game is a **Godot 4** project under **`../game/anthill/`**; there is no single self-contained engine export in the repo (that would be produced with an export preset and **`godot --export-release`**).
+This directory holds **distribution artifacts** for the repository tree.
 
-## `anthill` (launcher)
+## Linux binary (`anthill-<version>-linux.x86_64`)
 
-Executable shell launcher (same role as **`/usr/local/bin/anthill`** from **`scripts/install-anthill.sh`**): it runs Godot with **`--path`** pointing at **`game/anthill`** relative to the repository root.
+Self-contained **Godot 4.2** export (game data embedded in the executable with default preset settings). **x86_64** GNU/Linux (glibc); requires a normal desktop stack (X11/Wayland, OpenGL).
 
-**Version** matches **`game/anthill/project.godot`** **`config/version`** (currently **0.7.10**).
+**Run:**
 
-**Usage** (from repository root, after `chmod +x releases/anthill` if needed):
+```bash
+chmod +x anthill-0.7.10-linux.x86_64
+./anthill-0.7.10-linux.x86_64
+```
+
+**Rebuild** (from repository root; requires **Godot 4.2.x** matching the project and **export templates** installed for that exact version, e.g. under `~/.local/share/godot/export_templates/<version>/`):
+
+```bash
+./scripts/export-linux.sh
+```
+
+The output path is derived from **`game/anthill/project.godot`** **`config/version`**. Export preset: **`game/anthill/export_presets.cfg`** (preset name **`Linux`**).
+
+## `anthill` (shell launcher)
+
+Executable shell launcher (same role as **`/usr/local/bin/anthill`** from **`scripts/install-anthill.sh`**): it runs an existing **Godot editor** with **`--path`** pointing at **`game/anthill`** relative to the repository root. Use this when you develop from a clone and do not need a packaged binary.
+
+**Usage** (from repository root):
 
 ```bash
 ./releases/anthill

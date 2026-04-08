@@ -95,7 +95,7 @@ func _ray_voxel_hit(max_dist: float) -> Vector3i:
 	while t < max_dist:
 		var p := from + dir * t
 		var c := Vector3i(int(floor(p.x)), int(floor(p.y)), int(floor(p.z)))
-		var id := world.get_block(c.x, c.y, c.z)
+		var id: int = world.get_block(c.x, c.y, c.z)
 		if id != _Const.BLOCK_AIR:
 			return c
 		t += step

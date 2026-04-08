@@ -4,7 +4,6 @@
 # Intro source video (large; regenerate **`assets/intro/intro.ogv`** locally with **`ffmpeg`** if needed)
 assets/intro/*.mp4
 *.translation
-export_presets.cfg
 
 # Python (splash generator)
 __pycache__/

@@ -9,7 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **`releases/`**: add **`anthill`** repo-relative Godot launcher and **`releases/README.md`** describing usage and version alignment with **`game/anthill/project.godot`**.
+- **`game/anthill/export_presets.cfg`**: Linux (**`Linux/X11`**) release preset targeting **`releases/anthill-<version>-linux.x86_64`**.
+- **`scripts/export-linux.sh`**: headless **`godot --export-release`** using preset **`Linux`** and **`config/version`** from **`game/anthill/project.godot`**.
+- **`releases/anthill-0.7.10-linux.x86_64`**: Godot **4.2.2** Linux x86_64 release export (embedded PCK).
+
+### Changed
+
+- **`game/anthill/.gitignore`**: stop ignoring **`export_presets.cfg`** so the export preset is tracked.
+- **`releases/README.md`**: document the Linux binary, rebuild steps, and the shell launcher.
+- **`scripts/entities/ant.gd`**: annotate **`id`** as **`int`** in **`_ray_voxel_hit`** so release export does not report a GDScript inference error.
 
 ## [0.7.10] - 2026-04-08
 
