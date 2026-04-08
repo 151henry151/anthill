@@ -138,6 +138,12 @@ const FEEDER_CROWD_OVERFLOW_ATTEMPT_PROB := 0.12
 const FORAGING_MEMORY_TRAIL_WEAK := 0.012
 ## Weight on steps that align with remembered food coordinates when trail is weak.
 const FORAGING_MEMORY_BIAS_WEIGHT := 1.8
+## Bifurcation-style weight: **`P ∝ (trail + ε) / (HC·(f_nb+f_here) + crowding + ε)`** on each Moore neighbor.
+const TROPOTAXIS_RATIO_EPS := 0.012
+const TROPOTAXIS_RATIO_GAIN := 0.26
+const TROPOTAXIS_HC_DENOM_SCALE := 1.12
+## Per-worker crowding weight in the ratio **denominator** (neighbor patch).
+const TROPOTAXIS_CROWD_PER_ANT := 0.38
 ## Append **`user://validation/`** CSV logs when **true**.
 const VALIDATION_EXPORT_ENABLED := true
 const VALIDATION_EXPORT_INTERVAL_TICKS := 60

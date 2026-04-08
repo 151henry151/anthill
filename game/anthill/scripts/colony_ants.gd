@@ -346,7 +346,7 @@ func _step_foraging_recruit(a: Dictionary) -> void:
 	_check_food_nearby(a)
 
 
-## Tropotaxis + **phase-dependent** CHC: **search** (low trail) weak attraction along **`f_nb − f_here`**; **exploitation** (high trail) repellent **`f_here − f_nb`**.
+## Tropotaxis: bifurcation-style **`(trail+ε)/(HC·(f_nb+f_here)+crowding+ε)`** per neighbor, plus memory bias when trail is weak.
 func _step_tropotaxis_moore(a: Dictionary) -> void:
 	if pheromone_field == null:
 		return
@@ -354,9 +354,9 @@ func _step_tropotaxis_moore(a: Dictionary) -> void:
 	var wz: int = int(a["wz"])
 	var here: float = pheromone_field.sample(wx, wz)
 	var fp_here: float = footprint_field.sample(wx, wz) if footprint_field else 0.0
-	var exploit: bool = here >= _Const.PHEROMONE_EXPLOITATION_THRESHOLD
 	var weights: Array[float] = []
 	var dirs: Array[Vector2i] = []
+	var eps: float = _Const.TROPOTAXIS_RATIO_EPS
 	for ox in range(-1, 2):
 		for oz in range(-1, 2):
 			if ox == 0 and oz == 0:
@@ -366,13 +366,12 @@ func _step_tropotaxis_moore(a: Dictionary) -> void:
 			if not _cell_walkable(nwx, nwz):
 				continue
 			var c_nb: float = pheromone_field.sample(nwx, nwz)
-			var w: float = _Const.PHEROMONE_TROPOTAXIS_FLOOR + maxf(0.0, c_nb - here)
-			if footprint_field:
-				var fp_nb: float = footprint_field.sample(nwx, nwz)
-				if exploit:
-					w += _Const.FOOTPRINT_REPULSION_WEIGHT * maxf(0.0, fp_here - fp_nb)
-				else:
-					w += _Const.FOOTPRINT_SEARCH_ATTRACTION_WEIGHT * maxf(0.0, fp_nb - fp_here)
+			var fp_nb: float = footprint_field.sample(nwx, nwz) if footprint_field else 0.0
+			var hc_sum: float = _Const.TROPOTAXIS_HC_DENOM_SCALE * (fp_nb + fp_here * 0.5)
+			var crowd_n: float = _Const.TROPOTAXIS_CROWD_PER_ANT * float(_count_workers_near_patch(nwx, nwz, 1))
+			var denom: float = maxf(eps, hc_sum + crowd_n + eps)
+			var ratio_core: float = (c_nb + eps) / denom
+			var w: float = _Const.PHEROMONE_TROPOTAXIS_FLOOR + _Const.TROPOTAXIS_RATIO_GAIN * ratio_core
 			if bool(a.get("knows_food_site", false)) and here < _Const.FORAGING_MEMORY_TRAIL_WEAK:
 				var mx: int = int(a.get("memory_wx", 0))
 				var mz: int = int(a.get("memory_wz", 0))

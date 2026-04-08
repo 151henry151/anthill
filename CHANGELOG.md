@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.8] - 2026-04-04
+
+### Changed
+
+- **`scripts/constants.gd`**: add **`TROPOTAXIS_RATIO_*`** and **`TROPOTAXIS_HC_DENOM_SCALE`**, **`TROPOTAXIS_CROWD_PER_ANT`** for bifurcation-style branch weights.
+- **`scripts/colony_ants.gd`**: **FORAGING_RECRUIT** Moore roulette uses **ratio** weight **`(trail+ε)/(HC·(f+f_here)+crowding+ε)`** per neighbor; retain weak-trail **memory** bias.
+
 ## [0.6.7] - 2026-04-04
 
 ### Added
