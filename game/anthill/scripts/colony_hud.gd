@@ -225,6 +225,14 @@ func set_ant_inspector(inspector: Dictionary) -> void:
 			"Memory: (%d,%d) quality %.2f · last trip quality %.2f"
 			% [int(inspector.get("memory_wx", 0)), int(inspector.get("memory_wz", 0)), float(inspector.get("memory_quality", 0.0)), float(inspector.get("last_food_quality", 1.0))]
 		)
+	lines.append(
+		"Forager: %s · move interval: %.2fs · RTT deposit mult: %.2f"
+		% [
+			"experienced" if bool(inspector.get("is_experienced_forager", false)) else "naive",
+			float(inspector.get("move_interval_eff", 0.45)),
+			float(inspector.get("rtt_multiplier", 1.0)),
+		]
+	)
 	_ant_text.text = "\n".join(lines)
 
 

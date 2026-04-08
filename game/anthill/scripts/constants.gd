@@ -155,6 +155,8 @@ const FORAGING_MARKED_INTERVAL_MULT := 0.87
 ## **Naive** workers on **unmarked** substrate: random interval stretch (zigzag / slower search).
 const NAIVE_ZIGZAG_INTERVAL_MIN := 1.08
 const NAIVE_ZIGZAG_INTERVAL_MAX := 1.42
+## **Scout** search: probability of a **stop** (no move) for substrate sampling.
+const SCOUT_SEARCH_STOP_PROBABILITY := 0.085
 ## Append **`user://validation/`** CSV logs when **true**.
 const VALIDATION_EXPORT_ENABLED := true
 const VALIDATION_EXPORT_INTERVAL_TICKS := 60

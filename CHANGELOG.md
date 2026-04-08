@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-04-04
+
+### Changed
+
+- **`scripts/constants.gd`**: add **`HOME_RANGE_FOOTPRINT_THRESHOLD`**, **`FORAGING_MARKED_INTERVAL_MULT`**, **`NAIVE_ZIGZAG_INTERVAL_*`** for substrate-dependent locomotion.
+- **`scripts/colony_ants.gd`**: per-ant **`move_interval_eff`**; **marked** substrate (high footprint) speeds scout/recruit; **naive** foragers stretch interval on unmarked substrate; set **`is_experienced_forager`** after first successful food delivery at nest; inspector shows forager class, interval, RTT multiplier.
+
 ## [0.6.9] - 2026-04-04
 
 ### Changed
