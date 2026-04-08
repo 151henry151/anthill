@@ -26,6 +26,8 @@ var food_sources: Array[Node3D] = []
 var nest_entrance: Vector3i = Vector3i.ZERO
 var nest_chamber: Vector3i = Vector3i.ZERO
 var nest_manager: Node
+## Blueprint gallery targets (brood / storage / rest); tried before organic **`nest_manager`** scoring.
+var nest_builder: Node
 var building_pheromone: Node
 ## Task assignment tick counter.
 var _task_assign_timer: int = 0
@@ -514,7 +516,12 @@ func _step_digging_approach(a: Dictionary) -> void:
 			a["dig_target"] = target
 			nest_manager.reserve_voxel(target, a["node"])
 		else:
-			var t: Variant = nest_manager.get_dig_target(a["node"])
+			var t: Variant = null
+			if nest_builder and nest_builder.has_method("get_next_dig_target") and nest_builder.has_method("has_work"):
+				if nest_builder.has_work():
+					t = nest_builder.get_next_dig_target(nest_manager)
+			if t == null:
+				t = nest_manager.get_dig_target(a["node"])
 			if t == null:
 				a["state"] = 1
 				return

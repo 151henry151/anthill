@@ -36,6 +36,8 @@ Opening **`main.tscn`** directly in the editor still loads the colony scene for 
 | `scripts/pheromone_field.gd`, `footprint_field.gd`, `alarm_field.gd`, `building_pheromone.gd` | Chemical grids |
 | `scripts/queen_ant.gd`, `brood_manager.gd` | Queen lifecycle and brood |
 | `scripts/main_controller.gd` | Scene wiring, tick loop, mesh rebuild budget, overlays |
+| `scripts/nest_builder.gd` | Blueprint galleries (exposed voxels only); used before organic **`nest_manager`** dig scoring |
+| `scripts/nest_manager.gd` | Dig front, reservations, spoil, **`get_dig_target`** scoring |
 | `scripts/perf_trace.gd` | Optional autoload timing log (**`ANTHILL_PERF_TRACE=0`** to disable) |
 | `scenes/intro_video.tscn` | Intro playback; skip → loading screen |
 | `assets/intro/` | **`intro.ogv`** (runtime), **`Isolating_the_Negative_Feedback_Loop_in_Ant_Foraging.mp4`** (source for transcoding) |

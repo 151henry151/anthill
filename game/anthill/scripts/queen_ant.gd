@@ -72,6 +72,8 @@ var _shaft_top_y: int = 0
 var _shaft_depth_dug: int = 0
 var _chamber_voxels_to_dig: Array[Vector3i] = []
 var _chamber_dig_idx: int = 0
+## Lowest **y** index of the founding chamber box (walkable floor air sits on **`y == _chamber_bbox_min_y`**).
+var _chamber_bbox_min_y: int = 0
 
 ## Egg laying state
 var _egg_timer_ticks: int = 0
@@ -597,6 +599,7 @@ func _prepare_chamber_dig() -> void:
 	var cx: int = _shaft_start_xz.x - ch_size.x / 2
 	var cy: int = shaft_bottom_y - ch_size.y
 	var cz: int = _shaft_start_xz.y - ch_size.z / 2
+	_chamber_bbox_min_y = cy
 	_founding_chamber_center = Vector3i(cx + ch_size.x / 2, cy + ch_size.y / 2, cz + ch_size.z / 2)
 	_chamber_voxels_to_dig.clear()
 	for dx in range(ch_size.x):
@@ -618,7 +621,8 @@ func _seal_entrance() -> void:
 				_world.set_block(wx, _shaft_top_y, wz, _Const.BLOCK_PACKED_SAND)
 				if _nest_manager:
 					_nest_manager.compact_around(Vector3i(wx, _shaft_top_y, wz))
-	_queen_cell = _founding_chamber_center
+	## Stand on the **floor** of the founding chamber (lowest air layer), not the bbox center.
+	_queen_cell = Vector3i(_founding_chamber_center.x, _chamber_bbox_min_y, _founding_chamber_center.z)
 	_apply_queen_cell_pos()
 	_set_state(QueenState.CLAUSTRAL)
 	_egg_timer_ticks = 0
@@ -714,3 +718,9 @@ func apply_worker_trophallaxis(food_store: Node, worker_count: int) -> void:
 
 func get_chamber_center() -> Vector3i:
 	return _founding_chamber_center
+
+
+## World position for brood items: chamber floor center, slightly above the solid surface (**`brood_manager`**).
+func get_brood_placement_origin() -> Vector3:
+	var fy: float = float(_chamber_bbox_min_y) + 0.16
+	return Vector3(float(_founding_chamber_center.x) + 0.5, fy, float(_founding_chamber_center.z) + 0.5)

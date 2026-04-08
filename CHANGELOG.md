@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.5] - 2026-04-07
+
+### Added
+
+- **`scripts/nest_builder.gd`**: blueprint chambers (**brood**, **food storage**, **worker rest**) only enqueue **exposed** sand (6-neighbor to **AIR**); sort candidates by horizontal proximity to the founding chamber so galleries connect from the shaft; mark blueprints complete when fully air.
+- **`nest_manager.is_voxel_reserved`**: allow **`NestBuilder`** to skip reserved voxels.
+
+### Changed
+
+- **`scripts/colony_ants.gd`**: in **`DIGGING_APPROACH`**, prefer **`nest_builder.get_next_dig_target(nest_manager)`** when **`has_work()`**, else **`nest_manager.get_dig_target()`**.
+- **`scripts/main_controller.gd`**: assign **`colony_ants.nest_builder`**; on **`founding_chamber_ready`**, call **`brood_manager.set_chamber_floor(queen.get_brood_placement_origin())`** when available.
+- **`scripts/nest_manager.gd`**: dampen vertical **`entry_pull`** near the shaft axis after depth is sufficient; add lateral bonus and penalize further deepening along the axis below **`_deepest_air`**.
+- **`scripts/constants.gd`**: add **`NEST_*`** tuning constants for that scoring.
+- **`scripts/queen_ant.gd`**: store **`_chamber_bbox_min_y`**; place the queen on the **lowest chamber air layer** at seal; add **`get_brood_placement_origin()`** for floor-level world coordinates.
+- **`scripts/brood_manager.gd`**: add **`set_chamber_floor`** and **`_reposition_brood_to_floor`**; spawn eggs and reposition brood on the floor with small horizontal jitter only.
+- **`project.godot`**: set **`config/version`** to **0.7.5**.
+
 ## [0.7.4] - 2026-04-07
 
 ### Added

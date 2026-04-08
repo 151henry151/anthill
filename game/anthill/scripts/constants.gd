@@ -303,6 +303,15 @@ const NOISE_AMPLITUDE := 0.5
 const BLUEPRINT_WEIGHT := 1.5
 const RADIAL_OUTWARD_BIAS := 2.0
 const TUNNEL_EXTEND_BIAS := 3.0
+## Horizontal distance from **`queen_chamber`** XZ (voxels) treated as “still in the main shaft” for scoring.
+const NEST_SHAFT_AXIS_RADIUS_VOX := 5
+## Multiply **`entry_pull`** inside that radius once **`SHAFT_TARGET_DEPTH`** is reached (lateral galleries compete).
+const NEST_SHAFT_AXIS_ENTRY_PULL_SCALE := 0.32
+## Beyond this horizontal distance (voxels), add a flat bonus so workers widen the nest.
+const NEST_LATERAL_MIN_AXIS_DIST := 4.0
+const NEST_LATERAL_EXPANSION_BONUS := 6.0
+## Penalize deepening **along the shaft axis** when **`v.y`** is below the deepest existing air (**`_deepest_air`**).
+const NEST_DEEPEN_BELOW_DEEPEST_PENALTY := 5.0
 
 # ---------------------------------------------------------------------------
 # Building pheromone

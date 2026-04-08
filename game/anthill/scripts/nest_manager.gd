@@ -103,14 +103,22 @@ func get_dig_target(ant: Node3D) -> Variant:
 		var depth: int = surface_y - v.y
 		# Capped entry pull: strong for first SHAFT_TARGET_DEPTH voxels, then flat.
 		var entry_pull: float = float(mini(depth, _Const.SHAFT_TARGET_DEPTH)) * _Const.DEPTH_WEIGHT_ENTRY
-		score += entry_pull
-		# Horizontal expansion bias (reward galleries extending outward from shaft).
 		var dx_h: float = float(v.x - queen_chamber.x)
 		var dz_h: float = float(v.z - queen_chamber.z)
 		var horiz_dist: float = sqrt(dx_h * dx_h + dz_h * dz_h)
+		## Near the vertical shaft axis, pull down dominates; damp it once the shaft is deep enough so lateral galleries win.
+		if shaft_deep_enough and horiz_dist < float(_Const.NEST_SHAFT_AXIS_RADIUS_VOX):
+			entry_pull *= _Const.NEST_SHAFT_AXIS_ENTRY_PULL_SCALE
+		score += entry_pull
+		# Horizontal expansion bias (reward galleries extending outward from shaft).
 		if shaft_deep_enough and horiz_dist > 1.0:
 			var normalized: float = minf(horiz_dist / float(_Const.MAX_GALLERY_RADIUS), 1.0)
 			score += _Const.HORIZONTAL_WEIGHT * normalized * 4.0
+		if shaft_deep_enough and horiz_dist >= float(_Const.NEST_LATERAL_MIN_AXIS_DIST):
+			score += _Const.NEST_LATERAL_EXPANSION_BONUS
+		## Discourage further deepening **along the narrow shaft** once the nest is already deep.
+		if shaft_deep_enough and horiz_dist < float(_Const.NEST_SHAFT_AXIS_RADIUS_VOX) and v.y < _deepest_air_y():
+			score -= _Const.NEST_DEEPEN_BELOW_DEEPEST_PENALTY
 		# Same-depth bonus: prefer voxels at chamber depth (± 2 voxels).
 		if shaft_deep_enough:
 			var dy_from_chamber: int = absi(v.y - queen_chamber.y)
@@ -131,6 +139,10 @@ func get_dig_target(ant: Node3D) -> Variant:
 			best_score = score
 			best_voxel = v
 	return best_voxel
+
+
+func is_voxel_reserved(voxel: Vector3i) -> bool:
+	return _reserved_voxels.has(voxel)
 
 
 var _deepest_air: int = 999999

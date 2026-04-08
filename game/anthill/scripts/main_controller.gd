@@ -194,6 +194,7 @@ func _setup_systems() -> void:
 	colony_ants.alarm_field = _alarm_field
 	colony_ants.food_store = _food_store
 	colony_ants.nest_manager = _nest_manager
+	colony_ants.nest_builder = _nest_builder
 	colony_ants.building_pheromone = _building_pheromone
 
 	_init_food_spawning()
@@ -528,7 +529,9 @@ func _on_queen_died(cause: String) -> void:
 
 
 func _on_founding_chamber_ready(chamber_center: Vector3i) -> void:
-	if _brood_manager:
+	if _brood_manager and is_instance_valid(_queen) and _queen.has_method("get_brood_placement_origin"):
+		_brood_manager.set_chamber_floor(_queen.get_brood_placement_origin())
+	elif _brood_manager:
 		_brood_manager.set_chamber_center(chamber_center)
 	if _nest_builder:
 		_nest_builder.setup(world, chamber_center)

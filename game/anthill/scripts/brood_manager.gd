@@ -7,7 +7,11 @@ signal ant_eclosed(caste_destiny: String, position: Vector3)
 signal brood_changed()
 
 var _brood: Array[Dictionary] = []
+## Fallback when **`set_chamber_floor`** has not run (editor tests).
 var _chamber_center: Vector3 = Vector3.ZERO
+## World-space origin on the **chamber floor** (from **`queen.get_brood_placement_origin()`**).
+var _floor_origin: Vector3 = Vector3.ZERO
+var _use_floor_origin: bool = false
 var _rng: RandomNumberGenerator
 
 
@@ -17,23 +21,41 @@ func _ready() -> void:
 
 
 func set_chamber_center(center: Vector3i) -> void:
+	_use_floor_origin = false
 	_chamber_center = Vector3(float(center.x), float(center.y), float(center.z))
+
+
+## Prefer this after founding: brood meshes sit **on** the excavated floor, not at the chamber bbox center.
+func set_chamber_floor(origin: Vector3) -> void:
+	_floor_origin = origin
+	_use_floor_origin = true
+	_reposition_brood_to_floor()
+
+
+func _reposition_brood_to_floor() -> void:
+	for b in _brood:
+		b["position"] = _random_brood_position()
+	brood_changed.emit()
+
+
+func _random_brood_position() -> Vector3:
+	var ox: float = _rng.randf_range(-1.4, 1.4)
+	var oy: float = _rng.randf_range(0.0, 0.1)
+	var oz: float = _rng.randf_range(-1.4, 1.4)
+	if _use_floor_origin:
+		return _floor_origin + Vector3(ox, oy, oz)
+	return _chamber_center + Vector3(ox, _rng.randf_range(-0.2, 0.15), oz)
 
 
 func add_eggs(count: int, is_trophic: bool, caste_destiny: String = "worker") -> void:
 	for i in range(count):
-		var offset := Vector3(
-			_rng.randf_range(-1.5, 1.5),
-			_rng.randf_range(-0.5, 0.5),
-			_rng.randf_range(-1.5, 1.5)
-		)
 		_brood.append({
 			"type": "egg",
 			"caste_destiny": caste_destiny,
 			"is_trophic": is_trophic,
 			"age_ticks": 0,
 			"nutrition": 1.0 if not is_trophic else 0.0,
-			"position": _chamber_center + offset,
+			"position": _random_brood_position(),
 		})
 	brood_changed.emit()
 
@@ -52,6 +74,7 @@ func tick() -> void:
 				b["type"] = "larva"
 				b["age_ticks"] = 0
 				b["nutrition"] = 0.5
+				b["position"] = b["position"] + Vector3(0.0, 0.04, 0.0)
 		elif btype == "larva":
 			var nutr: float = float(b["nutrition"])
 			nutr -= 0.0001
@@ -61,6 +84,7 @@ func tick() -> void:
 			elif age >= _Const.LARVA_DURATION_TICKS and nutr > 0.2:
 				b["type"] = "pupa"
 				b["age_ticks"] = 0
+				b["position"] = b["position"] + Vector3(0.0, 0.06, 0.0)
 		elif btype == "pupa" and age >= _Const.PUPA_DURATION_TICKS:
 			ant_eclosed.emit(String(b["caste_destiny"]), b["position"] as Vector3)
 			to_remove.append(idx)
