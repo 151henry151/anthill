@@ -54,6 +54,8 @@ var _building_pheromone: Node
 var _hud: CanvasLayer
 var _game_over: CanvasLayer
 var _rng: RandomNumberGenerator
+## Autoload **`PerfTrace`** (see **`project.godot`**); cached so scripts compile when the singleton name is not in global scope.
+var _perf_trace: Node
 
 var _mesh_pending: Dictionary = {}
 var _xray_active: bool = false
@@ -84,6 +86,7 @@ var _load_phase: int = 2
 
 
 func _ready() -> void:
+	_perf_trace = get_node_or_null("/root/PerfTrace")
 	_rng = RandomNumberGenerator.new()
 	_rng.randomize()
 	_sand_step = _SandStepScript.new() as RefCounted
@@ -301,7 +304,8 @@ func _finish_initial_terrain_load() -> void:
 func _physics_process(_delta: float) -> void:
 	if not _initial_terrain_ready:
 		return
-	PerfTrace.begin_frame()
+	if _perf_trace:
+		_perf_trace.begin_frame()
 	var suppress_sand: bool = (
 		is_instance_valid(_queen)
 		and _queen.has_method("sand_physics_suppressed")
@@ -341,12 +345,14 @@ func _physics_process(_delta: float) -> void:
 		_update_food_sources_at_tick()
 		if _Const.VALIDATION_EXPORT_ENABLED and _game_tick % _Const.VALIDATION_EXPORT_INTERVAL_TICKS == 0:
 			_validation_export_csv()
-	PerfTrace.set_sand_usec(sand_us)
+	if _perf_trace:
+		_perf_trace.set_sand_usec(sand_us)
 	var t_meshq := Time.get_ticks_usec()
 	if world.take_mesh_dirty():
 		for ck in world.get_and_clear_dirty_chunks():
 			_mesh_pending[ck] = true
-	PerfTrace.set_mesh_dirty_usec(Time.get_ticks_usec() - t_meshq)
+	if _perf_trace:
+		_perf_trace.set_mesh_dirty_usec(Time.get_ticks_usec() - t_meshq)
 	var budget: int = maxi(1, _mesh_rebuild_budget())
 	var t_rebuild := Time.get_ticks_usec()
 	var rebuild_n: int = 0
@@ -357,21 +363,23 @@ func _physics_process(_delta: float) -> void:
 		_rebuild_chunk_mesh(k)
 		rebuild_n += 1
 		budget -= 1
-	PerfTrace.set_mesh_rebuild_usec(Time.get_ticks_usec() - t_rebuild, rebuild_n)
+	if _perf_trace:
+		_perf_trace.set_mesh_rebuild_usec(Time.get_ticks_usec() - t_rebuild, rebuild_n)
 	_update_colony_stage()
 	_update_trail_overlay()
 	_update_hud()
-	PerfTrace.set_systems_usec(Time.get_ticks_usec() - t_sys)
-	PerfTrace.set_context(
-		_game_tick,
-		_game_day,
-		_mesh_pending.size(),
-		world,
-		_pheromone_field,
-		_building_pheromone,
-		colony_ants,
-		_ff_tier > 0
-	)
+	if _perf_trace:
+		_perf_trace.set_systems_usec(Time.get_ticks_usec() - t_sys)
+		_perf_trace.set_context(
+			_game_tick,
+			_game_day,
+			_mesh_pending.size(),
+			world,
+			_pheromone_field,
+			_building_pheromone,
+			colony_ants,
+			_ff_tier > 0
+		)
 
 
 func _on_food_critical_alarm(_food_type: String) -> void:
@@ -387,7 +395,7 @@ func _on_food_critical_alarm(_food_type: String) -> void:
 
 
 func _validation_export_csv() -> void:
-	DirAccess.make_dir_recursive("user://validation")
+	DirAccess.make_dir_absolute(ProjectSettings.globalize_path("user://validation"))
 	var fp_n: int = 0
 	if _footprint_field and _footprint_field.has_method("get_grid"):
 		fp_n = int((_footprint_field.get_grid() as Dictionary).size())

@@ -82,6 +82,7 @@ var _wx: int = 0
 var _wz: int = 0
 var _nest_manager: Node
 var _brood_manager: Node
+var _perf_trace: Node
 
 const _ANT_LOCAL_Y_MIN: float = -0.28
 
@@ -98,6 +99,7 @@ func _founding_shaft_hi() -> int:
 
 
 func setup(world: Node, nest_manager: Node = null, brood_manager: Node = null) -> void:
+	_perf_trace = get_node_or_null("/root/PerfTrace")
 	_world = world
 	_nest_manager = nest_manager
 	_brood_manager = brood_manager
@@ -202,7 +204,8 @@ func _physics_process(delta: float) -> void:
 		QueenState.ESTABLISHED:
 			for _i in range(sim_steps):
 				_process_established_step()
-	PerfTrace.set_queen_usec(Time.get_ticks_usec() - t0)
+	if _perf_trace:
+		_perf_trace.set_queen_usec(Time.get_ticks_usec() - t0)
 
 
 func _set_state(s: int) -> void:

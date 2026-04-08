@@ -35,9 +35,11 @@ const _TASK_ASSIGN_INTERVAL := 300
 var _digger_count: int = 0
 static var _next_worker_sim_id: int = 1
 var _selection_ring: MeshInstance3D = null
+var _perf_trace: Node
 
 
 func _ready() -> void:
+	_perf_trace = get_node_or_null("/root/PerfTrace")
 	_ant_builder = _AntModelScript.new() as RefCounted
 	_rng = RandomNumberGenerator.new()
 	_rng.randomize()
@@ -159,7 +161,8 @@ func _physics_process(delta: float) -> void:
 				a["t"] -= eff
 				_step_ant(a)
 				_refresh_move_interval(a)
-	PerfTrace.set_ants_usec(Time.get_ticks_usec() - t0)
+	if _perf_trace:
+		_perf_trace.set_ants_usec(Time.get_ticks_usec() - t0)
 
 
 func _assign_tasks() -> void:

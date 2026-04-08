@@ -15,7 +15,7 @@ PerfTrace="*res://scripts/perf_trace.gd"
 [application]
 
 config/name="Anthill"
-config/version="0.7.2"
+config/version="0.7.3"
 config/description="Grain-scale voxel colony: top-down view; sand physics; future food, queen, and colony policy — not direct ant control."
 run/main_scene="res://scenes/loading_screen.tscn"
 config/features=PackedStringArray("4.2", "GL Compatibility")

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-04-07
+
+### Changed
+
+- **`scripts/main_controller.gd`**: create validation export directory with **`DirAccess.make_dir_absolute`** on the globalized **`user://validation`** path (Godot 4 does not allow calling **`DirAccess.make_dir_recursive`** on the class).
+- **`scripts/main_controller.gd`**, **`scripts/colony_ants.gd`**, **`scripts/queen_ant.gd`**: resolve the **`PerfTrace`** autoload via **`get_node_or_null("/root/PerfTrace")`** so scripts compile when the singleton name is not available as a global identifier.
+
 ## [0.7.2] - 2026-04-08
 
 ### Added
