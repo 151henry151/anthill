@@ -177,7 +177,7 @@ const PHEROMONE_VIS_FOOTPRINT := Color(0.88, 0.28, 0.72, 1.0)
 const PHEROMONE_VIS_BUILDING := Color(0.96, 0.74, 0.18, 1.0)
 ## Dufour gland alarm (**undecane**-like fiction).
 const PHEROMONE_VIS_ALARM := Color(0.95, 0.35, 0.12, 1.0)
-## When local **recruitment** concentration exceeds this, scale down further **fed-worker** deposits (counteracts runaway positive feedback; cf. *briefing.txt*).
+## When local **recruitment** concentration exceeds this, scale down further **fed-worker** deposits (counteracts runaway positive feedback; cf. **`docs/reference/briefing.txt`**).
 const TRAIL_SATURATION_START := 0.38
 ## Multiplier applied to recruitment deposit at **full** saturation (**1.0** = no extra deposit).
 const TRAIL_SATURATION_MIN_DEPOSIT_SCALE := 0.22

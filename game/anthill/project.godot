@@ -15,9 +15,9 @@ PerfTrace="*res://scripts/perf_trace.gd"
 [application]
 
 config/name="Anthill"
-config/version="0.7.3"
-config/description="Grain-scale voxel colony: top-down view; sand physics; future food, queen, and colony policy — not direct ant control."
-run/main_scene="res://scenes/loading_screen.tscn"
+config/version="0.7.4"
+config/description="Lasius niger–inspired grain-scale voxel colony simulation: pheromone fields, granular nest substrate, brood and foraging dynamics; observation and export, not direct ant control."
+run/main_scene="res://scenes/intro_video.tscn"
 config/features=PackedStringArray("4.2", "GL Compatibility")
 run/max_fps=60
 boot_splash/bg_color=Color(0.37, 0.51, 0.76, 1)

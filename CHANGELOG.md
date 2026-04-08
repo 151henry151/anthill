@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.4] - 2026-04-07
+
+### Added
+
+- **`assets/intro/intro.ogv`**: Ogg Theora intro (**~854p**, **~450 kb/s** video target; Godot plays **`.ogv`** in **`VideoStreamPlayer`**, not MP4). Re-encoded to satisfy GitHub’s **100 MB** per-file limit; replace **`assets/intro/intro.ogv`** locally if you have a higher-quality transcode.
+- **`scenes/intro_video.tscn`** and **`scripts/intro_video.gd`**: run first on launch; **press any key** (or mouse, gamepad, or touch) to skip to the loading screen.
+- **`docs/reference/README.md`**: index PDFs, briefing, specification, CSV reference table, and intro-media location.
+
+### Changed
+
+- **`project.godot`**: set **`run/main_scene`** to **`res://scenes/intro_video.tscn`**; set **`config/version`** to **0.7.4**; set **`config/description`** to a *Lasius niger*–inspired simulation summary (replacing the older “future food” wording).
+- **Documentation**: rewrite **`README.md`** and **`game/anthill/README.md`** for scientific framing (*Lasius niger*–inspired simulation, not a game); describe validation export, pheromone overlays, and repository layout.
+- **File layout**: move **`briefing.txt`**, **`technical_specification.txt`**, PDFs, and **`Ant Foraging and Communication Simulation Data - Table 1.csv`** to **`docs/reference/`**.
+- **`game/anthill/.gitignore`**: ignore **`assets/intro/*.mp4`** so large source video stays local-only; document in **`README.md`**.
+- **`scripts/constants.gd`**: point the trail-saturation comment at **`docs/reference/briefing.txt`**.
+- **`AGENTS.md`**: describe simulation paths and **`docs/reference/`**.
+
 ## [0.7.3] - 2026-04-07
 
 ### Changed
