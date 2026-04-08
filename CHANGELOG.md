@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`README.md`**: add **Architecture of Emergence (reference mapping)** table; cite **`architecture_of_emergence.txt`** in scope and reference materials.
 - **`game/anthill/README.md`**: point to the mapping section in the root **`README.md`**.
 - **`docs/reference/README.md`**: index **`architecture_of_emergence.txt`**.
-- **`AGENTS.md`**: document how the new reference relates to implemented vs omitted mechanisms.
+- **`AGENTS.md`**: document how the new reference relates to implemented vs omitted mechanisms; define user shorthand **`cpi`** (commit, push, **`sudo ./scripts/install-anthill.sh`**) and index **`install-anthill.sh`**.
 
 ## [0.7.6] - 2026-04-07
 

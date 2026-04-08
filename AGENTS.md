@@ -6,6 +6,13 @@
 
 Anthill is a **Godot 4.2+** **grain-scale voxel ant colony simulation** (*Lasius niger*–inspired). There is no backend, database, or external service. The only runtime dependency is the **Godot 4.2.2** engine binary.
 
+### Shorthand: `cpi`
+
+When the user says **`cpi`**, they mean **commit**, **push**, then **install**:
+
+1. Git commit and push (tracked changes).
+2. **`sudo ./scripts/install-anthill.sh`** from the repository root — copies **`game/anthill`** to **`/usr/local/share/anthill/game/anthill`** and installs the **`anthill`** launcher to **`/usr/local/bin/anthill`** (requires Godot 4 on `PATH` as **`godot4`** or **`godot`**). See the root **`README.md`** “System install” section.
+
 ### Running the simulation
 
 ```bash
@@ -40,6 +47,7 @@ godot4 --path game/anthill --import
 | `game/anthill/scripts/` | GDScript simulation logic |
 | `docs/reference/` | Bibliography, specification, briefing, **`architecture_of_emergence.txt`** (not loaded at runtime) |
 | `scripts/install-godot4.sh` | Installs Godot 4.2.2 to `/usr/local/bin/godot4` |
+| `scripts/install-anthill.sh` | System install: project under `/usr/local/share/anthill/`, launcher **`anthill`** in `/usr/local/bin/` (run with **`sudo`**) |
 
 ### Reference document vs code (`architecture_of_emergence.txt`)
 
