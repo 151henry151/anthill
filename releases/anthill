@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Anthill launcher for a repository clone: runs Godot with --path to game/anthill.
+# Matches install-anthill.sh behavior; no copy under PREFIX. Requires Godot 4 on PATH.
+set -euo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ANTHILL_PROJECT="$REPO_ROOT/game/anthill"
+if [[ ! -f "$ANTHILL_PROJECT/project.godot" ]]; then
+	echo "anthill: missing project at $ANTHILL_PROJECT" >&2
+	exit 1
+fi
+if [[ -n "${GODOT_BIN:-}" ]]; then
+	exec "$GODOT_BIN" --path "$ANTHILL_PROJECT" "$@"
+fi
+for c in godot4 godot Godot; do
+	if command -v "$c" &>/dev/null; then
+		exec "$c" --path "$ANTHILL_PROJECT" "$@"
+	fi
+done
+for p in /usr/bin/godot4 /usr/bin/godot /usr/local/bin/godot4 /usr/local/bin/godot; do
+	if [[ -x "$p" ]]; then
+		exec "$p" --path "$ANTHILL_PROJECT" "$@"
+	fi
+done
+echo "anthill: need Godot 4. Set GODOT_BIN to the engine binary, or install godot4/godot on PATH." >&2
+exit 1

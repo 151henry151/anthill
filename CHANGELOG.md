@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`releases/`**: add **`anthill`** repo-relative Godot launcher and **`releases/README.md`** describing usage and version alignment with **`game/anthill/project.godot`**.
+
 ## [0.7.10] - 2026-04-08
 
 ### Changed

@@ -75,6 +75,7 @@ The **Ogg Theora** intro (**`game/anthill/assets/intro/intro.ogv`**) is tracked 
 | **`docs/reference/`** | Bibliography, specification text, briefing, CSV tables (not loaded at runtime). |
 | **`docs/cursor-agent-shell.md`** | Notes if the Cursor agent shell misbehaves. |
 | **`CHANGELOG.md`** | Versioned list of code and asset changes. |
+| **`releases/`** | Repo-relative **`anthill`** launcher script and notes (see **`releases/README.md`**). |
 | **`scripts/install-godot4.sh`**, **`scripts/install-anthill.sh`** | Local installation helpers. |
 
 ## Citation and reuse
