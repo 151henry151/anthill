@@ -95,6 +95,11 @@ func spawn_worker(pos: Vector3, is_nanitic: bool) -> void:
 		"heading_rad": _rng.randf_range(0.0, TAU),
 		"trail_spot_dist_accum": 0.0,
 		"trail_next_spot_vox": 8,
+		"knows_food_site": false,
+		"memory_wx": 0,
+		"memory_wz": 0,
+		"memory_quality": 0.0,
+		"last_food_quality": 1.0,
 	})
 	_next_worker_sim_id += 1
 
@@ -366,6 +371,18 @@ func _step_tropotaxis_moore(a: Dictionary) -> void:
 					w += _Const.FOOTPRINT_REPULSION_WEIGHT * maxf(0.0, fp_here - fp_nb)
 				else:
 					w += _Const.FOOTPRINT_SEARCH_ATTRACTION_WEIGHT * maxf(0.0, fp_nb - fp_here)
+			if bool(a.get("knows_food_site", false)) and here < _Const.FORAGING_MEMORY_TRAIL_WEAK:
+				var mx: int = int(a.get("memory_wx", 0))
+				var mz: int = int(a.get("memory_wz", 0))
+				if mx != 0 or mz != 0:
+					var tdx: int = signi(mx - wx)
+					var tdz: int = signi(mz - wz)
+					var mem_align: float = 0.0
+					if tdx != 0 and ox == tdx:
+						mem_align += 0.55
+					if tdz != 0 and oz == tdz:
+						mem_align += 0.55
+					w += _Const.FORAGING_MEMORY_BIAS_WEIGHT * float(a.get("memory_quality", 0.5)) * mem_align
 			weights.append(w)
 			dirs.append(Vector2i(ox, oz))
 	if dirs.is_empty():
@@ -418,7 +435,8 @@ func _step_returning(a: Dictionary) -> void:
 		if total_path < 1.0:
 			total_path = 1.0
 		var food_proximity: float = clampf(1.0 - d_to_food / total_path, 0.0, 1.0)
-		var base_amt: float = _Const.PHEROMONE_BASE_DEPOSIT + _Const.PHEROMONE_DISTANCE_BONUS * food_proximity
+		var q: float = float(a.get("last_food_quality", 1.0))
+		var base_amt: float = (_Const.PHEROMONE_BASE_DEPOSIT + _Const.PHEROMONE_DISTANCE_BONUS * food_proximity) * q
 		_maybe_deposit_recruitment_spot(a, wx, wz, base_amt)
 	d = _dist_to(a, nest_entrance)
 	if d < _Const.WORKER_NEST_ARRIVAL_MAX_DIST:
@@ -590,6 +608,14 @@ func _check_food_nearby(a: Dictionary) -> void:
 				a["food_type"] = fs.food_type
 				a["food_source_wx"] = fs.wx
 				a["food_source_wz"] = fs.wz
+				a["knows_food_site"] = true
+				a["memory_wx"] = fs.wx
+				a["memory_wz"] = fs.wz
+				var rq: float = 0.7
+				if fs.has_method("get_reward_quality"):
+					rq = float(fs.call("get_reward_quality"))
+				a["memory_quality"] = rq
+				a["last_food_quality"] = rq
 				fs.is_known_to_colony = true
 				a["state"] = 7  # RETURNING
 				a["return_stuck"] = 0
@@ -597,7 +623,7 @@ func _check_food_nearby(a: Dictionary) -> void:
 				a["trail_next_spot_vox"] = _random_trail_spot_spacing_voxels()
 				# **Recruitment** burst at source: Bernoulli × saturation (no spot spacing — first mark at resource).
 				if pheromone_field and _rng.randf() < _Const.TRAIL_SATIATED_DEPOSIT_PROBABILITY:
-					var burst: float = _Const.PHEROMONE_DEPOSIT_AMOUNT * 2.0 * _trail_saturation_multiplier(wx, wz)
+					var burst: float = _Const.PHEROMONE_DEPOSIT_AMOUNT * 2.0 * float(a.get("last_food_quality", 1.0)) * _trail_saturation_multiplier(wx, wz)
 					pheromone_field.deposit(wx, wz, burst)
 			return
 
@@ -677,7 +703,7 @@ func _step_random_walk(a: Dictionary) -> void:
 		dx = 1 if _rng.randf() > 0.5 else -1
 	_try_move(a, dx, dz)
 	if bool(a.get("carrying_food", false)) and pheromone_field:
-		_maybe_deposit_recruitment_spot(a, int(a["wx"]), int(a["wz"]), _Const.PHEROMONE_DEPOSIT_AMOUNT * 0.5)
+		_maybe_deposit_recruitment_spot(a, int(a["wx"]), int(a["wz"]), _Const.PHEROMONE_DEPOSIT_AMOUNT * 0.5 * float(a.get("last_food_quality", 1.0)))
 
 
 func _cell_walkable(nwx: int, nwz: int) -> bool:
@@ -871,6 +897,11 @@ func get_ant_inspector_snapshot(a: Dictionary) -> Dictionary:
 		"footprint_sample": fp,
 		"heading_deg": rad_to_deg(float(a.get("heading_rad", 0.0))),
 		"dist_to_nest": _dist_to(a, nest_entrance) if nest_entrance != Vector3i.ZERO else -1.0,
+		"knows_food_site": bool(a.get("knows_food_site", false)),
+		"memory_wx": int(a.get("memory_wx", 0)),
+		"memory_wz": int(a.get("memory_wz", 0)),
+		"memory_quality": float(a.get("memory_quality", 0.0)),
+		"last_food_quality": float(a.get("last_food_quality", 1.0)),
 	}
 
 

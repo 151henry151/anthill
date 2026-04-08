@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.6] - 2026-04-04
+
+### Added
+
+- **`scripts/food_source.gd`**: **`sucrose_molarity`** (0.1–1.0) on carbohydrate patches; **`get_reward_quality()`** for trail scaling.
+
+### Changed
+
+- **`scripts/constants.gd`**: add **`FORAGING_MEMORY_*`** parameters.
+- **`scripts/colony_ants.gd`**: store **food memory** after first pickup; bias **FORAGING_RECRUIT** steps toward memory when trail is weak; scale recruitment deposits by **last_food_quality**.
+- **`scripts/colony_hud.gd`**: inspector shows memory coordinates and quality when present.
+
 ## [0.6.5] - 2026-04-04
 
 ### Changed

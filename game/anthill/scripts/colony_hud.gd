@@ -215,6 +215,11 @@ func set_ant_inspector(inspector: Dictionary) -> void:
 		lines.append("Dist. to nest entrance: %.1f voxels" % dn)
 	lines.append("Trail sample (recruitment): %.4f" % float(inspector.get("trail_sample", 0.0)))
 	lines.append("Footprint sample (CHC): %.4f" % float(inspector.get("footprint_sample", 0.0)))
+	if bool(inspector.get("knows_food_site", false)):
+		lines.append(
+			"Memory: (%d,%d) quality %.2f · last trip quality %.2f"
+			% [int(inspector.get("memory_wx", 0)), int(inspector.get("memory_wz", 0)), float(inspector.get("memory_quality", 0.0)), float(inspector.get("last_food_quality", 1.0))]
+		)
 	_ant_text.text = "\n".join(lines)
 
 

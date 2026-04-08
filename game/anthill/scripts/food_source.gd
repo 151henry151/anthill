@@ -4,6 +4,8 @@ extends Node3D
 const _Const := preload("res://scripts/constants.gd")
 
 var food_type: String = "sugar"
+## For carbohydrate sources: modeled **sucrose molarity** (0.1–1.0 M fiction) for trail strength scaling.
+var sucrose_molarity: float = 0.55
 var source_type: String = "aphid_colony"
 ## Current collectible amount (colony store units).
 var supply: float = 1.0
@@ -30,15 +32,19 @@ func setup(p_source_type: String, p_wx: int, p_wz: int, surface_y: int, rng: Ran
 		"aphid_colony":
 			food_type = "sugar"
 			max_supply_initial = rng.randf_range(_Const.FOOD_APHID_SUPPLY_MIN, _Const.FOOD_APHID_SUPPLY_MAX)
+			sucrose_molarity = rng.randf_range(0.1, 1.0)
 		"dead_insect":
 			food_type = "protein"
 			max_supply_initial = rng.randf_range(_Const.FOOD_INSECT_SUPPLY_MIN, _Const.FOOD_INSECT_SUPPLY_MAX)
+			sucrose_molarity = 0.0
 		"seed_cache":
 			food_type = "sugar"
 			max_supply_initial = rng.randf_range(_Const.FOOD_SEED_SUPPLY_MIN, _Const.FOOD_SEED_SUPPLY_MAX)
+			sucrose_molarity = rng.randf_range(0.1, 1.0)
 		_:
 			food_type = "sugar"
 			max_supply_initial = 0.5
+			sucrose_molarity = rng.randf_range(0.1, 1.0)
 	supply = max_supply_initial
 	position = Vector3(float(wx) + 0.5, float(surface_y) + 1.0, float(wz) + 0.5)
 	_visual_root = Node3D.new()
@@ -182,3 +188,10 @@ func _refresh_visual() -> void:
 
 func is_depleted() -> bool:
 	return supply <= 0.001
+
+
+## Relative reward quality for recruitment trail scaling (sugar → molarity; protein → fixed).
+func get_reward_quality() -> float:
+	if food_type == "protein":
+		return 0.65
+	return clampf(sucrose_molarity, 0.08, 1.0)

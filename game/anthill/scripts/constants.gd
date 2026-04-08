@@ -134,6 +134,10 @@ const FEEDER_CROWD_RADIUS := 2
 const FEEDER_CROWD_MAX_WORKERS := 4
 ## Probability to **still** attempt pickup when at or over crowding (search elsewhere).
 const FEEDER_CROWD_OVERFLOW_ATTEMPT_PROB := 0.12
+## Local trail below this triggers **memory**-biased movement for experienced foragers.
+const FORAGING_MEMORY_TRAIL_WEAK := 0.012
+## Weight on steps that align with remembered food coordinates when trail is weak.
+const FORAGING_MEMORY_BIAS_WEIGHT := 1.8
 
 # ---------------------------------------------------------------------------
 # Pheromone overlay (scientific visualization — [P] field view)
