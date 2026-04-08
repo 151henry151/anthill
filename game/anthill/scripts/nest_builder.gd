@@ -3,6 +3,7 @@ extends Node
 ## Voxels must be reachable from the current **`dig_front`** frontier; interior sand is skipped until a face opens.
 
 const _Const := preload("res://scripts/constants.gd")
+const _Chunk := preload("res://scripts/world/chunk_data.gd")
 
 const _NEIGH6: Array[Vector3i] = [
 	Vector3i(1, 0, 0), Vector3i(-1, 0, 0),
@@ -16,37 +17,82 @@ var _founding_chamber: Vector3i = Vector3i.ZERO
 var _sort_origin_xz: Vector2i = Vector2i.ZERO
 var _blueprints: Array[Dictionary] = []
 var _current_blueprint_idx: int = 0
+var _rng: RandomNumberGenerator
 
 
 func setup(world: Node, founding_chamber: Vector3i) -> void:
 	_world = world
 	_founding_chamber = founding_chamber
 	_sort_origin_xz = Vector2i(founding_chamber.x, founding_chamber.z)
+	if _rng == null:
+		_rng = RandomNumberGenerator.new()
+	_rng.randomize()
 	_generate_blueprints()
+
+
+func _world_max_xz() -> Vector2i:
+	var cx: Variant = _world.get("chunks_x") if _world else null
+	var cz: Variant = _world.get("chunks_z") if _world else null
+	if cx == null or cz == null:
+		return Vector2i(512, 512)
+	return Vector2i(int(cx) * _Chunk.SIZE_X, int(cz) * _Chunk.SIZE_Z)
+
+
+func _clamp_blueprint_center(center: Vector3i, sz: Vector3i, fc_y: int, max_xz: Vector2i) -> Vector3i:
+	var hx: int = sz.x / 2
+	var hy: int = sz.y / 2
+	var hz: int = sz.z / 2
+	var cx: int = clampi(center.x, hx + 2, maxi(0, max_xz.x - hx - 3))
+	var cz: int = clampi(center.z, hz + 2, maxi(0, max_xz.y - hz - 3))
+	var cy: int = clampi(center.y, hy + 2, _Chunk.SIZE_Y - hy - 4)
+	cy = clampi(cy, fc_y - 3, fc_y + 3)
+	return Vector3i(cx, cy, cz)
+
+
+func _append_blueprint(name: String, center: Vector3i, size: Vector3i) -> void:
+	var fc_y: int = _founding_chamber.y
+	var max_xz: Vector2i = _world_max_xz()
+	var c: Vector3i = _clamp_blueprint_center(center, size, fc_y, max_xz)
+	_blueprints.append({
+		"name": name,
+		"center": c,
+		"size": size,
+		"dug": false,
+	})
 
 
 func _generate_blueprints() -> void:
 	_blueprints.clear()
 	var fc := _founding_chamber
-	## Offset galleries from the founding chamber so workers widen the nest instead of only deepening the shaft.
-	_blueprints.append({
-		"name": "brood_chamber",
-		"center": Vector3i(fc.x + 5, fc.y, fc.z),
-		"size": Vector3i(5, 3, 5),
-		"dug": false,
-	})
-	_blueprints.append({
-		"name": "food_storage",
-		"center": Vector3i(fc.x - 5, fc.y, fc.z),
-		"size": Vector3i(4, 3, 3),
-		"dug": false,
-	})
-	_blueprints.append({
-		"name": "worker_rest",
-		"center": Vector3i(fc.x, fc.y, fc.z + 6),
-		"size": Vector3i(4, 3, 4),
-		"dug": false,
-	})
+	## Three chambers at ~120° with jitter and a random global rotation (not fixed +X / −X / +Z).
+	var global_rot: float = _rng.randf() * _Const.NEST_BLUEPRINT_GLOBAL_ROT_MAX
+	var slot_sep: float = 6.28318530718 / 3.0
+	var specs: Array = [
+		{"name": "brood_chamber", "sx": Vector2i(4, 6), "sy": Vector2i(2, 4), "sz": Vector2i(4, 6)},
+		{"name": "food_storage", "sx": Vector2i(3, 5), "sy": Vector2i(2, 3), "sz": Vector2i(3, 4)},
+		{"name": "worker_rest", "sx": Vector2i(3, 5), "sy": Vector2i(2, 3), "sz": Vector2i(3, 5)},
+	]
+	for i in range(specs.size()):
+		var ang: float = global_rot + float(i) * slot_sep + _rng.randf_range(-_Const.NEST_BLUEPRINT_ANGLE_JITTER, _Const.NEST_BLUEPRINT_ANGLE_JITTER)
+		var dist: int = _rng.randi_range(_Const.NEST_BLUEPRINT_DIST_MIN, _Const.NEST_BLUEPRINT_DIST_MAX)
+		var ox: int = int(round(cos(ang) * float(dist)))
+		var oz: int = int(round(sin(ang) * float(dist)))
+		var dy: int = _rng.randi_range(-1, 1)
+		var sp: Dictionary = specs[i]
+		var sx: int = _rng.randi_range(int(sp["sx"].x), int(sp["sx"].y))
+		var sy: int = _rng.randi_range(int(sp["sy"].x), int(sp["sy"].y))
+		var sz: int = _rng.randi_range(int(sp["sz"].x), int(sp["sz"].y))
+		var center := Vector3i(fc.x + ox, fc.y + dy, fc.z + oz)
+		var size := Vector3i(sx, sy, sz)
+		_append_blueprint(str(sp["name"]), center, size)
+	if _rng.randf() < _Const.NEST_BLUEPRINT_SPUR_PROB:
+		var spur_ang: float = _rng.randf() * 6.28318530718
+		var spur_d: int = _rng.randi_range(2, 5)
+		var sox: int = int(round(cos(spur_ang) * float(spur_d)))
+		var soz: int = int(round(sin(spur_ang) * float(spur_d)))
+		var spur_c := Vector3i(fc.x + sox, fc.y + _rng.randi_range(-1, 1), fc.z + soz)
+		var spur_sz := Vector3i(_rng.randi_range(2, 3), 2, _rng.randi_range(2, 3))
+		_append_blueprint("gallery_spur", spur_c, spur_sz)
 	_current_blueprint_idx = 0
 
 

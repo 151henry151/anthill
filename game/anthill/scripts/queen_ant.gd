@@ -412,7 +412,7 @@ func _begin_dig_act_ticks() -> void:
 	_dig_timer = _Const.QUEEN_DIG_ACT_TICK_INTERVAL
 	var bt: int = _world.get_block(_pending_voxel.x, _pending_voxel.y, _pending_voxel.z)
 	if _nest_manager:
-		_dig_act_max_ticks = maxi(1, _nest_manager.dig_duration_for(bt))
+		_dig_act_max_ticks = maxi(1, _nest_manager.dig_duration_at(_pending_voxel, bt))
 	else:
 		_dig_act_max_ticks = maxi(1, _Const.DIG_ACT_DURATION_TICKS)
 

@@ -312,6 +312,22 @@ const NEST_LATERAL_MIN_AXIS_DIST := 4.0
 const NEST_LATERAL_EXPANSION_BONUS := 6.0
 ## Penalize deepening **along the shaft axis** when **`v.y`** is below the deepest existing air (**`_deepest_air`**).
 const NEST_DEEPEN_BELOW_DEEPEST_PENALTY := 5.0
+## Extra uniform random score once the shaft is deep enough (stochastic gallery branching among similar candidates).
+const NEST_GALLERY_BRANCH_NOISE := 1.1
+## Additional random dig-front samples when **`shaft_deep_enough`** (more diversity in branch picks).
+const NEST_GALLERY_SAMPLE_BOOST := 48
+## Per-voxel substrate: loose-sand dig duration multiplier range (**1.0** = baseline **DIG_ACT_DURATION_TICKS**).
+const NEST_SUBSTRATE_HARDNESS_MIN := 1.0
+const NEST_SUBSTRATE_HARDNESS_MAX := 1.38
+## Blueprint chambers: horizontal distance from founding chamber center (voxels).
+const NEST_BLUEPRINT_DIST_MIN := 4
+const NEST_BLUEPRINT_DIST_MAX := 9
+## Random rotation of the whole blueprint triad (radians); **0** = one chamber along +X.
+const NEST_BLUEPRINT_GLOBAL_ROT_MAX := 6.28318530718
+## Jitter around each nominal 120° slot (radians).
+const NEST_BLUEPRINT_ANGLE_JITTER := 0.5
+## Optional small lateral chamber (probabilistic).
+const NEST_BLUEPRINT_SPUR_PROB := 0.34
 
 # ---------------------------------------------------------------------------
 # Building pheromone

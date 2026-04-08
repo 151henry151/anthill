@@ -542,7 +542,7 @@ func _step_digging_act(a: Dictionary) -> void:
 		a["dig_target"] = Vector3i.ZERO
 		a["state"] = 11
 		return
-	var duration: int = nest_manager.dig_duration_for(bt)
+	var duration: int = nest_manager.dig_duration_at(target, bt)
 	a["dig_ticks"] = int(a["dig_ticks"]) + 1
 	if int(a["dig_ticks"]) >= duration:
 		world.set_block(target.x, target.y, target.z, _Const.BLOCK_AIR)

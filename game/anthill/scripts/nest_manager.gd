@@ -88,9 +88,10 @@ func get_dig_target(ant: Node3D) -> Variant:
 		return null
 	var best_score: float = -INF
 	var best_voxel: Variant = null
-	var sample_count: int = mini(_dig_front.size(), 60)
 	var surface_y: int = _TerrainGen.SURFACE_BASE
 	var shaft_deep_enough: bool = _deepest_air_y() <= (surface_y - _Const.SHAFT_TARGET_DEPTH)
+	var sample_cap: int = 60 + (_Const.NEST_GALLERY_SAMPLE_BOOST if shaft_deep_enough else 0)
+	var sample_count: int = mini(_dig_front.size(), sample_cap)
 	for _i in range(sample_count):
 		var idx: int = _rng.randi_range(0, _dig_front.size() - 1)
 		var v: Vector3i = _dig_front[idx]
@@ -135,6 +136,8 @@ func get_dig_target(ant: Node3D) -> Variant:
 		if shaft_deep_enough and air_count <= 1:
 			score += _Const.TUNNEL_EXTEND_BIAS
 		score += _rng.randf_range(-_Const.NOISE_AMPLITUDE, _Const.NOISE_AMPLITUDE)
+		if shaft_deep_enough:
+			score += _rng.randf_range(0.0, _Const.NEST_GALLERY_BRANCH_NOISE)
 		if score > best_score:
 			best_score = score
 			best_voxel = v
@@ -222,6 +225,21 @@ func dig_duration_for(block_type: int) -> int:
 	elif block_type == _Const.BLOCK_SAND:
 		return _Const.DIG_ACT_DURATION_TICKS
 	return 0
+
+
+func _nest_substrate_hash(v: Vector3i) -> int:
+	return Vector3(v).hash()
+
+
+## Apply spatial **substrate hardness** on top of block type (loose vs packed).
+func dig_duration_at(v: Vector3i, block_type: int) -> int:
+	var base: int = dig_duration_for(block_type)
+	if block_type != _Const.BLOCK_SAND and block_type != _Const.BLOCK_PACKED_SAND:
+		return base
+	var h: int = _nest_substrate_hash(v)
+	var t: float = float(h % 1000) / 1000.0
+	var m: float = lerpf(_Const.NEST_SUBSTRATE_HARDNESS_MIN, _Const.NEST_SUBSTRATE_HARDNESS_MAX, t)
+	return maxi(1, int(round(float(base) * m)))
 
 
 func _rebuild_dig_front() -> void:

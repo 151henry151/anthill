@@ -15,7 +15,7 @@ PerfTrace="*res://scripts/perf_trace.gd"
 [application]
 
 config/name="Anthill"
-config/version="0.7.5"
+config/version="0.7.6"
 config/description="Lasius niger–inspired grain-scale voxel colony simulation: pheromone fields, granular nest substrate, brood and foraging dynamics; observation and export, not direct ant control."
 run/main_scene="res://scenes/intro_video.tscn"
 config/features=PackedStringArray("4.2", "GL Compatibility")

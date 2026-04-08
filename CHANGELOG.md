@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.6] - 2026-04-07
+
+### Added
+
+- **`scripts/nest_builder.gd`**: procedural blueprint placement — three chambers on a **~120°** layout with **global rotation**, **distance** and **size** ranges, optional **`gallery_spur`** chamber, and **world-bounds** clamping (replacing fixed ±X/±Z offsets from the founding chamber).
+- **`scripts/nest_manager.gd`**: **`dig_duration_at`** applies **spatial substrate hardness** (deterministic per-voxel multiplier on sand / packed-sand dig ticks); **`get_dig_target`** adds **gallery branch noise** and **extra random samples** once the shaft is deep enough.
+
+### Changed
+
+- **`scripts/colony_ants.gd`** and **`scripts/queen_ant.gd`**: use **`dig_duration_at`** for dig-act duration.
+- **`scripts/constants.gd`**: add **`NEST_GALLERY_*`**, **`NEST_SUBSTRATE_*`**, and **`NEST_BLUEPRINT_*`** tuning constants.
+- **`project.godot`**: set **`config/version`** to **0.7.6**.
+
 ## [0.7.5] - 2026-04-07
 
 ### Added
