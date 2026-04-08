@@ -38,6 +38,8 @@ var _digger_count: int = 0
 static var _next_worker_sim_id: int = 1
 var _selection_ring: MeshInstance3D = null
 var _perf_trace: Node
+## Set each physics frame by **`main_controller`** so **`sim_steps`** matches brood / **`_game_tick`** when large-colony throttling applies (**`-1`** = use engine scale only).
+var _sim_substeps_frame: int = -1
 
 
 func _ready() -> void:
@@ -147,9 +149,15 @@ func _ant_pos(wx: int, wy: int, wz: int, sc: float) -> Vector3:
 	return Vector3(float(wx) + 0.5, y, float(wz) + 0.5)
 
 
+func set_sim_substeps_per_frame(n: int) -> void:
+	_sim_substeps_frame = maxi(1, n)
+
+
 func _physics_process(delta: float) -> void:
 	var t0 := Time.get_ticks_usec()
 	var sim_steps: int = maxi(1, mini(int(round(Engine.time_scale)), _Const.FAST_FORWARD_SIM_STEPS_CAP))
+	if _sim_substeps_frame > 0:
+		sim_steps = _sim_substeps_frame
 	_task_assign_timer += sim_steps
 	if _task_assign_timer >= _TASK_ASSIGN_INTERVAL:
 		_task_assign_timer = 0

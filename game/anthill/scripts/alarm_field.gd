@@ -18,17 +18,29 @@ func sample(wx: int, wz: int) -> float:
 
 
 func tick() -> void:
-	_evap_timer += 1
-	if _evap_timer < _Const.ALARM_EVAPORATION_INTERVAL_TICKS:
+	advance_ticks(1)
+
+
+func advance_ticks(steps: int) -> void:
+	if steps < 1:
 		return
-	_evap_timer = 0
-	var to_remove: Array[Vector2i] = []
-	for cell in _grid:
-		_grid[cell] = float(_grid[cell]) * _Const.ALARM_EVAPORATION_RATE
-		if float(_grid[cell]) < _Const.ALARM_MINIMUM_THRESHOLD:
-			to_remove.append(cell)
-	for cell in to_remove:
-		_grid.erase(cell)
+	_evap_timer += steps
+	var interval: int = _Const.ALARM_EVAPORATION_INTERVAL_TICKS
+	var n_evap: int = _evap_timer / interval
+	if n_evap < 1:
+		return
+	_evap_timer %= interval
+	var factor: float = pow(float(_Const.ALARM_EVAPORATION_RATE), float(n_evap))
+	var thr: float = _Const.ALARM_MINIMUM_THRESHOLD
+	var keys: Array = _grid.keys()
+	for k in keys:
+		if not _grid.has(k):
+			continue
+		var nv: float = float(_grid[k]) * factor
+		if nv < thr:
+			_grid.erase(k)
+		else:
+			_grid[k] = nv
 
 
 func get_grid() -> Dictionary:

@@ -85,8 +85,14 @@ var _wz: int = 0
 var _nest_manager: Node
 var _brood_manager: Node
 var _perf_trace: Node
+## **`main_controller`** sets this so queen sub-steps match **`_game_tick`** when fast-forward is throttled (**`-1`** = use engine scale only).
+var _sim_substeps_frame: int = -1
 
 const _ANT_LOCAL_Y_MIN: float = -0.28
+
+
+func set_sim_substeps_per_frame(n: int) -> void:
+	_sim_substeps_frame = maxi(1, n)
 
 
 ## Inclusive range [lo, hi) for shaft dx/dz so an even `FOUNDING_SHAFT_WIDTH` is centered on `(_wx, _wz)`.
@@ -184,6 +190,8 @@ func sand_physics_suppressed() -> bool:
 func _physics_process(delta: float) -> void:
 	var t0 := Time.get_ticks_usec()
 	var sim_steps: int = maxi(1, mini(int(round(Engine.time_scale)), _Const.FAST_FORWARD_SIM_STEPS_CAP))
+	if _sim_substeps_frame > 0:
+		sim_steps = _sim_substeps_frame
 	## Physics `delta` is fixed; game ticks use `sim_steps` in `main_controller`. Run fly / search / dig once
 	## per sub-step so timers can cross thresholds multiple times per frame (same pattern as claustral).
 	age_ticks += sim_steps

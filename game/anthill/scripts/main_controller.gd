@@ -316,6 +316,14 @@ func _physics_process(_delta: float) -> void:
 	## **`Engine.time_scale`** scales **`delta`** for nodes but does **not** add extra physics callbacks per real second, so tick-based sim ( **`_game_tick += 1`** ) must advance **`round(time_scale)`** sub-steps per frame to make **[F]** fast-forward affect ant-days and brood.
 	var sim_steps: int = maxi(1, int(round(Engine.time_scale)))
 	sim_steps = mini(sim_steps, _Const.FAST_FORWARD_SIM_STEPS_CAP)
+	var wn_throttle: int = colony_ants.get_worker_count() if colony_ants else 0
+	if wn_throttle >= _Const.SIM_SUBSTEP_THROTTLE_MIN_WORKERS:
+		var scaled_steps: int = maxi(_Const.SIM_SUBSTEP_MIN, int(float(_Const.SIM_SUBSTEP_WORKER_BUDGET) / float(wn_throttle)))
+		sim_steps = mini(sim_steps, scaled_steps)
+	if colony_ants and colony_ants.has_method("set_sim_substeps_per_frame"):
+		colony_ants.set_sim_substeps_per_frame(sim_steps)
+	if is_instance_valid(_queen) and _queen.has_method("set_sim_substeps_per_frame"):
+		_queen.set_sim_substeps_per_frame(sim_steps)
 	var t_sys := Time.get_ticks_usec()
 	for _k in range(sim_steps):
 		if _sand_step != null and not world.sand_idle and not suppress_sand:
@@ -335,17 +343,17 @@ func _physics_process(_delta: float) -> void:
 			_brood_manager.call("feed_all_larvae", _Const.WORKER_BROOD_CARE_PER_TICK)
 		if _brood_manager:
 			_brood_manager.tick()
-		if _pheromone_field:
-			_pheromone_field.tick()
-		if _footprint_field:
-			_footprint_field.tick()
-		if _alarm_field:
-			_alarm_field.tick()
-		if _building_pheromone:
-			_building_pheromone.tick()
 		_update_food_sources_at_tick()
 		if _Const.VALIDATION_EXPORT_ENABLED and _game_tick % _Const.VALIDATION_EXPORT_INTERVAL_TICKS == 0:
 			_validation_export_csv()
+	if _pheromone_field and _pheromone_field.has_method("advance_ticks"):
+		_pheromone_field.advance_ticks(sim_steps)
+	if _footprint_field and _footprint_field.has_method("advance_ticks"):
+		_footprint_field.advance_ticks(sim_steps)
+	if _alarm_field and _alarm_field.has_method("advance_ticks"):
+		_alarm_field.advance_ticks(sim_steps)
+	if _building_pheromone and _building_pheromone.has_method("advance_ticks"):
+		_building_pheromone.advance_ticks(sim_steps)
 	if _perf_trace:
 		_perf_trace.set_sand_usec(sand_us)
 	var t_meshq := Time.get_ticks_usec()
@@ -637,8 +645,13 @@ func _clear_trail_overlay() -> void:
 func _update_trail_overlay() -> void:
 	if not _pheromone_overlay_active:
 		return
+	var overlay_period: int = _Const.TRAIL_OVERLAY_REFRESH_BASE
+	if colony_ants and colony_ants.get_worker_count() > _Const.TRAIL_OVERLAY_THROTTLE_WORKER_THRESHOLD:
+		overlay_period = _Const.TRAIL_OVERLAY_REFRESH_SLOW
+	if Engine.time_scale > 15.0:
+		overlay_period = maxi(overlay_period, _Const.TRAIL_OVERLAY_REFRESH_SLOW)
 	_trail_overlay_timer += 1
-	if _trail_overlay_timer < 15:
+	if _trail_overlay_timer < overlay_period:
 		return
 	_trail_overlay_timer = 0
 	_clear_trail_overlay()

@@ -20,16 +20,6 @@ func add_build_pheromone(pos: Vector3i, amount: float) -> void:
 		_build_grid[n] = minf(nc + amount * 0.5, 1.0)
 
 
-func evaporate_step() -> void:
-	var to_remove: Array[Vector3i] = []
-	for pos in _build_grid:
-		_build_grid[pos] = float(_build_grid[pos]) * _Const.BUILD_PHEROMONE_EVAPORATION_RATE
-		if float(_build_grid[pos]) < _Const.BUILD_PHEROMONE_MINIMUM:
-			to_remove.append(pos)
-	for pos in to_remove:
-		_build_grid.erase(pos)
-
-
 func debug_build_cell_count() -> int:
 	return _build_grid.size()
 
@@ -39,7 +29,26 @@ func get_grid() -> Dictionary:
 
 
 func tick() -> void:
-	_evap_timer += 1
-	if _evap_timer >= _Const.BUILD_PHEROMONE_EVAPORATION_INTERVAL_TICKS:
-		_evap_timer = 0
-		evaporate_step()
+	advance_ticks(1)
+
+
+func advance_ticks(steps: int) -> void:
+	if steps < 1:
+		return
+	_evap_timer += steps
+	var interval: int = _Const.BUILD_PHEROMONE_EVAPORATION_INTERVAL_TICKS
+	var n_evap: int = _evap_timer / interval
+	if n_evap < 1:
+		return
+	_evap_timer %= interval
+	var factor: float = pow(float(_Const.BUILD_PHEROMONE_EVAPORATION_RATE), float(n_evap))
+	var thr: float = _Const.BUILD_PHEROMONE_MINIMUM
+	var keys: Array = _build_grid.keys()
+	for k in keys:
+		if not _build_grid.has(k):
+			continue
+		var nv: float = float(_build_grid[k]) * factor
+		if nv < thr:
+			_build_grid.erase(k)
+		else:
+			_build_grid[k] = minf(nv, 1.0)

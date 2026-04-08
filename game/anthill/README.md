@@ -45,6 +45,7 @@ Opening **`main.tscn`** directly in the editor still loads the colony scene for 
 
 ## Prototype limitations
 
+- **Large colonies:** with many workers and high **[F]** speed, **`main_controller`** may cap simulation sub-steps per frame and batch chemical-field updates so the UI (camera, overlays) stays responsive; tune **`SIM_SUBSTEP_*`** and **`PHEROMONE_MAX_DIFFUSION_PASSES_PER_FRAME`** in **`constants.gd`** if needed.
 - **Terrain collision** is not voxel-accurate; a large **floor** collider approximates walkable space.
 - **Mesh rebuild** cadence and chunk count should be tuned if you enlarge the world or raise fast-forward tiers.
 - **Video:** Only **Ogg Theora** is supported by the stock **`VideoStreamPlayer`**; re-encode MP4 sources with **`ffmpeg`** when replacing **`intro.ogv`**.

@@ -378,6 +378,18 @@ const XRAY_DEPTH_FADE_RANGE := 80.0
 const FAST_FORWARD_SPEEDS: Array[float] = [10.0, 30.0, 60.0, 120.0]
 ## Max simulation sub-steps per physics frame (**`round(Engine.time_scale)`**); matches max **[F]** tier so fast-forward stays stable.
 const FAST_FORWARD_SIM_STEPS_CAP := 120
+## When **`worker_count`** ≥ this, **`main_controller`** may reduce **`sim_steps`** so large colonies stay responsive (camera / input).
+const SIM_SUBSTEP_THROTTLE_MIN_WORKERS := 50
+## **`sim_steps`** is capped to **`max(SIM_SUBSTEP_MIN, budget / worker_count)`** when throttling applies.
+const SIM_SUBSTEP_WORKER_BUDGET := 5200
+## Minimum **`sim_steps`** per frame while throttling (still advances ant-days; avoids single-tick stalls).
+const SIM_SUBSTEP_MIN := 10
+## Recruitment trail: max full **diffusion + evaporation** cycles per **physics frame** (extra due intervals use evaporation-only compounding).
+const PHEROMONE_MAX_DIFFUSION_PASSES_PER_FRAME := 1
+## Base physics frames between **[P]** overlay mesh rebuilds; slow tier when many workers or high **`Engine.time_scale`**.
+const TRAIL_OVERLAY_REFRESH_BASE := 15
+const TRAIL_OVERLAY_REFRESH_SLOW := 55
+const TRAIL_OVERLAY_THROTTLE_WORKER_THRESHOLD := 140
 
 # ---------------------------------------------------------------------------
 # Worker movement intervals (seconds between steps)

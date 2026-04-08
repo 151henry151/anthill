@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.9] - 2026-04-08
+
+### Changed
+
+- **`scripts/main_controller.gd`**: run pheromone / footprint / alarm / building chemistry **`advance_ticks(sim_steps)`** once per physics frame (batched decay) instead of per sub-step full-grid passes; cap **`sim_steps`** when **`worker_count`** is high (**`SIM_SUBSTEP_*`**); sync caps to **`colony_ants`** and **`queen_ant`** via **`set_sim_substeps_per_frame`**; throttle **[P]** overlay rebuild when many workers or high **`Engine.time_scale`**.
+- **`scripts/pheromone_field.gd`**: add **`advance_ticks`** with at most one Laplacian cycle per frame and compound evaporation for skipped intervals (**`PHEROMONE_MAX_DIFFUSION_PASSES_PER_FRAME`**).
+- **`scripts/footprint_field.gd`**, **`scripts/alarm_field.gd`**, **`scripts/building_pheromone.gd`**: add **`advance_ticks`** with single-pass compound evaporation; keep **`tick()`** as **`advance_ticks(1)`**.
+- **`scripts/colony_ants.gd`**, **`scripts/queen_ant.gd`**: honor **`main_controller`** sub-step override for throttled fast-forward.
+- **`scripts/constants.gd`**: add **`SIM_SUBSTEP_*`**, **`PHEROMONE_MAX_DIFFUSION_PASSES_PER_FRAME`**, **`TRAIL_OVERLAY_*`** tuning constants.
+- **`game/anthill/README.md`**: note large-colony performance behavior.
+- **`project.godot`**: set **`config/version`** to **0.7.9**.
+
 ## [0.7.8] - 2026-04-08
 
 ### Changed

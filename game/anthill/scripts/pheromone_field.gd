@@ -34,11 +34,10 @@ func sample_directional(wx: int, wz: int, heading_rad: float) -> Array[float]:
 
 
 func tick() -> void:
-	_evap_timer += 1
-	if _evap_timer < _Const.PHEROMONE_EVAPORATION_INTERVAL_TICKS:
-		return
-	_evap_timer = 0
-	_diffuse_laplacian_4()
+	advance_ticks(1)
+
+
+func _one_evaporation_pass() -> void:
 	var to_remove: Array[Vector2i] = []
 	for cell in _trail_grid:
 		_trail_grid[cell] = float(_trail_grid[cell]) * _Const.PHEROMONE_EVAPORATION_RATE
@@ -46,6 +45,36 @@ func tick() -> void:
 			to_remove.append(cell)
 	for cell in to_remove:
 		_trail_grid.erase(cell)
+
+
+## Batched simulation ticks: at most **`PHEROMONE_MAX_DIFFUSION_PASSES_PER_FRAME`** full Laplacian steps; extra intervals apply evaporation-only compounding (keeps large **`sim_steps`** affordable).
+func advance_ticks(steps: int) -> void:
+	if steps < 1:
+		return
+	_evap_timer += steps
+	var interval: int = _Const.PHEROMONE_EVAPORATION_INTERVAL_TICKS
+	var due: int = _evap_timer / interval
+	if due < 1:
+		return
+	_evap_timer %= interval
+	var max_d: int = _Const.PHEROMONE_MAX_DIFFUSION_PASSES_PER_FRAME
+	var diffuse_runs: int = mini(due, max_d)
+	for _i in range(diffuse_runs):
+		_diffuse_laplacian_4()
+		_one_evaporation_pass()
+	var evap_only: int = due - diffuse_runs
+	if evap_only > 0:
+		var factor: float = pow(float(_Const.PHEROMONE_EVAPORATION_RATE), float(evap_only))
+		var thr: float = _Const.PHEROMONE_MINIMUM_THRESHOLD
+		var keys: Array = _trail_grid.keys()
+		for k in keys:
+			if not _trail_grid.has(k):
+				continue
+			var nv: float = float(_trail_grid[k]) * factor
+			if nv < thr:
+				_trail_grid.erase(k)
+			else:
+				_trail_grid[k] = minf(nv, 1.0)
 
 
 func _diffuse_laplacian_4() -> void:
