@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-04-04
+
 ### Added
 
 - **Pheromone field view [P]**: overlay shows **recruitment trail** (green), **footprint / CHC** (magenta), and **nest construction** pheromone (amber) at distinct heights; **legend** panel lists channels and colors.
@@ -18,9 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **`scripts/constants.gd`**: add **`FOOTPRINT_*`**, **`TRAIL_SATURATION_*`**, and related scout/tropotaxis tuning.
+- **`scripts/constants.gd`**: add **`FOOTPRINT_*`**, **`TRAIL_SATURATION_*`**, **`TRAIL_SATIATED_DEPOSIT_PROBABILITY`**, **`TRAIL_SPOT_*_MM`**, and related scout/tropotaxis tuning.
 - **`scripts/main_controller.gd`**: create **`FootprintField`**, assign **`colony_ants.footprint_field`**, tick footprint each sim tick.
-- **`scripts/colony_ants.gd`**: deposit footprint each successful step; **FORAGING_SCOUT** uses footprint- and trail-weighted Moore roulette; **FORAGING_RECRUIT** tropotaxis adds repulsion from higher neighbor footprint; scale **fed-worker** recruitment deposits by trail saturation; document recruitment-only deposits.
+- **`scripts/colony_ants.gd`**: deposit footprint each successful step; **FORAGING_SCOUT** uses footprint- and trail-weighted Moore roulette; **FORAGING_RECRUIT** tropotaxis adds repulsion from higher neighbor footprint; scale **fed-worker** recruitment deposits by trail saturation; document recruitment-only deposits; model **satiated** recruitment marking with **~1/3** Bernoulli trials and **20–40 mm** discrete spot spacing along return and carry paths; apply Bernoulli to pickup burst.
 
 ## [0.6.2] - 2026-04-08
 

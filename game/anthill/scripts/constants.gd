@@ -119,6 +119,11 @@ const PHEROMONE_MINIMUM_THRESHOLD := 0.005
 const PHEROMONE_SENSE_RADIUS := 4
 ## Minimum roulette weight for tropotaxis (flat field → near-uniform random walk among walkable Moore neighbors).
 const PHEROMONE_TROPOTAXIS_FLOOR := 0.001
+## Bernoulli probability that a **satiated** returning forager deposits recruitment pheromone at each **spot** opportunity (spec ~1/3).
+const TRAIL_SATIATED_DEPOSIT_PROBABILITY := 0.333333
+## Laboratory spacing of discrete trail **spots** along the return path (mm); converted to voxels via **`MM_PER_UNIT`**.
+const TRAIL_SPOT_MIN_MM := 20.0
+const TRAIL_SPOT_MAX_MM := 40.0
 
 # ---------------------------------------------------------------------------
 # Pheromone overlay (scientific visualization — [P] field view)

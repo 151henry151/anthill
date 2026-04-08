@@ -93,6 +93,8 @@ func spawn_worker(pos: Vector3, is_nanitic: bool) -> void:
 		"food_source_wx": 0,
 		"food_source_wz": 0,
 		"heading_rad": _rng.randf_range(0.0, TAU),
+		"trail_spot_dist_accum": 0.0,
+		"trail_next_spot_vox": 8,
 	})
 	_next_worker_sim_id += 1
 
@@ -400,8 +402,10 @@ func _step_returning(a: Dictionary) -> void:
 	if dx == 0 and dz == 0:
 		dx = signi(nest_entrance.x - wx)
 	_try_move(a, dx, dz)
-	# **Recruitment trail** (fed return only): stronger near food source, weaker near nest; scale down when local trail is saturated.
+	# **Recruitment trail** (fed return): discrete spots (mm spacing) × Bernoulli **TRAIL_SATIATED_DEPOSIT_PROBABILITY**; amount scales with food proximity and saturation.
 	if pheromone_field and bool(a.get("carrying_food", false)):
+		wx = int(a["wx"])
+		wz = int(a["wz"])
 		var fsx: int = int(a.get("food_source_wx", wx))
 		var fsz: int = int(a.get("food_source_wz", wz))
 		var d_to_food: float = sqrt(float((wx - fsx) * (wx - fsx) + (wz - fsz) * (wz - fsz)))
@@ -410,9 +414,8 @@ func _step_returning(a: Dictionary) -> void:
 		if total_path < 1.0:
 			total_path = 1.0
 		var food_proximity: float = clampf(1.0 - d_to_food / total_path, 0.0, 1.0)
-		var deposit_amt: float = _Const.PHEROMONE_BASE_DEPOSIT + _Const.PHEROMONE_DISTANCE_BONUS * food_proximity
-		deposit_amt *= _trail_saturation_multiplier(int(a["wx"]), int(a["wz"]))
-		pheromone_field.deposit(int(a["wx"]), int(a["wz"]), deposit_amt)
+		var base_amt: float = _Const.PHEROMONE_BASE_DEPOSIT + _Const.PHEROMONE_DISTANCE_BONUS * food_proximity
+		_maybe_deposit_recruitment_spot(a, wx, wz, base_amt)
 	d = _dist_to(a, nest_entrance)
 	if d < _Const.WORKER_NEST_ARRIVAL_MAX_DIST:
 		if food_store and bool(a.get("carrying_food", false)):
@@ -565,8 +568,10 @@ func _check_food_nearby(a: Dictionary) -> void:
 				fs.is_known_to_colony = true
 				a["state"] = 7  # RETURNING
 				a["return_stuck"] = 0
-				# **Recruitment trail** burst at pickup (fed worker only); saturation reduces runaway reinforcement.
-				if pheromone_field:
+				a["trail_spot_dist_accum"] = 0.0
+				a["trail_next_spot_vox"] = _random_trail_spot_spacing_voxels()
+				# **Recruitment** burst at source: Bernoulli × saturation (no spot spacing — first mark at resource).
+				if pheromone_field and _rng.randf() < _Const.TRAIL_SATIATED_DEPOSIT_PROBABILITY:
 					var burst: float = _Const.PHEROMONE_DEPOSIT_AMOUNT * 2.0 * _trail_saturation_multiplier(wx, wz)
 					pheromone_field.deposit(wx, wz, burst)
 			return
@@ -646,10 +651,8 @@ func _step_random_walk(a: Dictionary) -> void:
 	if dx == 0 and dz == 0:
 		dx = 1 if _rng.randf() > 0.5 else -1
 	_try_move(a, dx, dz)
-	# **Recruitment trail** while carrying in legacy random-walk state (fed path only).
 	if bool(a.get("carrying_food", false)) and pheromone_field:
-		var dep: float = _Const.PHEROMONE_DEPOSIT_AMOUNT * 0.5 * _trail_saturation_multiplier(int(a["wx"]), int(a["wz"]))
-		pheromone_field.deposit(int(a["wx"]), int(a["wz"]), dep)
+		_maybe_deposit_recruitment_spot(a, int(a["wx"]), int(a["wz"]), _Const.PHEROMONE_DEPOSIT_AMOUNT * 0.5)
 
 
 func _cell_walkable(nwx: int, nwz: int) -> bool:
@@ -671,6 +674,27 @@ func _apply_step_to(a: Dictionary, nwx: int, nwz: int, face_dx: int, face_dz: in
 		ant.rotation.y = atan2(float(face_dx), float(face_dz))
 	if footprint_field and footprint_field.has_method("deposit"):
 		footprint_field.deposit(nwx, nwz, _Const.FOOTPRINT_DEPOSIT_PER_STEP)
+
+
+func _random_trail_spot_spacing_voxels() -> int:
+	var vmin: float = _Const.TRAIL_SPOT_MIN_MM / _Const.MM_PER_UNIT
+	var vmax: float = _Const.TRAIL_SPOT_MAX_MM / _Const.MM_PER_UNIT
+	return maxi(1, int(round(_rng.randf_range(vmin, vmax))))
+
+
+## Discrete **spots** along return path (voxel steps) × **`TRAIL_SATIATED_DEPOSIT_PROBABILITY`**.
+func _maybe_deposit_recruitment_spot(a: Dictionary, wx: int, wz: int, base_unscaled: float) -> void:
+	if pheromone_field == null:
+		return
+	a["trail_spot_dist_accum"] = float(a.get("trail_spot_dist_accum", 0.0)) + 1.0
+	if float(a["trail_spot_dist_accum"]) < float(a.get("trail_next_spot_vox", 8)):
+		return
+	a["trail_spot_dist_accum"] = 0.0
+	a["trail_next_spot_vox"] = _random_trail_spot_spacing_voxels()
+	if _rng.randf() > _Const.TRAIL_SATIATED_DEPOSIT_PROBABILITY:
+		return
+	var deposit_amt: float = base_unscaled * _trail_saturation_multiplier(wx, wz)
+	pheromone_field.deposit(wx, wz, deposit_amt)
 
 
 ## Scale **recruitment** deposit when local trail concentration is high (**Lasius niger**-style negative feedback on runaway attraction).
