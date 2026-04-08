@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.7] - 2026-04-04
+
+### Added
+
+- **`scripts/alarm_field.gd`**: fast-decay **Dufour / undecane**-like 2D alarm field; deposits near nest on **`food_critical`** from **`colony_food_store`**; **[P]** overlay and HUD cell count; worker inspector **alarm** sample.
+- **Validation CSV export** to **`user://validation/colony_ticks.csv`** and **`user://validation/workers_sample.csv`** on **`VALIDATION_EXPORT_INTERVAL_TICKS`** when **`VALIDATION_EXPORT_ENABLED`**.
+
+### Changed
+
+- **`scripts/constants.gd`**: add **`VALIDATION_*`**, **`ALARM_*`**, **`PHEROMONE_VIS_ALARM`**.
+- **`scripts/main_controller.gd`**: spawn **`AlarmField`**, tick alarm, connect **`food_critical`**, append validation logs; **[P]** draws alarm layer above footprint.
+
 ## [0.6.6] - 2026-04-04
 
 ### Added

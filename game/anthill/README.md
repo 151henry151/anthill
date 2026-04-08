@@ -5,7 +5,8 @@ Godot **4.2+** game: **one voxel = one sand grain** in fiction (~3 mm; see `scri
 ### Research / inspection UI
 
 - **HUD** (top-left): colony stage, ant-day clock, queen reserve, colony food stores (mass vs soft target), worker and brood counts, simulation tick, brood stage breakdown, nest entrance coordinates, active food patches, pheromone grid statistics, grain-scale fiction.
-- **[P]**: toggle **pheromone field** overlay — recruitment trail, footprint (CHC), and nest-construction fields use **different colors**; a **legend** appears top-right.
+- **[P]**: toggle **pheromone field** overlay — recruitment trail, footprint (CHC), alarm (Dufour), and nest-construction fields use **different colors**; a **legend** appears top-right.
+- **Validation**: with **`VALIDATION_EXPORT_ENABLED`** in `scripts/constants.gd`, the sim appends **`user://validation/colony_ticks.csv`** and **`workers_sample.csv`** (Godot user data folder) on a fixed tick interval for offline analysis.
 - **Right-click** a worker: **inspector** panel (bottom-right) with state, age, chemistry samples at the feet, etc. **Escape** clears the selection.
 
 ## Run

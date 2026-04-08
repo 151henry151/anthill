@@ -19,6 +19,8 @@ var _ant_builder: RefCounted
 var pheromone_field: Node
 ## Passive CHC footprint grid (negative chemotaxis); same cell size as **`pheromone_field`**.
 var footprint_field: Node
+## Dufour-type **alarm** field (optional); same grid resolution as trail.
+var alarm_field: Node
 var food_store: Node
 var food_sources: Array[Node3D] = []
 var nest_entrance: Vector3i = Vector3i.ZERO
@@ -806,6 +808,21 @@ func get_worker_count() -> int:
 	return _ants.size()
 
 
+func get_validation_worker_lines(tick: int) -> PackedStringArray:
+	var rows: PackedStringArray = []
+	for a in _ants:
+		var wx: int = int(a["wx"])
+		var wz: int = int(a["wz"])
+		var tr: float = pheromone_field.sample(wx, wz) if pheromone_field else 0.0
+		var fp: float = footprint_field.sample(wx, wz) if footprint_field else 0.0
+		var al: float = alarm_field.sample(wx, wz) if alarm_field else 0.0
+		rows.append(
+			"%d,%d,%d,%d,%d,%.6f,%.6f,%.6f"
+			% [tick, int(a.get("sim_id", 0)), int(a["state"]), wx, wz, tr, fp, al]
+		)
+	return rows
+
+
 func get_ant_by_sim_id(sim_id: int) -> Dictionary:
 	for a in _ants:
 		if int(a.get("sim_id", -1)) == sim_id:
@@ -878,6 +895,7 @@ func get_ant_inspector_snapshot(a: Dictionary) -> Dictionary:
 	var crop: float = 1.0 if bool(a.get("carrying_food", false)) else 0.0
 	var trail: float = pheromone_field.sample(wx, wz) if pheromone_field else 0.0
 	var fp: float = footprint_field.sample(wx, wz) if footprint_field else 0.0
+	var al: float = alarm_field.sample(wx, wz) if alarm_field else 0.0
 	var age: int = int(a.get("age_ticks", 0))
 	return {
 		"sim_id": int(a.get("sim_id", 0)),
@@ -895,6 +913,7 @@ func get_ant_inspector_snapshot(a: Dictionary) -> Dictionary:
 		"metabolic_reserve": float(a.get("metabolic_reserve", 1.0)),
 		"trail_sample": trail,
 		"footprint_sample": fp,
+		"alarm_sample": al,
 		"heading_deg": rad_to_deg(float(a.get("heading_rad", 0.0))),
 		"dist_to_nest": _dist_to(a, nest_entrance) if nest_entrance != Vector3i.ZERO else -1.0,
 		"knows_food_site": bool(a.get("knows_food_site", false)),

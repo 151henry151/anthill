@@ -138,6 +138,14 @@ const FEEDER_CROWD_OVERFLOW_ATTEMPT_PROB := 0.12
 const FORAGING_MEMORY_TRAIL_WEAK := 0.012
 ## Weight on steps that align with remembered food coordinates when trail is weak.
 const FORAGING_MEMORY_BIAS_WEIGHT := 1.8
+## Append **`user://validation/`** CSV logs when **true**.
+const VALIDATION_EXPORT_ENABLED := true
+const VALIDATION_EXPORT_INTERVAL_TICKS := 60
+## Dufour alarm field: deposit scale on **food_critical** events near nest.
+const ALARM_DEPOSIT_ON_CRITICAL := 0.42
+const ALARM_EVAPORATION_RATE := 0.88
+const ALARM_EVAPORATION_INTERVAL_TICKS := 8
+const ALARM_MINIMUM_THRESHOLD := 0.002
 
 # ---------------------------------------------------------------------------
 # Pheromone overlay (scientific visualization — [P] field view)
@@ -148,6 +156,8 @@ const PHEROMONE_VIS_RECRUITMENT := Color(0.12, 0.82, 0.38, 1.0)
 const PHEROMONE_VIS_FOOTPRINT := Color(0.88, 0.28, 0.72, 1.0)
 ## **Nest construction** stigmergy (**3D** voxel field).
 const PHEROMONE_VIS_BUILDING := Color(0.96, 0.74, 0.18, 1.0)
+## Dufour gland alarm (**undecane**-like fiction).
+const PHEROMONE_VIS_ALARM := Color(0.95, 0.35, 0.12, 1.0)
 ## When local **recruitment** concentration exceeds this, scale down further **fed-worker** deposits (counteracts runaway positive feedback; cf. *briefing.txt*).
 const TRAIL_SATURATION_START := 0.38
 ## Multiplier applied to recruitment deposit at **full** saturation (**1.0** = no extra deposit).

@@ -38,6 +38,7 @@ var _food_sources_n: int = 0
 var _peak_workers: int = 0
 var _trail_cells: int = 0
 var _fp_cells: int = 0
+var _alarm_cells: int = 0
 var _build_cells: int = 0
 
 
@@ -78,7 +79,7 @@ func _ready() -> void:
 	_legend_panel.offset_left = -280.0
 	_legend_panel.offset_right = -10.0
 	_legend_panel.offset_top = 40.0
-	_legend_panel.offset_bottom = 200.0
+	_legend_panel.offset_bottom = 240.0
 	_legend_panel.visible = false
 	var leg_v := VBoxContainer.new()
 	leg_v.add_theme_constant_override("separation", 6)
@@ -89,6 +90,7 @@ func _ready() -> void:
 	_add_legend_row(leg_v, _Const.PHEROMONE_VIS_RECRUITMENT, "Recruitment trail (2D, attractive)")
 	_add_legend_row(leg_v, _Const.PHEROMONE_VIS_FOOTPRINT, "Footprint / CHC (2D, substrate)")
 	_add_legend_row(leg_v, _Const.PHEROMONE_VIS_BUILDING, "Nest construction (3D voxels)")
+	_add_legend_row(leg_v, _Const.PHEROMONE_VIS_ALARM, "Alarm / Dufour (2D, stress)")
 	add_child(_legend_panel)
 
 	_ant_panel = PanelContainer.new()
@@ -171,6 +173,7 @@ func set_scientific_metrics(
 	p_peak_workers: int,
 	p_trail_cells: int,
 	p_fp_cells: int,
+	p_alarm_cells: int,
 	p_build_cells: int
 ) -> void:
 	_sim_tick = p_tick
@@ -182,6 +185,7 @@ func set_scientific_metrics(
 	_peak_workers = p_peak_workers
 	_trail_cells = p_trail_cells
 	_fp_cells = p_fp_cells
+	_alarm_cells = p_alarm_cells
 	_build_cells = p_build_cells
 	_update_display()
 
@@ -215,6 +219,7 @@ func set_ant_inspector(inspector: Dictionary) -> void:
 		lines.append("Dist. to nest entrance: %.1f voxels" % dn)
 	lines.append("Trail sample (recruitment): %.4f" % float(inspector.get("trail_sample", 0.0)))
 	lines.append("Footprint sample (CHC): %.4f" % float(inspector.get("footprint_sample", 0.0)))
+	lines.append("Alarm sample (Dufour): %.4f" % float(inspector.get("alarm_sample", 0.0)))
 	if bool(inspector.get("knows_food_site", false)):
 		lines.append(
 			"Memory: (%d,%d) quality %.2f · last trip quality %.2f"
@@ -243,7 +248,7 @@ func _update_display() -> void:
 		_sci_labels[0].text = "Sim tick: %d · brood: %d eggs, %d larvae, %d pupae" % [_sim_tick, _eggs, _larvae, _pupae]
 		_sci_labels[1].text = "Nest: %s" % _nest_line
 		_sci_labels[2].text = "Active food patches: %d" % _food_sources_n
-		_sci_labels[3].text = "Pheromone grid cells — trail: %d · footprint: %d · building: %d" % [_trail_cells, _fp_cells, _build_cells]
+		_sci_labels[3].text = "Pheromone grid cells — trail: %d · footprint: %d · alarm: %d · building: %d" % [_trail_cells, _fp_cells, _alarm_cells, _build_cells]
 		_sci_labels[4].text = "Voxel: 1 unit ≈ %.1f mm (grain-scale fiction)" % _Const.MM_PER_UNIT
 	var modes: Array[String] = []
 	if fast_forward_multiplier > 1.001:

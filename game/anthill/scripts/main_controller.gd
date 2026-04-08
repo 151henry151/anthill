@@ -44,6 +44,7 @@ var _brood_manager: Node
 var _brood_renderer: Node3D
 var _pheromone_field: Node
 var _footprint_field: Node
+var _alarm_field: Node
 var _food_store: Node
 var _food_sources: Array[Node3D] = []
 var _next_food_spawn_tick: int = 0
@@ -137,10 +138,16 @@ func _setup_systems() -> void:
 	_footprint_field.set_script(load("res://scripts/footprint_field.gd"))
 	add_child(_footprint_field)
 
+	_alarm_field = Node.new()
+	_alarm_field.name = "AlarmField"
+	_alarm_field.set_script(load("res://scripts/alarm_field.gd"))
+	add_child(_alarm_field)
+
 	_food_store = Node.new()
 	_food_store.name = "ColonyFoodStore"
 	_food_store.set_script(load("res://scripts/colony_food_store.gd"))
 	add_child(_food_store)
+	_food_store.food_critical.connect(_on_food_critical_alarm)
 
 	_nest_builder = Node.new()
 	_nest_builder.name = "NestBuilder"
@@ -181,6 +188,7 @@ func _setup_systems() -> void:
 
 	colony_ants.pheromone_field = _pheromone_field
 	colony_ants.footprint_field = _footprint_field
+	colony_ants.alarm_field = _alarm_field
 	colony_ants.food_store = _food_store
 	colony_ants.nest_manager = _nest_manager
 	colony_ants.building_pheromone = _building_pheromone
@@ -326,9 +334,13 @@ func _physics_process(_delta: float) -> void:
 			_pheromone_field.tick()
 		if _footprint_field:
 			_footprint_field.tick()
+		if _alarm_field:
+			_alarm_field.tick()
 		if _building_pheromone:
 			_building_pheromone.tick()
 		_update_food_sources_at_tick()
+		if _Const.VALIDATION_EXPORT_ENABLED and _game_tick % _Const.VALIDATION_EXPORT_INTERVAL_TICKS == 0:
+			_validation_export_csv()
 	PerfTrace.set_sand_usec(sand_us)
 	var t_meshq := Time.get_ticks_usec()
 	if world.take_mesh_dirty():
@@ -360,6 +372,58 @@ func _physics_process(_delta: float) -> void:
 		colony_ants,
 		_ff_tier > 0
 	)
+
+
+func _on_food_critical_alarm(_food_type: String) -> void:
+	if _alarm_field == null or colony_ants == null:
+		return
+	var ne: Vector3i = colony_ants.nest_entrance
+	if ne == Vector3i.ZERO:
+		return
+	for _i in range(12):
+		var ox: int = _rng.randi_range(-8, 8)
+		var oz: int = _rng.randi_range(-8, 8)
+		_alarm_field.deposit(ne.x + ox, ne.z + oz, _Const.ALARM_DEPOSIT_ON_CRITICAL * 0.16)
+
+
+func _validation_export_csv() -> void:
+	DirAccess.make_dir_recursive("user://validation")
+	var fp_n: int = 0
+	if _footprint_field and _footprint_field.has_method("get_grid"):
+		fp_n = int((_footprint_field.get_grid() as Dictionary).size())
+	var alarm_n: int = _alarm_field.debug_alarm_cell_count() if _alarm_field and _alarm_field.has_method("debug_alarm_cell_count") else 0
+	var line := "%d,%d,%.6f,%.6f,%d,%d,%d,%d" % [
+		_game_tick,
+		colony_ants.get_worker_count() if colony_ants else 0,
+		_food_store.sugar if _food_store else 0.0,
+		_food_store.protein if _food_store else 0.0,
+		_pheromone_field.debug_trail_cell_count() if _pheromone_field else 0,
+		fp_n,
+		alarm_n,
+		_building_pheromone.debug_build_cell_count() if _building_pheromone else 0,
+	]
+	var p := "user://validation/colony_ticks.csv"
+	var f: FileAccess
+	if FileAccess.file_exists(p):
+		f = FileAccess.open(p, FileAccess.READ_WRITE)
+		f.seek_end()
+	else:
+		f = FileAccess.open(p, FileAccess.WRITE)
+		f.store_line("tick,workers,sugar,protein,trail_cells,fp_cells,alarm_cells,build_cells")
+	f.store_line(line)
+	f.close()
+	var pw := "user://validation/workers_sample.csv"
+	if colony_ants and colony_ants.has_method("get_validation_worker_lines"):
+		var wnf: FileAccess
+		if FileAccess.file_exists(pw):
+			wnf = FileAccess.open(pw, FileAccess.READ_WRITE)
+			wnf.seek_end()
+		else:
+			wnf = FileAccess.open(pw, FileAccess.WRITE)
+			wnf.store_line("tick,sim_id,state,wx,wz,trail,fp,alarm")
+		for row in colony_ants.get_validation_worker_lines(_game_tick):
+			wnf.store_line(row)
+		wnf.close()
 
 
 func _update_colony_stage() -> void:
@@ -419,6 +483,7 @@ func _update_hud() -> void:
 	var fp_n: int = 0
 	if _footprint_field and _footprint_field.has_method("get_grid"):
 		fp_n = int((_footprint_field.get_grid() as Dictionary).size())
+	var alarm_n: int = _alarm_field.debug_alarm_cell_count() if _alarm_field and _alarm_field.has_method("debug_alarm_cell_count") else 0
 	var build_n: int = _building_pheromone.debug_build_cell_count() if _building_pheromone else 0
 	_hud.set_scientific_metrics(
 		_game_tick,
@@ -430,6 +495,7 @@ func _update_hud() -> void:
 		_peak_workers,
 		trail_n,
 		fp_n,
+		alarm_n,
 		build_n
 	)
 	if _selected_worker_sim_id >= 0 and colony_ants:
@@ -573,6 +639,7 @@ func _update_trail_overlay() -> void:
 	mat_base.render_priority = 2
 	const Y_RECRUIT: float = 1.02
 	const Y_FP: float = 1.08
+	const Y_ALARM: float = 1.14
 	if _pheromone_field:
 		var grid_t: Dictionary = _pheromone_field.get_grid()
 		var base_col: Color = _Const.PHEROMONE_VIS_RECRUITMENT
@@ -615,6 +682,27 @@ func _update_trail_overlay() -> void:
 			mi2.position = Vector3(wx2, float(sy2) + Y_FP, wz2)
 			add_child(mi2)
 			_trail_overlay_meshes.append(mi2)
+	if _alarm_field and _alarm_field.has_method("get_grid"):
+		var grid_a: Dictionary = _alarm_field.get_grid()
+		var base_al: Color = _Const.PHEROMONE_VIS_ALARM
+		for cell in grid_a:
+			var conc_a: float = float(grid_a[cell])
+			if conc_a < 0.006:
+				continue
+			var wxa: float = float(cell.x) * cs + cs * 0.5
+			var wza: float = float(cell.y) * cs + cs * 0.5
+			var sya: int = world.get_surface_y(int(wxa), int(wza))
+			if sya < 0:
+				continue
+			var mia := MeshInstance3D.new()
+			mia.mesh = quad
+			var ma := mat_base.duplicate() as StandardMaterial3D
+			var aa: float = clampf(conc_a * 1.9, 0.07, 0.7)
+			ma.albedo_color = Color(base_al.r, base_al.g, base_al.b, aa)
+			mia.material_override = ma
+			mia.position = Vector3(wxa, float(sya) + Y_ALARM, wza)
+			add_child(mia)
+			_trail_overlay_meshes.append(mia)
 	if _building_pheromone and _building_pheromone.has_method("get_grid"):
 		var grid_b: Dictionary = _building_pheromone.get_grid()
 		var base_b: Color = _Const.PHEROMONE_VIS_BUILDING
