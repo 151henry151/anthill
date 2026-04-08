@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Pheromone field view [P]**: overlay shows **recruitment trail** (green), **footprint / CHC** (magenta), and **nest construction** pheromone (amber) at distinct heights; **legend** panel lists channels and colors.
+- **Worker inspector**: **right-click** a worker for ID, behavioral state, age (ticks and ant-days), caste, health / metabolic placeholders, crop load, heading, distance to nest, and local **trail / footprint** samples; **Escape** clears selection; torus highlight on selected worker.
+- **Scientific HUD**: simulation tick, brood breakdown (eggs / larvae / pupae), nest coordinates, active food patches, pheromone grid cell counts, grain-scale note; colony food stores as **mass vs target** with percent.
 - **`scripts/footprint_field.gd`**: passive **cuticular hydrocarbon** footprint grid (slow decay, same resolution as recruitment trail).
 - **`briefing.txt`**: synthesis of **Lasius niger** foraging feedback (attractive trail vs footprint hydrocarbon negative feedback).
 - **`Ant Foraging and Communication Simulation Data - Table 1.csv`**: reference table of pheromone types and behaviors for **L. niger** and comparison species.

@@ -119,6 +119,16 @@ const PHEROMONE_MINIMUM_THRESHOLD := 0.005
 const PHEROMONE_SENSE_RADIUS := 4
 ## Minimum roulette weight for tropotaxis (flat field → near-uniform random walk among walkable Moore neighbors).
 const PHEROMONE_TROPOTAXIS_FLOOR := 0.001
+
+# ---------------------------------------------------------------------------
+# Pheromone overlay (scientific visualization — [P] field view)
+# ---------------------------------------------------------------------------
+## Recruitment / foraging trail (**2D** surface field).
+const PHEROMONE_VIS_RECRUITMENT := Color(0.12, 0.82, 0.38, 1.0)
+## Cuticular hydrocarbon **footprint** (passive substrate marking).
+const PHEROMONE_VIS_FOOTPRINT := Color(0.88, 0.28, 0.72, 1.0)
+## **Nest construction** stigmergy (**3D** voxel field).
+const PHEROMONE_VIS_BUILDING := Color(0.96, 0.74, 0.18, 1.0)
 ## When local **recruitment** concentration exceeds this, scale down further **fed-worker** deposits (counteracts runaway positive feedback; cf. *briefing.txt*).
 const TRAIL_SATURATION_START := 0.38
 ## Multiplier applied to recruitment deposit at **full** saturation (**1.0** = no extra deposit).

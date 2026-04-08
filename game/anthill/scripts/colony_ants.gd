@@ -31,6 +31,8 @@ const _TASK_ASSIGN_INTERVAL := 300
 ## Extended states: 11=DIGGING_APPROACH 12=DIGGING_ACT 13=CARRYING_TO_SURFACE 14=DEPOSITING
 ## **`entrance_clear`** on **`11..12`**: dig **nest shaft** plug (sand / packed sand), then resume **`post_entrance_state`**.
 var _digger_count: int = 0
+static var _next_worker_sim_id: int = 1
+var _selection_ring: MeshInstance3D = null
 
 
 func _ready() -> void:
@@ -64,11 +66,16 @@ func spawn_worker(pos: Vector3, is_nanitic: bool) -> void:
 	ant.add_child(carry_vis)
 	_ants.append({
 		"node": ant,
+		"sim_id": _next_worker_sim_id,
 		"wx": int(pos.x),
 		"wz": int(pos.z),
 		"t": 0.0,
 		"state": state,
 		"age_ticks": 0,
+		## Placeholder **vitality** (0–1) for scientific readout; future metabolism can drain this.
+		"health": 1.0,
+		## Abstract **crop / labial gland** fullness when carrying liquid food (0–1).
+		"metabolic_reserve": 1.0,
 		"carrying_food": false,
 		"food_type": "",
 		"target_food": -1,
@@ -87,6 +94,7 @@ func spawn_worker(pos: Vector3, is_nanitic: bool) -> void:
 		"food_source_wz": 0,
 		"heading_rad": _rng.randf_range(0.0, TAU),
 	})
+	_next_worker_sim_id += 1
 
 
 func _surface_y(wx: int, wz: int) -> int:
@@ -721,3 +729,125 @@ func _try_move(a: Dictionary, dx: int, dz: int) -> void:
 
 func get_worker_count() -> int:
 	return _ants.size()
+
+
+func get_ant_by_sim_id(sim_id: int) -> Dictionary:
+	for a in _ants:
+		if int(a.get("sim_id", -1)) == sim_id:
+			return a
+	return {}
+
+
+func get_worker_state_name(st: int) -> String:
+	match st:
+		0:
+			return "EMERGING"
+		1:
+			return "RESTING"
+		2:
+			return "BROOD_CARE"
+		3:
+			return "NEST_BUILDING"
+		4:
+			return "FORAGING_DEPART"
+		5:
+			return "FORAGING_SCOUT"
+		6:
+			return "FORAGING_RECRUIT"
+		7:
+			return "RETURNING"
+		8:
+			return "TROPHALLAXIS"
+		9:
+			return "ATTENDING_QUEEN"
+		10:
+			return "DEFENDING"
+		11:
+			return "DIGGING_APPROACH"
+		12:
+			return "DIGGING_ACT"
+		13:
+			return "CARRYING_TO_SURFACE"
+		14:
+			return "DEPOSITING"
+		_:
+			return "OTHER(%d)" % st
+
+
+## Screen-space pick (orthographic colony view): closest worker within **`max_px`** of **`screen_pos`**.
+func try_pick_ant(camera: Camera3D, screen_pos: Vector2, max_px: float) -> Dictionary:
+	var best_d: float = max_px
+	var best: Dictionary = {}
+	for a in _ants:
+		var node: Node3D = a["node"] as Node3D
+		if node == null or not is_instance_valid(node):
+			continue
+		var wpos: Vector3 = node.global_position
+		if not camera.is_position_in_frustum(wpos):
+			continue
+		var sp: Vector2 = camera.unproject_position(wpos)
+		var d: float = sp.distance_to(screen_pos)
+		if d < best_d:
+			best_d = d
+			best = a
+	return best
+
+
+## Data for inspector UI and exports (local chemistry samples at worker feet).
+func get_ant_inspector_snapshot(a: Dictionary) -> Dictionary:
+	if a.is_empty():
+		return {}
+	var wx: int = int(a["wx"])
+	var wz: int = int(a["wz"])
+	var st: int = int(a["state"])
+	var crop: float = 1.0 if bool(a.get("carrying_food", false)) else 0.0
+	var trail: float = pheromone_field.sample(wx, wz) if pheromone_field else 0.0
+	var fp: float = footprint_field.sample(wx, wz) if footprint_field else 0.0
+	var age: int = int(a.get("age_ticks", 0))
+	return {
+		"sim_id": int(a.get("sim_id", 0)),
+		"state_name": get_worker_state_name(st),
+		"state": st,
+		"wx": wx,
+		"wz": wz,
+		"age_ticks": age,
+		"age_ant_days": float(age) / float(_Const.TICKS_PER_ANT_DAY),
+		"is_nanitic": bool(a.get("is_nanitic", false)),
+		"carrying_food": bool(a.get("carrying_food", false)),
+		"food_type": String(a.get("food_type", "")),
+		"crop_load": crop,
+		"health": float(a.get("health", 1.0)),
+		"metabolic_reserve": float(a.get("metabolic_reserve", 1.0)),
+		"trail_sample": trail,
+		"footprint_sample": fp,
+		"heading_deg": rad_to_deg(float(a.get("heading_rad", 0.0))),
+		"dist_to_nest": _dist_to(a, nest_entrance) if nest_entrance != Vector3i.ZERO else -1.0,
+	}
+
+
+func set_selected_ant_highlight(selected: Dictionary) -> void:
+	if _selection_ring != null and is_instance_valid(_selection_ring):
+		if _selection_ring.get_parent():
+			_selection_ring.get_parent().remove_child(_selection_ring)
+		_selection_ring.queue_free()
+		_selection_ring = null
+	if selected.is_empty():
+		return
+	var ant_node: Node3D = selected.get("node") as Node3D
+	if ant_node == null or not is_instance_valid(ant_node):
+		return
+	var ring := MeshInstance3D.new()
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.28
+	torus.outer_radius = 0.42
+	ring.mesh = torus
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color(0.95, 0.85, 0.2)
+	mat.emission_enabled = true
+	mat.emission = Color(0.4, 0.35, 0.05)
+	ring.material_override = mat
+	ring.rotation_degrees = Vector3(90, 0, 0)
+	ring.position = Vector3(0, 0.06, 0)
+	ant_node.add_child(ring)
+	_selection_ring = ring

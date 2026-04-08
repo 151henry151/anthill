@@ -34,6 +34,10 @@ func debug_build_cell_count() -> int:
 	return _build_grid.size()
 
 
+func get_grid() -> Dictionary:
+	return _build_grid
+
+
 func tick() -> void:
 	_evap_timer += 1
 	if _evap_timer >= _Const.BUILD_PHEROMONE_EVAPORATION_INTERVAL_TICKS:

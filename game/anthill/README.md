@@ -2,6 +2,12 @@
 
 Godot **4.2+** game: **one voxel = one sand grain** in fiction (~3 mm; see `scripts/constants.gd`). The world is a **chunked heightmap** (Minecraft-like layers: air / sand / stone) with **falling sand** each physics tick. You watch from a **top-down colony camera** (not direct ant control); later: food, queen, and colony priorities.
 
+### Research / inspection UI
+
+- **HUD** (top-left): colony stage, ant-day clock, queen reserve, colony food stores (mass vs soft target), worker and brood counts, simulation tick, brood stage breakdown, nest entrance coordinates, active food patches, pheromone grid statistics, grain-scale fiction.
+- **[P]**: toggle **pheromone field** overlay — recruitment trail, footprint (CHC), and nest-construction fields use **different colors**; a **legend** appears top-right.
+- **Right-click** a worker: **inspector** panel (bottom-right) with state, age, chemistry samples at the feet, etc. **Escape** clears the selection.
+
 ## Run
 
 1. Install [Godot 4.2+](https://godotengine.org/download/).

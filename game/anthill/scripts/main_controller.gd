@@ -28,6 +28,7 @@ var _sand_step: RefCounted
 @onready var world: Node = $WorldManager
 @onready var chunks_root: Node3D = $Chunks
 @onready var colony_ants: Node3D = $ColonyAnts
+@onready var _colony_camera: Camera3D = $ColonyCamera
 @onready var _terrain_load_overlay: CanvasLayer = $TerrainLoadOverlay
 @onready var _terrain_load_bar: ProgressBar = $TerrainLoadOverlay/LoadingPanel/Center/VBox/ProgressBar
 @onready var _terrain_load_status: Label = $TerrainLoadOverlay/LoadingPanel/Center/VBox/StatusLabel
@@ -62,6 +63,8 @@ var _trail_overlay_meshes: Array[MeshInstance3D] = []
 var _trail_overlay_timer: int = 0
 var _mat_xray: StandardMaterial3D
 var _game_tick: int = 0
+## **Inspector**: selected worker **`sim_id`**, or **−1** if none.
+var _selected_worker_sim_id: int = -1
 var _game_day: int = 0
 var _peak_workers: int = 0
 var _first_workers_emerged: bool = false
@@ -385,9 +388,15 @@ func _update_hud() -> void:
 	var protein: float = _food_store.protein if _food_store else 0.0
 	var workers: int = colony_ants.get_worker_count() if colony_ants else 0
 	var brood_total: int = 0
+	var eggs: int = 0
+	var larvae: int = 0
+	var pupae: int = 0
 	if _brood_manager:
 		var counts: Dictionary = _brood_manager.get_counts()
 		brood_total = int(counts["total"])
+		eggs = int(counts["eggs"])
+		larvae = int(counts["larvae"])
+		pupae = int(counts["pupae"])
 	_peak_workers = maxi(_peak_workers, workers)
 	_hud.xray_active = _xray_active
 	_hud.pheromone_overlay_active = _pheromone_overlay_active
@@ -402,6 +411,35 @@ func _update_hud() -> void:
 		workers,
 		brood_total
 	)
+	var nest_line: String = "—"
+	if colony_ants and colony_ants.nest_entrance != Vector3i.ZERO:
+		var ne: Vector3i = colony_ants.nest_entrance
+		nest_line = "entrance (%d, %d), chamber y=%d" % [ne.x, ne.z, colony_ants.nest_chamber.y]
+	var trail_n: int = _pheromone_field.debug_trail_cell_count() if _pheromone_field else 0
+	var fp_n: int = 0
+	if _footprint_field and _footprint_field.has_method("get_grid"):
+		fp_n = int((_footprint_field.get_grid() as Dictionary).size())
+	var build_n: int = _building_pheromone.debug_build_cell_count() if _building_pheromone else 0
+	_hud.set_scientific_metrics(
+		_game_tick,
+		eggs,
+		larvae,
+		pupae,
+		nest_line,
+		_food_sources.size(),
+		_peak_workers,
+		trail_n,
+		fp_n,
+		build_n
+	)
+	if _selected_worker_sim_id >= 0 and colony_ants:
+		var sel: Dictionary = colony_ants.get_ant_by_sim_id(_selected_worker_sim_id)
+		if sel.is_empty():
+			_selected_worker_sim_id = -1
+			colony_ants.set_selected_ant_highlight({})
+			_hud.set_ant_inspector({})
+		else:
+			_hud.set_ant_inspector(colony_ants.get_ant_inspector_snapshot(sel))
 
 
 func _on_queen_egg_laid(count: int, is_trophic: bool) -> void:
@@ -449,6 +487,26 @@ func _unhandled_input(event: InputEvent) -> void:
 			_speed_down()
 		elif event.keycode == KEY_P:
 			_toggle_pheromone_overlay()
+		elif event.keycode == KEY_ESCAPE:
+			_clear_worker_selection()
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		if colony_ants and _colony_camera:
+			var pick: Dictionary = colony_ants.try_pick_ant(_colony_camera, event.position, 36.0)
+			if pick.is_empty():
+				_clear_worker_selection()
+			else:
+				_selected_worker_sim_id = int(pick.get("sim_id", -1))
+				colony_ants.set_selected_ant_highlight(pick)
+				_hud.set_ant_inspector(colony_ants.get_ant_inspector_snapshot(pick))
+			get_viewport().set_input_as_handled()
+
+
+func _clear_worker_selection() -> void:
+	_selected_worker_sim_id = -1
+	if colony_ants:
+		colony_ants.set_selected_ant_highlight({})
+	if _hud:
+		_hud.set_ant_inspector({})
 
 
 func _ff_time_scale() -> float:
@@ -498,40 +556,84 @@ func _clear_trail_overlay() -> void:
 
 
 func _update_trail_overlay() -> void:
-	if not _pheromone_overlay_active or _pheromone_field == null:
+	if not _pheromone_overlay_active:
 		return
 	_trail_overlay_timer += 1
 	if _trail_overlay_timer < 15:
 		return
 	_trail_overlay_timer = 0
 	_clear_trail_overlay()
-	var grid: Dictionary = _pheromone_field.get_grid()
 	var cs: float = float(_Const.PHEROMONE_CELL_SIZE)
-	var mat_trail := StandardMaterial3D.new()
-	mat_trail.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat_trail.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat_trail.cull_mode = BaseMaterial3D.CULL_DISABLED
-	mat_trail.render_priority = 2
 	var quad := PlaneMesh.new()
 	quad.size = Vector2(cs, cs)
-	for cell in grid:
-		var conc: float = float(grid[cell])
-		if conc < 0.01:
-			continue
-		var wx: float = float(cell.x) * cs + cs * 0.5
-		var wz: float = float(cell.y) * cs + cs * 0.5
-		var sy: int = world.get_surface_y(int(wx), int(wz))
-		if sy < 0:
-			continue
-		var mi := MeshInstance3D.new()
-		mi.mesh = quad
-		var m := mat_trail.duplicate() as StandardMaterial3D
-		var alpha: float = clampf(conc * 2.0, 0.1, 0.7)
-		m.albedo_color = Color(0.2, 0.85, 0.3, alpha)
-		mi.material_override = m
-		mi.position = Vector3(wx, float(sy) + 1.05, wz)
-		add_child(mi)
-		_trail_overlay_meshes.append(mi)
+	var mat_base := StandardMaterial3D.new()
+	mat_base.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat_base.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat_base.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat_base.render_priority = 2
+	const Y_RECRUIT: float = 1.02
+	const Y_FP: float = 1.08
+	if _pheromone_field:
+		var grid_t: Dictionary = _pheromone_field.get_grid()
+		var base_col: Color = _Const.PHEROMONE_VIS_RECRUITMENT
+		for cell in grid_t:
+			var conc: float = float(grid_t[cell])
+			if conc < 0.008:
+				continue
+			var wx: float = float(cell.x) * cs + cs * 0.5
+			var wz: float = float(cell.y) * cs + cs * 0.5
+			var sy: int = world.get_surface_y(int(wx), int(wz))
+			if sy < 0:
+				continue
+			var mi := MeshInstance3D.new()
+			mi.mesh = quad
+			var m := mat_base.duplicate() as StandardMaterial3D
+			var alpha: float = clampf(conc * 2.0, 0.08, 0.72)
+			m.albedo_color = Color(base_col.r, base_col.g, base_col.b, alpha)
+			mi.material_override = m
+			mi.position = Vector3(wx, float(sy) + Y_RECRUIT, wz)
+			add_child(mi)
+			_trail_overlay_meshes.append(mi)
+	if _footprint_field and _footprint_field.has_method("get_grid"):
+		var grid_f: Dictionary = _footprint_field.get_grid()
+		var base_fp: Color = _Const.PHEROMONE_VIS_FOOTPRINT
+		for cell in grid_f:
+			var conc_f: float = float(grid_f[cell])
+			if conc_f < 0.004:
+				continue
+			var wx2: float = float(cell.x) * cs + cs * 0.5
+			var wz2: float = float(cell.y) * cs + cs * 0.5
+			var sy2: int = world.get_surface_y(int(wx2), int(wz2))
+			if sy2 < 0:
+				continue
+			var mi2 := MeshInstance3D.new()
+			mi2.mesh = quad
+			var mf := mat_base.duplicate() as StandardMaterial3D
+			var alpha_f: float = clampf(conc_f * 1.8, 0.06, 0.68)
+			mf.albedo_color = Color(base_fp.r, base_fp.g, base_fp.b, alpha_f)
+			mi2.material_override = mf
+			mi2.position = Vector3(wx2, float(sy2) + Y_FP, wz2)
+			add_child(mi2)
+			_trail_overlay_meshes.append(mi2)
+	if _building_pheromone and _building_pheromone.has_method("get_grid"):
+		var grid_b: Dictionary = _building_pheromone.get_grid()
+		var base_b: Color = _Const.PHEROMONE_VIS_BUILDING
+		var box := BoxMesh.new()
+		box.size = Vector3(0.82, 0.82, 0.82)
+		for pos in grid_b:
+			var cbuild: float = float(grid_b[pos])
+			if cbuild < _Const.BUILD_PHEROMONE_MINIMUM * 0.5:
+				continue
+			var p3: Vector3i = pos as Vector3i
+			var mb := mat_base.duplicate() as StandardMaterial3D
+			var ab: float = clampf(cbuild * 1.4, 0.1, 0.85)
+			mb.albedo_color = Color(base_b.r, base_b.g, base_b.b, ab)
+			var mib := MeshInstance3D.new()
+			mib.mesh = box
+			mib.material_override = mb
+			mib.position = Vector3(float(p3.x) + 0.5, float(p3.y) + 0.5, float(p3.z) + 0.5)
+			add_child(mib)
+			_trail_overlay_meshes.append(mib)
 
 
 func _toggle_xray() -> void:
