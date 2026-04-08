@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-04-04
+
+### Changed
+
+- **`scripts/constants.gd`**: add **`SCOUT_SEARCH_STOP_PROBABILITY`**.
+- **`scripts/colony_ants.gd`**: **FORAGING_SCOUT** sometimes **stops** (no displacement) for environmental sampling.
+- **`scripts/colony_hud.gd`**: worker inspector shows **naive/experienced**, **move interval**, and **RTT deposit multiplier**.
+
 ## [0.7.0] - 2026-04-04
 
 ### Changed

@@ -297,6 +297,8 @@ func _step_foraging_scout(a: Dictionary) -> void:
 	if _detect_trail(a):
 		a["state"] = 6
 		return
+	if _rng.randf() < _Const.SCOUT_SEARCH_STOP_PROBABILITY:
+		return
 	_moore_exploration_step(a)
 	if _detect_trail(a):
 		a["state"] = 6
