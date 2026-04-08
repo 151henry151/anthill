@@ -228,7 +228,11 @@ func dig_duration_for(block_type: int) -> int:
 
 
 func _nest_substrate_hash(v: Vector3i) -> int:
-	return Vector3(v).hash()
+	## Godot **`Vector3`** has no **`hash()`** in GDScript; mix integers deterministically.
+	var x: int = v.x * 73856093
+	var y: int = v.y * 19349663
+	var z: int = v.z * 83492791
+	return int(absi(x ^ y ^ z))
 
 
 ## Apply spatial **substrate hardness** on top of block type (loose vs packed).

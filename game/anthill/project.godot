@@ -8,27 +8,21 @@
 
 config_version=5
 
-[autoload]
-
-PerfTrace="*res://scripts/perf_trace.gd"
-
 [application]
 
 config/name="Anthill"
-config/version="0.7.6"
 config/description="Lasius niger–inspired grain-scale voxel colony simulation: pheromone fields, granular nest substrate, brood and foraging dynamics; observation and export, not direct ant control."
+config/version="0.7.7"
 run/main_scene="res://scenes/intro_video.tscn"
 config/features=PackedStringArray("4.2", "GL Compatibility")
 run/max_fps=60
 boot_splash/bg_color=Color(0.37, 0.51, 0.76, 1)
 boot_splash/image="res://assets/splash/anthill_boot.png"
 boot_splash/fullsize=false
-boot_splash/show_image=true
-boot_splash/use_filter=true
 
-[display]
+[autoload]
 
-window/vsync/vsync_mode=1
+PerfTrace="*res://scripts/perf_trace.gd"
 
 [physics]
 
@@ -38,5 +32,4 @@ common/physics_ticks_per_second=30
 
 textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
-; 0=disabled, 1=2x, 2=4x, 3=8x — MSAA smooths mesh edges (less jaggy voxels).
 anti_aliasing/quality/msaa_3d=2

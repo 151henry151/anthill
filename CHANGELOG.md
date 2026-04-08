@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.7] - 2026-04-08
+
 ### Added
 
 - **`docs/reference/architecture_of_emergence.txt`**: reference narrative on feedback loops and chemical signaling in ant spatial networks.
@@ -17,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`game/anthill/README.md`**: point to the mapping section in the root **`README.md`**.
 - **`docs/reference/README.md`**: index **`architecture_of_emergence.txt`**.
 - **`AGENTS.md`**: document how the new reference relates to implemented vs omitted mechanisms; define user shorthand **`cpi`** (commit, push, **`sudo ./scripts/install-anthill.sh`**) and index **`install-anthill.sh`**.
+- **`scripts/nest_manager.gd`**: replace invalid **`Vector3.hash()`** substrate mixing with deterministic integer mixing (**`Vector3` has no `hash()` in GDScript**), restoring **`main_controller`** compilation and colony startup (HUD, queen, workers).
+- **`project.godot`**: set **`config/version`** to **0.7.7**.
 
 ## [0.7.6] - 2026-04-07
 
