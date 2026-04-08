@@ -17,6 +17,7 @@ var _nest_interior_cache: Dictionary = {}
 var _interior_dirty: bool = true
 var _rng: RandomNumberGenerator
 var _building_pheromone: Node
+var _nest_builder: Node
 
 
 ## Call as soon as the node exists — **before** the queen digs (she invokes **`compact_around`** during the shaft/chamber phase). Full **`setup`** still runs at **`founding_chamber_ready`** with the real chamber center.
@@ -25,6 +26,11 @@ func bind_world(world: Node) -> void:
 	if _rng == null:
 		_rng = RandomNumberGenerator.new()
 		_rng.randomize()
+
+
+## Optional **`NestBuilder`** — biases organic **`dig_front`** scoring toward incomplete blueprint chambers (before faces open inside the box).
+func set_nest_builder(nb: Node) -> void:
+	_nest_builder = nb
 
 
 func setup(world: Node, founding_chamber: Vector3i, building_pheromone: Node) -> void:
@@ -138,6 +144,8 @@ func get_dig_target(ant: Node3D) -> Variant:
 		score += _rng.randf_range(-_Const.NOISE_AMPLITUDE, _Const.NOISE_AMPLITUDE)
 		if shaft_deep_enough:
 			score += _rng.randf_range(0.0, _Const.NEST_GALLERY_BRANCH_NOISE)
+		if shaft_deep_enough and _nest_builder and _nest_builder.has_method("score_blueprint_lead"):
+			score += float(_nest_builder.call("score_blueprint_lead", v))
 		if score > best_score:
 			best_score = score
 			best_voxel = v

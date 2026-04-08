@@ -537,6 +537,8 @@ func _on_founding_chamber_ready(chamber_center: Vector3i) -> void:
 		_nest_builder.setup(world, chamber_center)
 	if _nest_manager:
 		_nest_manager.setup(world, chamber_center, _building_pheromone)
+		if _nest_builder:
+			_nest_manager.set_nest_builder(_nest_builder)
 	colony_ants.nest_entrance = Vector3i(chamber_center.x, _TerrainGen.SURFACE_BASE, chamber_center.z)
 	colony_ants.nest_chamber = chamber_center
 	## Used by **`sand_step`** to keep lateral spill from landing on the nest mouth ring.
@@ -677,7 +679,7 @@ func _update_trail_overlay() -> void:
 		var base_fp: Color = _Const.PHEROMONE_VIS_FOOTPRINT
 		for cell in grid_f:
 			var conc_f: float = float(grid_f[cell])
-			if conc_f < 0.004:
+			if conc_f < _Const.FOOTPRINT_OVERLAY_MIN_CONC:
 				continue
 			var wx2: float = float(cell.x) * cs + cs * 0.5
 			var wz2: float = float(cell.y) * cs + cs * 0.5

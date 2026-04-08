@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.8] - 2026-04-08
+
+### Changed
+
+- **`scripts/constants.gd`**: strengthen CHC **footprint** decay and lower per-step deposit so trails fade instead of saturating the map; add **`FOOTPRINT_OVERLAY_MIN_CONC`**; add **`NEST_BLUEPRINT_LEAD_WEIGHT`**; tune **`HOME_RANGE_FOOTPRINT_THRESHOLD`**; slow **building pheromone** evaporation slightly so grid counts match spoil deposits more often.
+- **`scripts/nest_builder.gd`**: add **`score_blueprint_lead`** so **`nest_manager`** can bias the dig frontier toward incomplete blueprint chambers (horizontal projection from the founding chamber).
+- **`scripts/nest_manager.gd`**: add **`set_nest_builder`** and apply blueprint-lead bonus in **`get_dig_target`** once the shaft is deep enough.
+- **`scripts/main_controller.gd`**: call **`set_nest_builder`** after founding; use **`FOOTPRINT_OVERLAY_MIN_CONC`** for the purple **[P]** footprint quads.
+- **`project.godot`**: set **`config/version`** to **0.7.8**.
+
 ## [0.7.7] - 2026-04-08
 
 ### Added

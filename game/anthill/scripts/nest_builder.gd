@@ -199,3 +199,29 @@ func has_work() -> bool:
 		if not c.is_empty():
 			return true
 	return false
+
+
+## Horizontal projection bonus for **`nest_manager.get_dig_target`**: reward frontier sand that lies **outward** from the founding chamber toward an **incomplete** blueprint center (tunnels reach planned chambers sooner than pure lateral noise).
+func score_blueprint_lead(v: Vector3i) -> float:
+	if _world == null or _blueprints.is_empty():
+		return 0.0
+	_refresh_blueprint_completion()
+	var best: float = 0.0
+	var fc: Vector3i = _founding_chamber
+	for bp in _blueprints:
+		if bool(bp["dug"]):
+			continue
+		var center: Vector3i = bp["center"]
+		var dx: float = float(center.x - fc.x)
+		var dz: float = float(center.z - fc.z)
+		var len_h: float = sqrt(dx * dx + dz * dz)
+		if len_h < 0.75:
+			continue
+		dx /= len_h
+		dz /= len_h
+		var vx: float = float(v.x - fc.x)
+		var vz: float = float(v.z - fc.z)
+		var proj: float = vx * dx + vz * dz
+		if proj > 0.0:
+			best = maxf(best, proj * _Const.NEST_BLUEPRINT_LEAD_WEIGHT)
+	return best

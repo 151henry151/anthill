@@ -149,7 +149,7 @@ const FORAGING_RTT_REFERENCE_TICKS := 420
 const FORAGING_RTT_SCALE_MIN := 0.42
 const FORAGING_RTT_SCALE_MAX := 1.85
 ## Footprint ≥ this ⇒ **home-range** / well-trodden substrate (**faster** steps during scout/recruit).
-const HOME_RANGE_FOOTPRINT_THRESHOLD := 0.038
+const HOME_RANGE_FOOTPRINT_THRESHOLD := 0.032
 ## Multiply move interval on **marked** substrate (**< 1** ⇒ faster movement).
 const FORAGING_MARKED_INTERVAL_MULT := 0.87
 ## **Naive** workers on **unmarked** substrate: random interval stretch (zigzag / slower search).
@@ -173,6 +173,8 @@ const ALARM_MINIMUM_THRESHOLD := 0.002
 const PHEROMONE_VIS_RECRUITMENT := Color(0.12, 0.82, 0.38, 1.0)
 ## Cuticular hydrocarbon **footprint** (passive substrate marking).
 const PHEROMONE_VIS_FOOTPRINT := Color(0.88, 0.28, 0.72, 1.0)
+## Minimum CHC concentration to draw a footprint overlay quad (**[P]** view); suppresses stale low-level tint.
+const FOOTPRINT_OVERLAY_MIN_CONC := 0.028
 ## **Nest construction** stigmergy (**3D** voxel field).
 const PHEROMONE_VIS_BUILDING := Color(0.96, 0.74, 0.18, 1.0)
 ## Dufour gland alarm (**undecane**-like fiction).
@@ -186,11 +188,14 @@ const TRAIL_SATURATION_MIN_DEPOSIT_SCALE := 0.22
 # Footprint hydrocarbons (CHC) — passive marking, negative chemotaxis (Lasius niger)
 # ---------------------------------------------------------------------------
 ## Deposited per successful worker step (tarsi); same grid resolution as **`PHEROMONE_CELL_SIZE`**.
-const FOOTPRINT_DEPOSIT_PER_STEP := 0.0035
-## Slow decay (persistent “hours–days” substrate marking in compressed ant-time).
-const FOOTPRINT_EVAPORATION_RATE := 0.997
-const FOOTPRINT_EVAPORATION_INTERVAL_TICKS := 90
-const FOOTPRINT_MINIMUM_THRESHOLD := 0.0002
+## Tuned so old paths fade: real CHC builds up but also dissipates; saturation of the whole map broke negative chemotaxis.
+const FOOTPRINT_DEPOSIT_PER_STEP := 0.0011
+## Per evaporation tick, multiply cell concentration (**< 1** = decay). Faster than prior builds so unvisited areas stay distinguishable.
+const FOOTPRINT_EVAPORATION_RATE := 0.988
+## Physics ticks between footprint evaporation passes ( **`main_controller`** calls **`footprint_field.tick`** once per sim tick).
+const FOOTPRINT_EVAPORATION_INTERVAL_TICKS := 48
+## Remove cells below this after decay (prunes the **`get_grid().size()`** HUD count for “empty” substrate).
+const FOOTPRINT_MINIMUM_THRESHOLD := 0.0006
 ## Weight on **`max(0, f_here − f_nb)`** in combined scout/recruit roulette (repellent / negative feedback).
 const FOOTPRINT_REPULSION_WEIGHT := 2.2
 ## Base roulette weight for **scout** exploration before footprint terms.
@@ -328,13 +333,15 @@ const NEST_BLUEPRINT_GLOBAL_ROT_MAX := 6.28318530718
 const NEST_BLUEPRINT_ANGLE_JITTER := 0.5
 ## Optional small lateral chamber (probabilistic).
 const NEST_BLUEPRINT_SPUR_PROB := 0.34
+## Scales horizontal “lead” toward incomplete blueprint centers in **`nest_manager.get_dig_target`** (after shaft depth is sufficient).
+const NEST_BLUEPRINT_LEAD_WEIGHT := 0.24
 
 # ---------------------------------------------------------------------------
 # Building pheromone
 # ---------------------------------------------------------------------------
 const BUILD_PHEROMONE_DEPOSIT_AMOUNT := 0.4
-const BUILD_PHEROMONE_EVAPORATION_RATE := 0.94
-const BUILD_PHEROMONE_EVAPORATION_INTERVAL_TICKS := 15
+const BUILD_PHEROMONE_EVAPORATION_RATE := 0.96
+const BUILD_PHEROMONE_EVAPORATION_INTERVAL_TICKS := 24
 const BUILD_PHEROMONE_MINIMUM := 0.01
 
 # ---------------------------------------------------------------------------
