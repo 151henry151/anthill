@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.10] - 2026-04-08
+
+### Changed
+
+- **`scripts/constants.gd`**: strengthen recruitment **trail** deposits (**`PHEROMONE_BASE_DEPOSIT`**, **`PHEROMONE_DISTANCE_BONUS`**, **`PHEROMONE_DEPOSIT_AMOUNT`**); slow evaporation (**`PHEROMONE_EVAPORATION_RATE`**, longer **`PHEROMONE_EVAPORATION_INTERVAL_TICKS`**); lower **`PHEROMONE_RECRUIT_THRESHOLD`** and **`PHEROMONE_MINIMUM_THRESHOLD`**; relax **`TRAIL_SATURATION_*`** so saturated paths stay thicker before negative feedback caps deposits.
+- **`project.godot`**: set **`config/version`** to **0.7.10**.
+
 ## [0.7.9] - 2026-04-08
 
 ### Changed

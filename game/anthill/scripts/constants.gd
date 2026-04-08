@@ -100,21 +100,21 @@ const CALLOW_DARKEN_TICKS := 3 * TICKS_PER_ANT_DAY
 ## Each pheromone cell covers this many voxels on a side.
 const PHEROMONE_CELL_SIZE := 2
 ## Base deposit per step while RETURNING with food.
-const PHEROMONE_BASE_DEPOSIT := 0.12
+const PHEROMONE_BASE_DEPOSIT := 0.175
 ## Extra deposit amount close to food source.
-const PHEROMONE_DISTANCE_BONUS := 0.18
+const PHEROMONE_DISTANCE_BONUS := 0.26
 ## Legacy single-event deposit (food pickup burst).
-const PHEROMONE_DEPOSIT_AMOUNT := 0.15
+const PHEROMONE_DEPOSIT_AMOUNT := 0.21
 ## Multiplicative factor applied every evaporation tick (closer to 1.0 = slower evaporation).
-const PHEROMONE_EVAPORATION_RATE := 0.985
+const PHEROMONE_EVAPORATION_RATE := 0.992
 ## Explicit Laplacian diffusion step on the trail grid each evaporation interval (**< 0.25** for 4-neighbor stability).
 const PHEROMONE_DIFFUSION_LAMBDA := 0.12
-## Physics ticks between evaporation passes.
-const PHEROMONE_EVAPORATION_INTERVAL_TICKS := 30
+## Physics ticks between evaporation / diffusion chemistry passes (larger ⇒ trails persist longer).
+const PHEROMONE_EVAPORATION_INTERVAL_TICKS := 44
 ## Min concentration to trigger trail-following mode.
-const PHEROMONE_RECRUIT_THRESHOLD := 0.02
+const PHEROMONE_RECRUIT_THRESHOLD := 0.016
 ## Cells below this are removed.
-const PHEROMONE_MINIMUM_THRESHOLD := 0.005
+const PHEROMONE_MINIMUM_THRESHOLD := 0.003
 ## Voxels ahead an ant can sense trail.
 const PHEROMONE_SENSE_RADIUS := 4
 ## Minimum roulette weight for tropotaxis (flat field → near-uniform random walk among walkable Moore neighbors).
@@ -180,9 +180,9 @@ const PHEROMONE_VIS_BUILDING := Color(0.96, 0.74, 0.18, 1.0)
 ## Dufour gland alarm (**undecane**-like fiction).
 const PHEROMONE_VIS_ALARM := Color(0.95, 0.35, 0.12, 1.0)
 ## When local **recruitment** concentration exceeds this, scale down further **fed-worker** deposits (counteracts runaway positive feedback; cf. **`docs/reference/briefing.txt`**).
-const TRAIL_SATURATION_START := 0.38
+const TRAIL_SATURATION_START := 0.42
 ## Multiplier applied to recruitment deposit at **full** saturation (**1.0** = no extra deposit).
-const TRAIL_SATURATION_MIN_DEPOSIT_SCALE := 0.22
+const TRAIL_SATURATION_MIN_DEPOSIT_SCALE := 0.28
 
 # ---------------------------------------------------------------------------
 # Footprint hydrocarbons (CHC) — passive marking, negative chemotaxis (Lasius niger)
