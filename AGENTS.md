@@ -38,5 +38,15 @@ godot4 --path game/anthill --import
 | `game/anthill/project.godot` | Godot project file (entry point) |
 | `game/anthill/scenes/main.tscn` | Main colony scene |
 | `game/anthill/scripts/` | GDScript simulation logic |
-| `docs/reference/` | Bibliography, specification, briefing (not loaded at runtime) |
+| `docs/reference/` | Bibliography, specification, briefing, **`architecture_of_emergence.txt`** (not loaded at runtime) |
 | `scripts/install-godot4.sh` | Installs Godot 4.2.2 to `/usr/local/bin/godot4` |
+
+### Reference document vs code (`architecture_of_emergence.txt`)
+
+**`docs/reference/architecture_of_emergence.txt`** summarizes positive feedback (mass recruitment, stigmergy), negative feedback (footprint hydrocarbons), and *Lasius niger* vs *Monomorium pharaonis* contrasts. When changing foraging or chemical fields, treat it as **intent**, not a checklist of implemented features.
+
+**Implemented in spirit:** recruitment **trail** pheromone with stigmergic deposit and diffusion/evaporation; **CHC footprint** field with passive deposit, negative chemotaxis, and tropotaxis that combines trail attraction with footprint/crowding in the denominator; **RTT-scaled** return deposits; **feeder crowding**; **alarm** field (Dufour-type framing, not literal undecane chemistry).
+
+**Not implemented:** second-species (*M. pharaonis*) rules; **volatile short-half-life** repellent as a separate mechanism; **physical interaction** at bifurcations (ants pushing nestmates); **visual landmarks**; a built-in **pheromone-only vs dual-signal** A/B experiment in the executable.
+
+The **root `README.md`** section **“Architecture of Emergence (reference mapping)”** has the full table; keep it in sync when adding or removing major feedback mechanisms.

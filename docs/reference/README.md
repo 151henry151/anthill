@@ -5,6 +5,7 @@ Curated **bibliography, briefing notes, and tabular data** supporting the *Lasiu
 | File | Role |
 |------|------|
 | **`briefing.txt`** | Synthesis of attractive recruitment trail versus **cuticular hydrocarbon (CHC)** “footprint” negative feedback in foraging. |
+| **`architecture_of_emergence.txt`** | Narrative on **positive vs negative feedback**, mass recruitment, footprint hydrocarbons, and *Lasius niger* vs *Monomorium pharaonis* contrasts; use with the root **`README.md`** “Architecture of Emergence (reference mapping)” section for what the code implements. |
 | **`technical_specification.txt`** | Algorithmic specification: pheromone logic, foraging mechanics, validation goals (see **CHANGELOG** for versioned changes). |
 | **`285_2024_Article_2136.pdf`** | Journal article (PDF; filename from publisher numbering). |
 | **`XRMZ AM Senior Thesis - Moving Together.pdf`** | Senior thesis (PDF): collective movement / related context. |

@@ -2,7 +2,28 @@
 
 **Anthill** is a **grain-scale, voxel-based simulation** of an ant colony, implemented in **Godot 4.2+**. The model is **inspired by the biology and chemistry of *Lasius niger*** (black garden ant): discrete-time colony dynamics, **recruitment pheromone** trails, **cuticular hydrocarbon (CHC)** footprint fields, **Dufour gland / alarm**–like signaling, nest excavation in granular substrate, brood development, and worker polyethism. The program is intended as a **research-oriented executable model**: observers inspect emergent behavior through a scientific HUD, optional **pheromone overlays**, and **validation CSV export**—not as an interactive game with player-directed ants.
 
-**Scope and limitations.** This is a **simplified, algorithmic** representation. Parameters are tuned for stability and interpretability; they should **not** be read as species-wide empirical constants. Comparative validation against field or laboratory data is **out of scope** unless you add it. See **`docs/reference/technical_specification.txt`** for the modeling narrative, **`docs/reference/briefing.txt`** for foraging feedback logic, and **`CHANGELOG.md`** for implementation history.
+**Scope and limitations.** This is a **simplified, algorithmic** representation. Parameters are tuned for stability and interpretability; they should **not** be read as species-wide empirical constants. Comparative validation against field or laboratory data is **out of scope** unless you add it. See **`docs/reference/technical_specification.txt`** for the modeling narrative, **`docs/reference/briefing.txt`** for foraging feedback logic, **`docs/reference/architecture_of_emergence.txt`** for the integrated feedback narrative (and the mapping below), and **`CHANGELOG.md`** for implementation history.
+
+### Architecture of Emergence (reference mapping)
+
+The note **`docs/reference/architecture_of_emergence.txt`** describes positive and negative feedback in ant spatial networks (stigmergy, footprint hydrocarbons, species contrasts). The simulation is ***Lasius niger*–inspired**, not a full replication of every mechanism in that text. The following summarizes **what is reflected in code** versus **what is not** (at a high level):
+
+| Theme (document) | In this repository |
+|------------------|-------------------|
+| **Positive feedback / mass recruitment** — trail deposition reinforces later visits | **Yes.** Recruitment **pheromone** grid with deposit-on-return behavior, diffusion, evaporation (`pheromone_field.gd`, `colony_ants.gd`). |
+| **Stigmergy** — environment carries the signal | **Yes.** Trail and footprint fields are sampled from the substrate; workers do not share a central map. |
+| **Shorter paths → faster reinforcement** | **Partially.** Return-segment length scales recruitment deposit strength (**RTT**-style multipliers in `constants.gd` / `colony_ants.gd`), not a full shortest-path competition experiment. |
+| **Higher food quality → more marking** | **Partially.** Food sources differ by type and supply; pickup and deposit logic does not implement every biological detail of “feed faster → more pheromone” from the literature. |
+| **Negative feedback / footprint hydrocarbons** — avoid over-searched substrate | **Yes.** **CHC footprint** field: passive deposit while walking, slow decay, repellent / exploration weights (`footprint_field.gd`, tropotaxis and scout steps in `colony_ants.gd`). |
+| **Trail vs footprint at bifurcations** (ratio-style balance) | **Yes.** Recruit tropotaxis uses a **ratio** form with trail in the numerator and footprint (and crowding) in the denominator (`TROPOTAXIS_*` in `constants.gd`). |
+| **Crowding / overshoot-style relief** | **Partially.** **Feeder crowding** reduces pickup when many workers are near a patch; there is no explicit “depleted patch” overshoot model beyond finite food and rot. |
+| **Alarm / Dufour gland / undecane** | **Partially.** An **alarm** field exists and is framed as Dufour-type; it is **not** a chemical identity model for undecane. |
+| ***Monomorium pharaonis*** **contrast** (polydomy, sting dragging, volatile repellent half-life, etc.) | **No.** The executable does not simulate a second species or *M. pharaonis* trail rules. |
+| **Physical “interaction mechanism” at forks** (experienced ant steers naive nestmate) | **No.** No pairwise ant–ant steering at bifurcations; only field-based movement. |
+| **Visual landmarks** | **No.** |
+| **Explicit ABM benchmark** (pheromone-only vs dual-signal efficiency) | **No.** The program does not ship a built-in A/B toggle for that comparison; you would compare runs or fork behavior externally. |
+
+**Nest excavation** (granular substrate, procedural blueprint galleries, dig scoring) implements **spatial nest expansion** described elsewhere in the repo; the *Architecture of Emergence* text is mainly about **foraging networks**, not the nest voxel model.
 
 ## What the simulation contains
 
@@ -14,7 +35,7 @@
 
 ## Reference materials
 
-PDFs (articles and thesis), briefing notes, the **technical specification** text, and a **pheromone reference table** (CSV) live under **`docs/reference/`**. See **`docs/reference/README.md`**. The **intro video** source file (**MP4**) and the **Ogg Theora** asset used at startup are under **`game/anthill/assets/intro/`** (Godot’s built-in player supports **`.ogv`** only; regenerate **`intro.ogv`** from the MP4 with **`ffmpeg`** if you replace the clip).
+PDFs (articles and thesis), briefing notes, **architecture of emergence** narrative, the **technical specification** text, and a **pheromone reference table** (CSV) live under **`docs/reference/`**. See **`docs/reference/README.md`**. The **intro video** source file (**MP4**) and the **Ogg Theora** asset used at startup are under **`game/anthill/assets/intro/`** (Godot’s built-in player supports **`.ogv`** only; regenerate **`intro.ogv`** from the MP4 with **`ffmpeg`** if you replace the clip).
 
 ## Running the simulation
 
