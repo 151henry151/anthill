@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.5] - 2026-04-04
+
+### Changed
+
+- **`scripts/constants.gd`**: add **`FEEDER_CROWD_*`** parameters for patch occupancy.
+- **`scripts/colony_ants.gd`**: randomize food-patch evaluation order; skip crowded patches unless **overflow** probability allows pickup.
+
 ## [0.6.4] - 2026-04-04
 
 ### Changed

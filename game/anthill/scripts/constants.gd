@@ -128,6 +128,12 @@ const TRAIL_SPOT_MAX_MM := 40.0
 const PHEROMONE_EXPLOITATION_THRESHOLD := 0.015
 ## Weight on **`max(0, f_nb − f_here)`** in **search** phase (positive chemotaxis to recent exploration).
 const FOOTPRINT_SEARCH_ATTRACTION_WEIGHT := 0.35
+## Count workers within this **Chebyshev** radius of a food patch center for crowding.
+const FEEDER_CROWD_RADIUS := 2
+## When this many workers already occupy the patch neighborhood, new arrivals usually skip (overflow).
+const FEEDER_CROWD_MAX_WORKERS := 4
+## Probability to **still** attempt pickup when at or over crowding (search elsewhere).
+const FEEDER_CROWD_OVERFLOW_ATTEMPT_PROB := 0.12
 
 # ---------------------------------------------------------------------------
 # Pheromone overlay (scientific visualization — [P] field view)

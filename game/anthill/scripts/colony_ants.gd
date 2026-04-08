@@ -551,11 +551,29 @@ func _detect_trail(a: Dictionary) -> bool:
 	return false
 
 
+func _count_workers_near_patch(pwx: int, pwz: int, radius: int) -> int:
+	var n: int = 0
+	for ant in _ants:
+		var ax: int = int(ant["wx"])
+		var az: int = int(ant["wz"])
+		if absi(ax - pwx) <= radius and absi(az - pwz) <= radius:
+			n += 1
+	return n
+
+
 func _check_food_nearby(a: Dictionary) -> void:
 	var wx: int = int(a["wx"])
 	var wz: int = int(a["wz"])
+	var order: Array[int] = []
 	for i in range(food_sources.size()):
-		var fs: Node3D = food_sources[i]
+		order.append(i)
+	for i in range(order.size() - 1, 0, -1):
+		var j: int = _rng.randi_range(0, i)
+		var t: int = order[i]
+		order[i] = order[j]
+		order[j] = t
+	for idx in order:
+		var fs: Node3D = food_sources[idx]
 		if not is_instance_valid(fs):
 			continue
 		if fs.is_depleted():
@@ -563,6 +581,9 @@ func _check_food_nearby(a: Dictionary) -> void:
 		var dx: int = absi(fs.wx - wx)
 		var dz: int = absi(fs.wz - wz)
 		if dx <= 2 and dz <= 2:
+			var crowd: int = _count_workers_near_patch(fs.wx, fs.wz, _Const.FEEDER_CROWD_RADIUS)
+			if crowd >= _Const.FEEDER_CROWD_MAX_WORKERS and _rng.randf() > _Const.FEEDER_CROWD_OVERFLOW_ATTEMPT_PROB:
+				continue
 			var taken: float = fs.collect(_Const.FOOD_CARRY_AMOUNT)
 			if taken > 0.0:
 				a["carrying_food"] = true
