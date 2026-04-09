@@ -12,7 +12,7 @@ This directory is the **Godot 4.2+** project for **Anthill**, a **voxel-resolved
    ```
 
 3. **Run Project** (**F5**). The startup sequence is:
-   - **`scenes/intro_video.tscn`** — full-screen **Ogg Theora** clip (`assets/intro/intro.ogv`; **any key**, mouse button, gamepad button, or touch to skip);
+   - **`scenes/intro_video.tscn`** — full-screen **Ogg Theora** clip (`assets/intro/intro.ogv`; **any key**, mouse button, gamepad button, or touch to skip). Full-resolution **MP4** of the same video: [download from hromp.com](https://hromp.com/downloads/Isolating_the_Negative_Feedback_Loop_in_Ant_Foraging.mp4).
    - **`scenes/simulation_settings.tscn`** — scrollable form of all **`SimParams`** (mutable mirrors of **`scripts/constants.gd`**); **Reset to defaults** or edit fields, then **Start simulation**;
    - **`scenes/loading_screen.tscn`** — threaded load of **`scenes/main.tscn`** with a progress bar;
    - **`scenes/main.tscn`** — colony, terrain, and UI layers.

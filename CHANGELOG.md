@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **`README.md`**, **`game/anthill/README.md`**: link to full-resolution intro **MP4** on **hromp.com** (`/downloads/Isolating_the_Negative_Feedback_Loop_in_Ant_Foraging.mp4`).
+
 ## [0.7.19] - 2026-04-04
 
 ### Added

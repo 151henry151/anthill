@@ -67,7 +67,7 @@ This copies **`game/anthill`** to **`/usr/local/share/anthill/game/anthill`** an
 
 ## Repository layout
 
-The **Ogg Theora** intro (**`game/anthill/assets/intro/intro.ogv`**) is tracked in Git under GitHub’s per-file size limit. The **MP4** source for transcoding is **not** committed (see **`game/anthill/.gitignore`**); place a copy locally if you need to re-encode.
+The **Ogg Theora** intro (**`game/anthill/assets/intro/intro.ogv`**) is tracked in Git under GitHub’s per-file size limit. The **MP4** source for transcoding is **not** committed (see **`game/anthill/.gitignore`**); place a copy locally if you need to re-encode. **Full-resolution download** (same clip as the intro): [Isolating_the_Negative_Feedback_Loop_in_Ant_Foraging.mp4](https://hromp.com/downloads/Isolating_the_Negative_Feedback_Loop_in_Ant_Foraging.mp4) on **hromp.com**.
 
 | Path | Role |
 |------|------|
