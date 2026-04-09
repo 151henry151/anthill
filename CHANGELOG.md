@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.15] - 2026-04-09
+
+### Changed
+
+- **`game/anthill/scripts/constants.gd`**, **`game/anthill/scripts/simulation_parameters.gd`**: raise **`WORKER_NEST_ARRIVAL_MAX_DIST`** so foragers within the spoil mound and lateral nest exits can complete **`food_store`** deposits (previous disk was smaller than **`SPOIL_DEPOSIT_RADIUS`** / gallery reach).
+- **`game/anthill/project.godot`**: set **`config/version`** to **0.7.15**.
+
 ## [0.7.14] - 2026-04-09
 
 ### Changed
