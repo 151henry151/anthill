@@ -4,7 +4,9 @@
 
 ### Overview
 
-Anthill is a **Godot 4.2+** **grain-scale voxel ant colony simulation** (*Lasius niger*–inspired). There is no backend, database, or external service. The only runtime dependency is the **Godot 4.2.2** engine binary.
+Anthill is a **Godot 4.2+** **grain-scale voxel ant colony simulation** (*Lasius niger*–inspired). There is no backend, database, or external service. The only runtime dependency is the **Godot 4.2.2** engine binary. **License:** GNU **GPL-3.0-or-later**; see root **`LICENSE`**.
+
+When suggesting dependencies or bundled assets, prefer licenses **compatible with GPLv3** (e.g. MIT, BSD, Apache-2.0, CC0; avoid proprietary or GPL-incompatible copyleft in linked code without checking compatibility).
 
 ### Shorthand: `cpi`
 

@@ -81,3 +81,9 @@ The **Ogg Theora** intro (**`game/anthill/assets/intro/intro.ogv`**) is tracked 
 ## Citation and reuse
 
 If you use this software or its documentation in academic work, cite the **repository** and **version** (see **`game/anthill/project.godot`** `config/version` and **`CHANGELOG.md`**), and describe which **commit or release** you ran. Model assumptions belong in your methods section; point readers to **`docs/reference/technical_specification.txt`** and the **CHANGELOG** for the mapping from biology to code.
+
+## License
+
+Anthill is [free software](https://www.gnu.org/philosophy/free-sw.en.html), licensed under the **GNU General Public License** as published by the Free Software Foundation, **either version 3 of the License, or (at your option) any later version** (SPDX: **`GPL-3.0-or-later`**). See [`LICENSE`](LICENSE) in the repository root for the full license text.
+
+Copyright © Anthill contributors.

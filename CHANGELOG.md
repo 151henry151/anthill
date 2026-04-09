@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.19] - 2026-04-04
+
+### Added
+
+- **`LICENSE`**: GNU General Public License version 3 (full text).
+
+### Changed
+
+- **`README.md`**, **`game/anthill/README.md`**: add License section (**GPL-3.0-or-later**; pointer to **`LICENSE`**).
+- **`AGENTS.md`**: note **GPL-3.0-or-later** and compatibility guidance for dependencies.
+- **`game/anthill/project.godot`**: set **`config/version`** to **0.7.19**.
+
 ## [0.7.18] - 2026-04-09
 
 ### Added

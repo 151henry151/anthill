@@ -54,3 +54,7 @@ Opening **`main.tscn`** directly in the editor still loads the colony scene for 
 - **Video:** Only **Ogg Theora** is supported by the stock **`VideoStreamPlayer`**; re-encode MP4 sources with **`ffmpeg`** when replacing **`intro.ogv`**.
 
 For literature, specification text, **`architecture_of_emergence.txt`**, and tables, see **`../../docs/reference/`**. The repository root **`README.md`** includes an **“Architecture of Emergence (reference mapping)”** section that lists which ideas from that document are implemented in code versus omitted or only partially modeled.
+
+## License
+
+Licensed under the **GNU GPL v3 or later** (SPDX **`GPL-3.0-or-later`**). See **`../../LICENSE`** in the repository root.
