@@ -1,6 +1,9 @@
 extends Control
-## Full-screen editor for **`SimParams`** before **`loading_screen.tscn`** loads **`main.tscn`**.
+## Full-screen editor for **`SimParams`**: pre-run (**`runtime_mode`** false) loads **`loading_screen.tscn`**; in-game (**`runtime_mode`** true) pauses the tree until **Continue** or **Esc**.
 
+signal runtime_panel_closed()
+
+const _ParamHelp := preload("res://scripts/simulation_param_help.gd")
 const LOADING_SCENE := "res://scenes/loading_screen.tscn"
 ## Matches getter-only properties in **`simulation_parameters.gd`** (derived from other fields).
 const _DERIVED_READONLY: Array[String] = [
@@ -18,15 +21,33 @@ const _DERIVED_READONLY: Array[String] = [
 	"FOOD_SPOIL_DURATION_TICKS_MAX",
 ]
 
+@export var runtime_mode: bool = false
+
 @onready var _form_vbox: VBoxContainer = $MarginContainer/VBox/ScrollContainer/FormVBox
 @onready var _reset_btn: Button = $MarginContainer/VBox/ButtonRow/ResetDefaults
 @onready var _start_btn: Button = $MarginContainer/VBox/ButtonRow/StartSimulation
+@onready var _title: Label = $MarginContainer/VBox/Title
+@onready var _subtitle: Label = $MarginContainer/VBox/Subtitle
 
 
 func _ready() -> void:
 	_reset_btn.pressed.connect(_on_reset_defaults)
 	_start_btn.pressed.connect(_on_start_simulation)
+	if runtime_mode:
+		process_mode = Node.PROCESS_MODE_ALWAYS
+		_title.text = "Simulation parameters (runtime)"
+		_subtitle.text = "Game is paused. Values update SimParams as you edit. Continue (or Esc) resumes the simulation."
+		_start_btn.text = "Continue simulation"
+		visible = false
 	_rebuild_form()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not runtime_mode or not visible:
+		return
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+		_close_runtime_panel()
+		get_viewport().set_input_as_handled()
 
 
 func _on_reset_defaults() -> void:
@@ -35,15 +56,28 @@ func _on_reset_defaults() -> void:
 
 
 func _on_start_simulation() -> void:
+	if runtime_mode:
+		_close_runtime_panel()
+		return
 	_apply_controls_to_sim_params()
 	var err := get_tree().change_scene_to_file(LOADING_SCENE)
 	if err != OK:
 		push_error("simulation_settings: failed to load %s (err %s)" % [LOADING_SCENE, err])
 
 
+func _close_runtime_panel() -> void:
+	if not runtime_mode:
+		return
+	_apply_controls_to_sim_params()
+	visible = false
+	get_tree().paused = false
+	runtime_panel_closed.emit()
+
+
 func _rebuild_form() -> void:
 	for c in _form_vbox.get_children():
 		c.queue_free()
+	_form_vbox.add_theme_constant_override("separation", 14)
 	var names: Array[String] = _list_sim_param_property_names()
 	names.sort()
 	for prop_name in names:
@@ -64,6 +98,9 @@ func _list_sim_param_property_names() -> Array[String]:
 
 func _add_row(prop_name: String) -> void:
 	var pinfo: Dictionary = _property_info(prop_name)
+	var block := VBoxContainer.new()
+	block.set_meta("param_name", prop_name)
+	block.add_theme_constant_override("separation", 6)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
 	var name_lbl := Label.new()
@@ -83,7 +120,15 @@ func _add_row(prop_name: String) -> void:
 		var editor: Control = _make_editor(prop_name, type)
 		editor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(editor)
-	_form_vbox.add_child(row)
+	block.add_child(row)
+	var expl := Label.new()
+	expl.text = _ParamHelp.help_for(prop_name)
+	expl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	expl.add_theme_font_size_override("font_size", 11)
+	expl.add_theme_color_override("font_color", Color(0.62, 0.68, 0.76))
+	expl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	block.add_child(expl)
+	_form_vbox.add_child(block)
 
 
 func _property_info(prop_name: String) -> Dictionary:
@@ -179,16 +224,13 @@ func _array_floats_to_csv(a: Array) -> String:
 
 func _apply_controls_to_sim_params() -> void:
 	# Values are already pushed on edit for interactive controls; re-read vector/array line edits from tree.
-	for row in _form_vbox.get_children():
-		if not row is HBoxContainer:
+	for block in _form_vbox.get_children():
+		if not block.has_meta("param_name"):
 			continue
-		var h: HBoxContainer = row as HBoxContainer
-		if h.get_child_count() < 2:
+		var prop_name: String = String(block.get_meta("param_name"))
+		var h: HBoxContainer = block.get_child(0) as HBoxContainer
+		if h == null or h.get_child_count() < 2:
 			continue
-		var lbl: Label = h.get_child(0) as Label
-		if lbl == null:
-			continue
-		var prop_name: String = lbl.text
 		var pinfo: Dictionary = _property_info(prop_name)
 		if _is_readonly_name(prop_name, pinfo):
 			continue
@@ -201,18 +243,15 @@ func _apply_controls_to_sim_params() -> void:
 
 func _process(_delta: float) -> void:
 	# Keep derived (read-only) labels in sync when independent vars change.
-	for row in _form_vbox.get_children():
-		if not row is HBoxContainer:
+	for block in _form_vbox.get_children():
+		if not block.has_meta("param_name"):
 			continue
-		var h: HBoxContainer = row as HBoxContainer
-		if h.get_child_count() < 2:
-			continue
-		var lbl: Label = h.get_child(0) as Label
-		if lbl == null:
-			continue
-		var prop_name: String = lbl.text
+		var prop_name: String = String(block.get_meta("param_name"))
 		var pinfo: Dictionary = _property_info(prop_name)
 		if not _is_readonly_name(prop_name, pinfo):
+			continue
+		var h: HBoxContainer = block.get_child(0) as HBoxContainer
+		if h == null or h.get_child_count() < 2:
 			continue
 		var v_lbl: Label = h.get_child(1) as Label
 		if v_lbl and str(v_lbl.name) == "ValueLabel":

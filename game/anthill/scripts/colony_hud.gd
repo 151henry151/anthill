@@ -1,6 +1,7 @@
 extends CanvasLayer
 ## Scientific colony readout: population, time, resources, pheromone legend, per-worker inspector.
 
+signal sim_params_requested
 
 var _stage_label: Label
 var _day_label: Label
@@ -66,6 +67,13 @@ func _ready() -> void:
 		_sci_labels.append(sl)
 	_mode_label = _mk_label(vbox)
 	_mode_label.add_theme_font_size_override("font_size", 12)
+	var sim_btn := Button.new()
+	sim_btn.text = "Simulation parameters…"
+	sim_btn.tooltip_text = "Pause and edit all SimParams (shortcut: F10)"
+	sim_btn.flat = true
+	sim_btn.add_theme_font_size_override("font_size", 12)
+	sim_btn.pressed.connect(func() -> void: sim_params_requested.emit())
+	vbox.add_child(sim_btn)
 	_update_display()
 
 	_legend_panel = PanelContainer.new()
@@ -264,5 +272,9 @@ func _update_display() -> void:
 		modes.append("[X] X-ray terrain")
 	if pheromone_overlay_active:
 		modes.append("[P] Pheromone fields")
-	_mode_label.text = " · ".join(modes) if not modes.is_empty() else "Controls: [P] fields · [X] x-ray · [F]/[S] speed · right-click worker"
+	var tail := " · [F10] SimParams · right-click worker"
+	if modes.is_empty():
+		_mode_label.text = "Controls: [P] fields · [X] x-ray · [F]/[S] speed" + tail
+	else:
+		_mode_label.text = " · ".join(modes) + tail
 	_legend_panel.visible = pheromone_overlay_active

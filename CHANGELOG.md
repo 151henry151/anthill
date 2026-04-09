@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.18] - 2026-04-09
+
+### Added
+
+- **`game/anthill/scripts/simulation_param_help.gd`**: short explainer string per **`SimParams`** property for the simulation settings form.
+- **`game/anthill/scripts/runtime_sim_settings_bridge.gd`**: **F10** opens in-game **`SimParams`** while the tree is paused ( **`PROCESS_MODE_ALWAYS`** ).
+- **`game/anthill/scripts/main_controller.gd`**: instantiate **`simulation_settings.tscn`** with **`runtime_mode`** on a high canvas layer; pause, **`SimParams`** live-edit, **Continue** or **Esc** to resume.
+- **`game/anthill/scripts/colony_hud.gd`**: **Simulation parameters…** button and mode-line hint for **F10**.
+
+### Changed
+
+- **`game/anthill/scripts/simulation_settings.gd`**: support **`runtime_mode`** (title, **Continue simulation**, **`runtime_panel_closed`**, Esc to close); pre-menu flow unchanged; wrap each parameter in a block with explainer text under the row; use block metadata for apply/sync; increase vertical separation between parameters.
+- **`AGENTS.md`**, **`game/anthill/README.md`**: document runtime **`SimParams`** UI and **`simulation_param_help.gd`**.
+- **`game/anthill/project.godot`**: set **`config/version`** to **0.7.18**.
+
 ## [0.7.17] - 2026-04-09
 
 ### Changed

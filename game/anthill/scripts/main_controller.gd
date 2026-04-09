@@ -16,6 +16,8 @@ const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
 const _SurfaceQuery := preload("res://scripts/world/surface_query.gd")
 const _NestManagerScript = preload("res://scripts/nest_manager.gd")
 const _BuildPheromoneScript = preload("res://scripts/building_pheromone.gd")
+const _RuntimeSimBridgeScript := preload("res://scripts/runtime_sim_settings_bridge.gd")
+const _SimulationSettingsScene := preload("res://scenes/simulation_settings.tscn")
 
 @export var initial_mesh_chunks_per_frame: int = 10
 ## Larger batches while the terrain overlay is visible (faster splash; does not affect steady-state mesh budget).
@@ -52,6 +54,9 @@ var _nest_manager: Node
 var _building_pheromone: Node
 var _hud: CanvasLayer
 var _game_over: CanvasLayer
+## In-game **`SimParams`** editor ( **`simulation_settings.tscn`** with **`runtime_mode`** ).
+var _runtime_sim_panel: Control
+var _runtime_sim_bridge: Node
 var _rng: RandomNumberGenerator
 ## Autoload **`PerfTrace`** (see **`project.godot`**); cached so scripts compile when the singleton name is not in global scope.
 var _perf_trace: Node
@@ -199,6 +204,35 @@ func _setup_systems() -> void:
 	_init_food_spawning()
 
 
+func _setup_runtime_sim_settings_ui() -> void:
+	var layer := CanvasLayer.new()
+	layer.name = "RuntimeSimSettingsLayer"
+	layer.layer = 100
+	add_child(layer)
+	_runtime_sim_panel = _SimulationSettingsScene.instantiate() as Control
+	_runtime_sim_panel.runtime_mode = true
+	_runtime_sim_panel.visible = false
+	layer.add_child(_runtime_sim_panel)
+	_runtime_sim_bridge = Node.new()
+	_runtime_sim_bridge.name = "RuntimeSimInputBridge"
+	_runtime_sim_bridge.set_script(_RuntimeSimBridgeScript)
+	_runtime_sim_bridge.main_controller = self
+	add_child(_runtime_sim_bridge)
+	if _hud and _hud.has_signal("sim_params_requested"):
+		_hud.sim_params_requested.connect(open_runtime_sim_settings)
+
+
+func open_runtime_sim_settings() -> void:
+	if not _initial_terrain_ready or _runtime_sim_panel == null:
+		return
+	if _runtime_sim_panel.visible:
+		return
+	if _runtime_sim_panel.has_method("_rebuild_form"):
+		_runtime_sim_panel._rebuild_form()
+	_runtime_sim_panel.visible = true
+	get_tree().paused = true
+
+
 func _init_food_spawning() -> void:
 	_food_sources.clear()
 	_next_food_spawn_tick = _rng.randi_range(SimParams.FOOD_SPAWN_FIRST_DELAY_MIN, SimParams.FOOD_SPAWN_FIRST_DELAY_MAX)
@@ -291,6 +325,7 @@ func _process(_delta: float) -> void:
 func _finish_initial_terrain_load() -> void:
 	_set_load_status("Setting up queen, brood, food, pheromones...")
 	_setup_systems()
+	_setup_runtime_sim_settings_ui()
 	_set_load_progress(100.0)
 	_set_load_status("Ready.")
 	_initial_terrain_ready = true

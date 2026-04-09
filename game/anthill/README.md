@@ -26,6 +26,7 @@ Opening **`main.tscn`** directly in the editor still loads the colony scene for 
 - **Right-click** a worker: **inspector** (bottom-right) — behavioral state, age (ticks and ant-days), caste, metabolic placeholders, crop load, heading, distance to nest, local **trail / footprint / alarm** samples. **Escape** clears selection.
 - **Validation export:** When **`VALIDATION_EXPORT_ENABLED`** is set in **`SimParams`** (defaults in **`scripts/constants.gd`**), the simulation appends **`user://validation/colony_ticks.csv`** and **`user://validation/workers_sample.csv`** at **`VALIDATION_EXPORT_INTERVAL_TICKS`** for offline analysis (paths are under Godot’s per-user data directory).
 - **[F]**: Cycles **fast-forward** multipliers (`Engine.time_scale`); simulation **ticks** advance **multiple sub-steps per frame** so ant-days remain consistent (see **`main_controller.gd`**).
+- **Simulation parameters…** (HUD button) or **F10**: Pauses the game and opens the same scrollable **`SimParams`** form as pre-run (**`simulation_settings.tscn`** in **runtime** mode). Edits apply immediately; **Continue simulation** or **Esc** resumes.
 
 ## Layout (selected paths)
 
@@ -37,6 +38,7 @@ Opening **`main.tscn`** directly in the editor still loads the colony scene for 
 | `scripts/pheromone_field.gd`, `footprint_field.gd`, `alarm_field.gd`, `building_pheromone.gd` | Chemical grids |
 | `scripts/queen_ant.gd`, `brood_manager.gd` | Queen lifecycle and brood |
 | `scripts/main_controller.gd` | Scene wiring, tick loop, mesh rebuild budget, overlays |
+| `scripts/simulation_param_help.gd` | Human-readable lines for each **`SimParams`** key in **`simulation_settings.tscn`** |
 | `scripts/nest_builder.gd` | Blueprint galleries (exposed voxels only); used before organic **`nest_manager`** dig scoring |
 | `scripts/nest_manager.gd` | Dig front, reservations, spoil, **`get_dig_target`** scoring |
 | `scripts/perf_trace.gd` | Optional autoload timing log (**`ANTHILL_PERF_TRACE=0`** to disable) |

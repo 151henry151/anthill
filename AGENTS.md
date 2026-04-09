@@ -44,7 +44,9 @@ godot4 --path game/anthill --import
 |---|---|
 | `game/anthill/project.godot` | Godot project file (entry point) |
 | `game/anthill/scenes/main.tscn` | Main colony scene |
-| `game/anthill/scenes/simulation_settings.tscn` | Pre-run UI to edit autoload **`SimParams`** (`simulation_parameters.gd`) |
+| `game/anthill/scenes/simulation_settings.tscn` | Pre-run or in-game (**`runtime_mode`**) UI to edit autoload **`SimParams`**; **F10** or HUD button when running **`main.tscn`** |
+| `game/anthill/scripts/runtime_sim_settings_bridge.gd` | **F10** input while the scene tree may be paused (**`PROCESS_MODE_ALWAYS`**) |
+| `game/anthill/scripts/simulation_param_help.gd` | UI help lines for each **`SimParams`** field in **`simulation_settings.tscn`** |
 | `game/anthill/scripts/simulation_parameters.gd` | Autoload **`SimParams`**: mutable simulation parameters (defaults from **`constants.gd`**) |
 | `game/anthill/scripts/` | GDScript simulation logic |
 | `docs/reference/` | Bibliography, specification, briefing, **`architecture_of_emergence.txt`** (not loaded at runtime) |
