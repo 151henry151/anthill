@@ -247,7 +247,7 @@ func _update_display() -> void:
 	var p_tgt: float = SimParams.FOOD_STORE_TARGET_PROTEIN
 	var sp: float = clampf(sugar / maxf(0.001, s_tgt), 0.0, 9.99) * 100.0
 	var pp: float = clampf(protein / maxf(0.001, p_tgt), 0.0, 9.99) * 100.0
-	_food_label.text = "Stores — sugar: %.0f / %.0f (%.0f%%) · protein: %.0f / %.0f (%.0f%%)" % [
+	_food_label.text = "Stores — sugar: %.2f / %.0f (%.1f%%) · protein: %.2f / %.0f (%.1f%%)" % [
 		sugar, s_tgt, sp, protein, p_tgt, pp
 	]
 	_pop_label.text = "Workers: %d (peak %d) · brood total: %d" % [worker_count, _peak_workers, brood_count]

@@ -306,6 +306,9 @@ func _step_foraging_scout(a: Dictionary) -> void:
 	if _detect_trail(a):
 		a["state"] = 6
 		return
+	_check_food_nearby(a)
+	if int(a["state"]) == 7:
+		return
 	if _rng.randf() < SimParams.SCOUT_SEARCH_STOP_PROBABILITY:
 		return
 	_moore_exploration_step(a)
@@ -381,6 +384,9 @@ func _step_foraging_recruit(a: Dictionary) -> void:
 	var local_max: float = _recruit_trail_local_max(wx, wz, SimParams.RECRUIT_TRAIL_FOLLOW_LOCAL_RADIUS)
 	if local_max < SimParams.PHEROMONE_RECRUIT_THRESHOLD * SimParams.RECRUIT_TRAIL_EXIT_SCOUT_FACTOR:
 		a["state"] = 5
+		return
+	_check_food_nearby(a)
+	if int(a["state"]) == 7:
 		return
 	_step_tropotaxis_moore(a)
 	_check_food_nearby(a)

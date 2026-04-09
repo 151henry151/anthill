@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.16] - 2026-04-09
+
+### Changed
+
+- **`game/anthill/scripts/colony_ants.gd`**: run **`_check_food_nearby`** before movement in **FORAGING_SCOUT** and **FORAGING_RECRUIT** so ants already in pickup range take food and enter **RETURNING** instead of stepping off the patch while following the trail.
+- **`game/anthill/scripts/colony_hud.gd`**: show colony sugar and protein with two decimal places and one decimal on store percentages so loads near **`FOOD_CARRY_AMOUNT`** are visible (integer formatting previously showed **0** for typical deposits).
+- **`game/anthill/project.godot`**: set **`config/version`** to **0.7.16**.
+
 ## [0.7.15] - 2026-04-09
 
 ### Changed
