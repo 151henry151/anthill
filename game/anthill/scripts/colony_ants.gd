@@ -488,7 +488,7 @@ func _step_returning(a: Dictionary) -> void:
 		var deposit_amt: float = base_amt * _trail_saturation_multiplier(wx, wz)
 		pheromone_field.deposit(wx, wz, deposit_amt)
 	d = _dist_to(a, nest_entrance)
-	if d < SimParams.WORKER_NEST_ARRIVAL_MAX_DIST:
+	if d < SimParams.WORKER_FOOD_STORE_DEPOSIT_MAX_H_DIST:
 		if food_store and bool(a.get("carrying_food", false)):
 			food_store.add_food(String(a["food_type"]), SimParams.FOOD_CARRY_AMOUNT)
 			a["is_experienced_forager"] = true

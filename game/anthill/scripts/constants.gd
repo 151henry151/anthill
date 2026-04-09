@@ -23,8 +23,8 @@ const BLOCK_PACKED_SAND := 3
 const SAND_LATERAL_SPILL_STACK_LIMIT := 6
 ## Lateral spill does not **deposit** onto surface columns within this XZ radius of **`nest_spill_exclude_xz`** (reduces plugging the shaft mouth).
 const NEST_SPILL_LATERAL_EXCLUDE_RADIUS := 5
-## Workers within this horizontal distance of **`nest_entrance`** (founding chamber **xz**) complete **returning** and credit **`food_store`**. Must reach at least **`SPOIL_DEPOSIT_RADIUS`** plus typical **`MAX_GALLERY_RADIUS`** lateral exits or foragers stand on spoil / tunnel mouths without ever being within a tight disk.
-const WORKER_NEST_ARRIVAL_MAX_DIST := 40.0
+## Horizontal distance (xz) from **`nest_entrance`** within which a **RETURNING** worker credits **`food_store`**: founding **shaft mouth** only (~**`FOUNDING_SHAFT_WIDTH`**), not lateral tunnel exits or the spoil ring. Foragers must walk to the central entrance; workers are surface-walkers so this proxies “into the nest” until true 3D entry exists.
+const WORKER_FOOD_STORE_DEPOSIT_MAX_H_DIST := 5.0
 ## Within this horizontal distance of **`nest_entrance`**, workers may engage **shaft clearing** (dig sand / packed sand blocking the shaft).
 const WORKER_ENTRANCE_CLEAR_ENGAGE_DIST := 14.0
 

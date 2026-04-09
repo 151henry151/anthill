@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.17] - 2026-04-09
+
+### Changed
+
+- **`game/anthill/scripts/constants.gd`**, **`game/anthill/scripts/simulation_parameters.gd`**, **`game/anthill/scripts/colony_ants.gd`**: replace loose **`WORKER_NEST_ARRIVAL_MAX_DIST`** with **`WORKER_FOOD_STORE_DEPOSIT_MAX_H_DIST`** (shaft-mouth horizontal radius) so **`food_store`** credits only when a forager reaches the central nest entrance, not distant spoil or lateral tunnel surface cells.
+- **`game/anthill/project.godot`**: set **`config/version`** to **0.7.17**.
+
 ## [0.7.16] - 2026-04-09
 
 ### Changed
