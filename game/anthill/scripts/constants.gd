@@ -1,5 +1,7 @@
 extends Object
 class_name GameConstants
+## Default parameter values (compile-time **`const`**). At runtime the autoload **`SimParams`** (`simulation_parameters.gd`) holds editable copies; game code reads **`SimParams`**.
+##
 ## Fiction: one voxel = one sand grain. Godot units match voxels 1:1 for the prototype.
 ## Colony camera orthographic `size` is vertical world units visible; grain height in pixels ≈ viewport_height / size.
 ##

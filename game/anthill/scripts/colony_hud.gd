@@ -1,7 +1,6 @@
 extends CanvasLayer
 ## Scientific colony readout: population, time, resources, pheromone legend, per-worker inspector.
 
-const _Const := preload("res://scripts/constants.gd")
 
 var _stage_label: Label
 var _day_label: Label
@@ -87,10 +86,10 @@ func _ready() -> void:
 	var leg_title := _mk_label(leg_v)
 	leg_title.text = "Pheromone field view [P]"
 	leg_title.add_theme_font_size_override("font_size", 13)
-	_add_legend_row(leg_v, _Const.PHEROMONE_VIS_RECRUITMENT, "Recruitment trail (2D, attractive)")
-	_add_legend_row(leg_v, _Const.PHEROMONE_VIS_FOOTPRINT, "Footprint / CHC (2D, substrate)")
-	_add_legend_row(leg_v, _Const.PHEROMONE_VIS_BUILDING, "Nest construction (3D voxels)")
-	_add_legend_row(leg_v, _Const.PHEROMONE_VIS_ALARM, "Alarm / Dufour (2D, stress)")
+	_add_legend_row(leg_v, SimParams.PHEROMONE_VIS_RECRUITMENT, "Recruitment trail (2D, attractive)")
+	_add_legend_row(leg_v, SimParams.PHEROMONE_VIS_FOOTPRINT, "Footprint / CHC (2D, substrate)")
+	_add_legend_row(leg_v, SimParams.PHEROMONE_VIS_BUILDING, "Nest construction (3D voxels)")
+	_add_legend_row(leg_v, SimParams.PHEROMONE_VIS_ALARM, "Alarm / Dufour (2D, stress)")
 	add_child(_legend_panel)
 
 	_ant_panel = PanelContainer.new()
@@ -241,11 +240,11 @@ func _update_display() -> void:
 		return
 	_stage_label.text = "Colony: %s" % colony_stage
 	_day_label.text = "Ant day %d · %s local" % [game_day, clock_time]
-	_day_label.tooltip_text = "Simulation clock: one ant-day = %d ticks (see constants)." % _Const.TICKS_PER_ANT_DAY
+	_day_label.tooltip_text = "Simulation clock: one ant-day = %d ticks (see constants)." % SimParams.TICKS_PER_ANT_DAY
 	var qc: String = "OK" if queen_energy > 0.5 else ("Low" if queen_energy > 0.2 else "Critical")
 	_queen_label.text = "Queen reserve: %s (%.0f%%)" % [qc, queen_energy * 100.0]
-	var s_tgt: float = _Const.FOOD_STORE_TARGET_SUGAR
-	var p_tgt: float = _Const.FOOD_STORE_TARGET_PROTEIN
+	var s_tgt: float = SimParams.FOOD_STORE_TARGET_SUGAR
+	var p_tgt: float = SimParams.FOOD_STORE_TARGET_PROTEIN
 	var sp: float = clampf(sugar / maxf(0.001, s_tgt), 0.0, 9.99) * 100.0
 	var pp: float = clampf(protein / maxf(0.001, p_tgt), 0.0, 9.99) * 100.0
 	_food_label.text = "Stores — sugar: %.0f / %.0f (%.0f%%) · protein: %.0f / %.0f (%.0f%%)" % [
@@ -257,7 +256,7 @@ func _update_display() -> void:
 		_sci_labels[1].text = "Nest: %s" % _nest_line
 		_sci_labels[2].text = "Active food patches: %d" % _food_sources_n
 		_sci_labels[3].text = "Pheromone grid cells — trail: %d · footprint: %d · alarm: %d · building: %d" % [_trail_cells, _fp_cells, _alarm_cells, _build_cells]
-		_sci_labels[4].text = "Voxel: 1 unit ≈ %.1f mm (grain-scale fiction)" % _Const.MM_PER_UNIT
+		_sci_labels[4].text = "Voxel: 1 unit ≈ %.1f mm (grain-scale fiction)" % SimParams.MM_PER_UNIT
 	var modes: Array[String] = []
 	if fast_forward_multiplier > 1.001:
 		modes.append("%.0fx >>" % fast_forward_multiplier)

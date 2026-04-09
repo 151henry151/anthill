@@ -1,7 +1,6 @@
 extends Node
 ## Drives sun direction, directional light, and ambient/sky from game tick (one day per ant-day).
 
-const _Const := preload("res://scripts/constants.gd")
 
 @onready var _sun: DirectionalLight3D = $"../DirectionalLight3D"
 @onready var _world_env: WorldEnvironment = $"../WorldEnvironment"
@@ -17,7 +16,7 @@ func _ready() -> void:
 
 
 func set_game_tick(tick: int) -> void:
-	var day_len: float = float(_Const.TICKS_PER_ANT_DAY)
+	var day_len: float = float(SimParams.TICKS_PER_ANT_DAY)
 	var t: float = fmod(float(tick), day_len) / day_len
 	var azimuth: float = t * TAU
 	var elevation: float = sin(t * TAU) * deg_to_rad(52.0)

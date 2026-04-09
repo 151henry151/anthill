@@ -1,7 +1,6 @@
 extends Node
 ## 3D building pheromone field for stigmergic construction coordination.
 
-const _Const := preload("res://scripts/constants.gd")
 
 var _build_grid: Dictionary = {}
 var _evap_timer: int = 0
@@ -36,13 +35,13 @@ func advance_ticks(steps: int) -> void:
 	if steps < 1:
 		return
 	_evap_timer += steps
-	var interval: int = _Const.BUILD_PHEROMONE_EVAPORATION_INTERVAL_TICKS
+	var interval: int = SimParams.BUILD_PHEROMONE_EVAPORATION_INTERVAL_TICKS
 	var n_evap: int = _evap_timer / interval
 	if n_evap < 1:
 		return
 	_evap_timer %= interval
-	var factor: float = pow(float(_Const.BUILD_PHEROMONE_EVAPORATION_RATE), float(n_evap))
-	var thr: float = _Const.BUILD_PHEROMONE_MINIMUM
+	var factor: float = pow(float(SimParams.BUILD_PHEROMONE_EVAPORATION_RATE), float(n_evap))
+	var thr: float = SimParams.BUILD_PHEROMONE_MINIMUM
 	var keys: Array = _build_grid.keys()
 	for k in keys:
 		if not _build_grid.has(k):

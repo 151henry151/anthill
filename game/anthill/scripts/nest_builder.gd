@@ -2,7 +2,6 @@ extends Node
 ## Blueprint chambers (brood, storage, rest) dug by workers only on **exposed** sand (adjacent to existing air).
 ## Voxels must be reachable from the current **`dig_front`** frontier; interior sand is skipped until a face opens.
 
-const _Const := preload("res://scripts/constants.gd")
 const _Chunk := preload("res://scripts/world/chunk_data.gd")
 
 const _NEIGH6: Array[Vector3i] = [
@@ -65,7 +64,7 @@ func _generate_blueprints() -> void:
 	_blueprints.clear()
 	var fc := _founding_chamber
 	## Three chambers at ~120° with jitter and a random global rotation (not fixed +X / −X / +Z).
-	var global_rot: float = _rng.randf() * _Const.NEST_BLUEPRINT_GLOBAL_ROT_MAX
+	var global_rot: float = _rng.randf() * SimParams.NEST_BLUEPRINT_GLOBAL_ROT_MAX
 	var slot_sep: float = 6.28318530718 / 3.0
 	var specs: Array = [
 		{"name": "brood_chamber", "sx": Vector2i(4, 6), "sy": Vector2i(2, 4), "sz": Vector2i(4, 6)},
@@ -73,8 +72,8 @@ func _generate_blueprints() -> void:
 		{"name": "worker_rest", "sx": Vector2i(3, 5), "sy": Vector2i(2, 3), "sz": Vector2i(3, 5)},
 	]
 	for i in range(specs.size()):
-		var ang: float = global_rot + float(i) * slot_sep + _rng.randf_range(-_Const.NEST_BLUEPRINT_ANGLE_JITTER, _Const.NEST_BLUEPRINT_ANGLE_JITTER)
-		var dist: int = _rng.randi_range(_Const.NEST_BLUEPRINT_DIST_MIN, _Const.NEST_BLUEPRINT_DIST_MAX)
+		var ang: float = global_rot + float(i) * slot_sep + _rng.randf_range(-SimParams.NEST_BLUEPRINT_ANGLE_JITTER, SimParams.NEST_BLUEPRINT_ANGLE_JITTER)
+		var dist: int = _rng.randi_range(SimParams.NEST_BLUEPRINT_DIST_MIN, SimParams.NEST_BLUEPRINT_DIST_MAX)
 		var ox: int = int(round(cos(ang) * float(dist)))
 		var oz: int = int(round(sin(ang) * float(dist)))
 		var dy: int = _rng.randi_range(-1, 1)
@@ -85,7 +84,7 @@ func _generate_blueprints() -> void:
 		var center := Vector3i(fc.x + ox, fc.y + dy, fc.z + oz)
 		var size := Vector3i(sx, sy, sz)
 		_append_blueprint(str(sp["name"]), center, size)
-	if _rng.randf() < _Const.NEST_BLUEPRINT_SPUR_PROB:
+	if _rng.randf() < SimParams.NEST_BLUEPRINT_SPUR_PROB:
 		var spur_ang: float = _rng.randf() * 6.28318530718
 		var spur_d: int = _rng.randi_range(2, 5)
 		var sox: int = int(round(cos(spur_ang) * float(spur_d)))
@@ -99,7 +98,7 @@ func _generate_blueprints() -> void:
 func _adjacent_to_air(p: Vector3i) -> bool:
 	for d in _NEIGH6:
 		var n := Vector3i(p.x + d.x, p.y + d.y, p.z + d.z)
-		if _world.get_block(n.x, n.y, n.z) == _Const.BLOCK_AIR:
+		if _world.get_block(n.x, n.y, n.z) == SimParams.BLOCK_AIR:
 			return true
 	return false
 
@@ -114,7 +113,7 @@ func _blueprint_all_air(bp: Dictionary) -> bool:
 		for dy in range(-hy, hy + 1):
 			for dz in range(-hz, hz + 1):
 				var p := Vector3i(center.x + dx, center.y + dy, center.z + dz)
-				if _world.get_block(p.x, p.y, p.z) != _Const.BLOCK_AIR:
+				if _world.get_block(p.x, p.y, p.z) != SimParams.BLOCK_AIR:
 					return false
 	return true
 
@@ -139,7 +138,7 @@ func _collect_exposed_in_blueprint(bp: Dictionary, nest_manager: Node) -> Array[
 			for dz in range(-hz, hz + 1):
 				var p := Vector3i(center.x + dx, center.y + dy, center.z + dz)
 				var bt: int = _world.get_block(p.x, p.y, p.z)
-				if bt != _Const.BLOCK_SAND and bt != _Const.BLOCK_PACKED_SAND:
+				if bt != SimParams.BLOCK_SAND and bt != SimParams.BLOCK_PACKED_SAND:
 					continue
 				if not _adjacent_to_air(p):
 					continue
@@ -223,5 +222,5 @@ func score_blueprint_lead(v: Vector3i) -> float:
 		var vz: float = float(v.z - fc.z)
 		var proj: float = vx * dx + vz * dz
 		if proj > 0.0:
-			best = maxf(best, proj * _Const.NEST_BLUEPRINT_LEAD_WEIGHT)
+			best = maxf(best, proj * SimParams.NEST_BLUEPRINT_LEAD_WEIGHT)
 	return best

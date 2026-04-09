@@ -12,10 +12,10 @@ The note **`docs/reference/architecture_of_emergence.txt`** describes positive a
 |------------------|-------------------|
 | **Positive feedback / mass recruitment** — trail deposition reinforces later visits | **Yes.** Recruitment **pheromone** grid with deposit-on-return behavior, diffusion, evaporation (`pheromone_field.gd`, `colony_ants.gd`). |
 | **Stigmergy** — environment carries the signal | **Yes.** Trail and footprint fields are sampled from the substrate; workers do not share a central map. |
-| **Stronger marking near food** | **Yes (tunable).** On the return path, workers still lay trail pheromone only where they walk (stigmergy); each allowed **spot** deposit is multiplied by an exponential falloff in horizontal distance to the remembered patch (`RECRUIT_TRAIL_BEACON_*` in `constants.gd`), not by return-trip time. That tends to build a brighter trail end near the source after many trips—it is not a separate field applied without ants. |
+| **Stronger marking near food** | **Yes (tunable).** On the return path, workers still lay trail pheromone only where they walk (stigmergy); each allowed **spot** deposit is multiplied by an exponential falloff in horizontal distance to the remembered patch (`RECRUIT_TRAIL_BEACON_*` in **`SimParams`**, defaults in `constants.gd`), not by return-trip time. That tends to build a brighter trail end near the source after many trips—it is not a separate field applied without ants. |
 | **Higher food quality → more marking** | **Partially.** Food sources differ by type and supply; pickup and deposit logic does not implement every biological detail of “feed faster → more pheromone” from the literature. |
 | **Negative feedback / footprint hydrocarbons** — avoid over-searched substrate | **Yes.** **CHC footprint** field: passive deposit while walking, slow decay, repellent / exploration weights (`footprint_field.gd`, tropotaxis and scout steps in `colony_ants.gd`). |
-| **Trail vs footprint at bifurcations** (ratio-style balance) | **Yes.** Recruit tropotaxis uses a **ratio** form with trail in the numerator and footprint (and crowding) in the denominator (`TROPOTAXIS_*` in `constants.gd`). |
+| **Trail vs footprint at bifurcations** (ratio-style balance) | **Yes.** Recruit tropotaxis uses a **ratio** form with trail in the numerator and footprint (and crowding) in the denominator (`TROPOTAXIS_*` in **`SimParams`**). |
 | **Crowding / overshoot-style relief** | **Partially.** **Feeder crowding** reduces pickup when many workers are near a patch; there is no explicit “depleted patch” overshoot model beyond finite food and rot. |
 | **Alarm / Dufour gland / undecane** | **Partially.** An **alarm** field exists and is framed as Dufour-type; it is **not** a chemical identity model for undecane. |
 | ***Monomorium pharaonis*** **contrast** (polydomy, sting dragging, volatile repellent half-life, etc.) | **No.** The executable does not simulate a second species or *M. pharaonis* trail rules. |
@@ -71,7 +71,7 @@ The **Ogg Theora** intro (**`game/anthill/assets/intro/intro.ogv`**) is tracked 
 
 | Path | Role |
 |------|------|
-| **`game/anthill/`** | Godot project: scenes, scripts, packaged **`assets/`** (splash, intro media). |
+| **`game/anthill/`** | Godot project: scenes, scripts, packaged **`assets/`** (splash, intro media); pre-run **`simulation_settings.tscn`** edits autoload **`SimParams`**. |
 | **`docs/reference/`** | Bibliography, specification text, briefing, CSV tables (not loaded at runtime). |
 | **`docs/cursor-agent-shell.md`** | Notes if the Cursor agent shell misbehaves. |
 | **`CHANGELOG.md`** | Versioned list of code and asset changes. |

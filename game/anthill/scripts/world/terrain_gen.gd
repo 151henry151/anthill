@@ -1,7 +1,6 @@
 extends RefCounted
 class_name TerrainGen
 
-const _Const := preload("res://scripts/constants.gd")
 const _Chunk := preload("res://scripts/world/chunk_data.gd")
 
 
@@ -23,10 +22,10 @@ static func fill_chunk(chunk: RefCounted, noise: FastNoiseLite, on_sand_column_p
 			h = clampi(h, 4, sy - 4)
 			var stone_top: int = h - 40
 			for ly in range(0, stone_top):
-				chunk.set_b(lx, ly, lz, _Const.BLOCK_STONE)
+				chunk.set_b(lx, ly, lz, SimParams.BLOCK_STONE)
 			var marked: bool = false
 			for ly in range(stone_top, h):
-				chunk.set_b(lx, ly, lz, _Const.BLOCK_PACKED_SAND)
+				chunk.set_b(lx, ly, lz, SimParams.BLOCK_PACKED_SAND)
 				if not marked and on_sand_column_placed.is_valid():
 					on_sand_column_placed.call(wx, wz)
 					marked = true

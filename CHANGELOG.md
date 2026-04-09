@@ -7,14 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.12] - 2026-04-04
+
+### Added
+
+- **`game/anthill/scripts/simulation_parameters.gd`**: autoload **`SimParams`** — mutable mirrors of **`constants.gd`** (including typed **`FAST_FORWARD_SPEEDS`**); derived tick durations remain read-only getters tied to **`GAME_SECONDS_PER_ANT_DAY`** and brood day counts; **`reset_to_reference_defaults()`** restores from **`GameConstants`**.
+- **`game/anthill/scenes/simulation_settings.tscn`**, **`game/anthill/scripts/simulation_settings.gd`**: full-screen scrollable form (built from **`SimParams`** property list) with **Reset to defaults** and **Start simulation** before the loading screen.
+- **`game/anthill/project.godot`**: register autoload **`SimParams`** before **`PerfTrace`**.
+- **`game/anthill/scripts/intro_video.gd`**: after the intro clip, go to **`simulation_settings.tscn`** instead of **`loading_screen.tscn`**.
+
 ### Changed
 
+- **Simulation scripts** (`**main_controller**`, **`colony_ants`**, **`pheromone_field`**, **`queen_ant`**, **`nest_manager`**, **`world/`**, etc.): read tunable values from **`SimParams`** instead of preloading **`constants.gd`** as **`_Const`**.
+- **`scripts/constants.gd`**: document that **`SimParams`** holds runtime values; defaults remain **`const`** for reference and reset.
+- **`game/anthill/README.md`**, root **`README.md`**: document launch sequence and **`SimParams`**.
 - **`scripts/constants.gd`**: replace **`FORAGING_RTT_*`** and **`PHEROMONE_DISTANCE_BONUS`** with **`RECRUIT_TRAIL_BEACON_*`** (exponential falloff in mm from the food patch for recruitment deposits).
 - **`scripts/colony_ants.gd`**: scale return-path and random-walk recruitment deposits by **`_recruit_trail_food_proximity_multiplier`** (distance to **`food_source_*`**); remove **`trip_pickup_age`** and RTT-based multiplier.
 - **`scripts/colony_hud.gd`**: inspector shows **`recruit_deposit_proximity_mult`** (HUD: recruit deposit proximity) instead of **`rtt_multiplier`**.
 - **`README.md`**, **`AGENTS.md`**: describe food-proximity-scaled return deposits instead of RTT scaling.
 - **`docs/reference/technical_specification.txt`**: align recruitment optimization text with proximity-scaled ant-laid deposits vs RTT-based per-step scaling.
 - **`README.md`**, **`AGENTS.md`**, **`docs/reference/technical_specification.txt`**, **`scripts/constants.gd`**, **`scripts/colony_ants.gd`**: clarify that recruitment pheromone is **ant-laid** (stigmergy); distance scaling only weights each deposit.
+- **`game/anthill/project.godot`**: set **`config/version`** to **0.7.12**.
 
 ## [0.7.11] - 2026-04-04
 

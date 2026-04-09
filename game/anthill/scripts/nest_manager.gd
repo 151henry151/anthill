@@ -1,7 +1,6 @@
 extends Node
 ## Colony-level nest construction manager: compaction, dig front, reservations, volume, navigation.
 
-const _Const := preload("res://scripts/constants.gd")
 const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
 const _SurfaceQuery := preload("res://scripts/world/surface_query.gd")
 const _SpoilDeposit := preload("res://scripts/spoil_deposit.gd")
@@ -51,15 +50,15 @@ func setup(world: Node, founding_chamber: Vector3i, building_pheromone: Node) ->
 func compact_around(pos: Vector3i) -> void:
 	if _world == null:
 		return
-	var r: int = _Const.COMPACTION_RADIUS
+	var r: int = SimParams.COMPACTION_RADIUS
 	for dx in range(-r, r + 1):
 		for dy in range(-r, r + 1):
 			for dz in range(-r, r + 1):
 				if dx == 0 and dy == 0 and dz == 0:
 					continue
 				var n := Vector3i(pos.x + dx, pos.y + dy, pos.z + dz)
-				if _world.get_block(n.x, n.y, n.z) == _Const.BLOCK_SAND:
-					_world.set_block(n.x, n.y, n.z, _Const.BLOCK_PACKED_SAND)
+				if _world.get_block(n.x, n.y, n.z) == SimParams.BLOCK_SAND:
+					_world.set_block(n.x, n.y, n.z, SimParams.BLOCK_PACKED_SAND)
 
 
 func on_voxel_removed(pos: Vector3i) -> void:
@@ -76,8 +75,8 @@ func on_voxel_removed(pos: Vector3i) -> void:
 	for offset in [Vector3i(1,0,0), Vector3i(-1,0,0), Vector3i(0,1,0), Vector3i(0,-1,0), Vector3i(0,0,1), Vector3i(0,0,-1)]:
 		var n: Vector3i = pos + offset
 		var bt: int = _world.get_block(n.x, n.y, n.z)
-		if (bt == _Const.BLOCK_SAND or bt == _Const.BLOCK_PACKED_SAND) and not _dig_front_set.has(n):
-			if n.y >= (_TerrainGen.SURFACE_BASE - _Const.MAX_DIG_DEPTH):
+		if (bt == SimParams.BLOCK_SAND or bt == SimParams.BLOCK_PACKED_SAND) and not _dig_front_set.has(n):
+			if n.y >= (_TerrainGen.SURFACE_BASE - SimParams.MAX_DIG_DEPTH):
 				_dig_front.append(n)
 				_dig_front_set[n] = true
 
@@ -95,8 +94,8 @@ func get_dig_target(ant: Node3D) -> Variant:
 	var best_score: float = -INF
 	var best_voxel: Variant = null
 	var surface_y: int = _TerrainGen.SURFACE_BASE
-	var shaft_deep_enough: bool = _deepest_air_y() <= (surface_y - _Const.SHAFT_TARGET_DEPTH)
-	var sample_cap: int = 60 + (_Const.NEST_GALLERY_SAMPLE_BOOST if shaft_deep_enough else 0)
+	var shaft_deep_enough: bool = _deepest_air_y() <= (surface_y - SimParams.SHAFT_TARGET_DEPTH)
+	var sample_cap: int = 60 + (SimParams.NEST_GALLERY_SAMPLE_BOOST if shaft_deep_enough else 0)
 	var sample_count: int = mini(_dig_front.size(), sample_cap)
 	for _i in range(sample_count):
 		var idx: int = _rng.randi_range(0, _dig_front.size() - 1)
@@ -104,28 +103,28 @@ func get_dig_target(ant: Node3D) -> Variant:
 		if _reserved_voxels.has(v):
 			continue
 		var bt: int = _world.get_block(v.x, v.y, v.z)
-		if bt != _Const.BLOCK_SAND and bt != _Const.BLOCK_PACKED_SAND:
+		if bt != SimParams.BLOCK_SAND and bt != SimParams.BLOCK_PACKED_SAND:
 			continue
 		var score: float = 0.0
 		var depth: int = surface_y - v.y
 		# Capped entry pull: strong for first SHAFT_TARGET_DEPTH voxels, then flat.
-		var entry_pull: float = float(mini(depth, _Const.SHAFT_TARGET_DEPTH)) * _Const.DEPTH_WEIGHT_ENTRY
+		var entry_pull: float = float(mini(depth, SimParams.SHAFT_TARGET_DEPTH)) * SimParams.DEPTH_WEIGHT_ENTRY
 		var dx_h: float = float(v.x - queen_chamber.x)
 		var dz_h: float = float(v.z - queen_chamber.z)
 		var horiz_dist: float = sqrt(dx_h * dx_h + dz_h * dz_h)
 		## Near the vertical shaft axis, pull down dominates; damp it once the shaft is deep enough so lateral galleries win.
-		if shaft_deep_enough and horiz_dist < float(_Const.NEST_SHAFT_AXIS_RADIUS_VOX):
-			entry_pull *= _Const.NEST_SHAFT_AXIS_ENTRY_PULL_SCALE
+		if shaft_deep_enough and horiz_dist < float(SimParams.NEST_SHAFT_AXIS_RADIUS_VOX):
+			entry_pull *= SimParams.NEST_SHAFT_AXIS_ENTRY_PULL_SCALE
 		score += entry_pull
 		# Horizontal expansion bias (reward galleries extending outward from shaft).
 		if shaft_deep_enough and horiz_dist > 1.0:
-			var normalized: float = minf(horiz_dist / float(_Const.MAX_GALLERY_RADIUS), 1.0)
-			score += _Const.HORIZONTAL_WEIGHT * normalized * 4.0
-		if shaft_deep_enough and horiz_dist >= float(_Const.NEST_LATERAL_MIN_AXIS_DIST):
-			score += _Const.NEST_LATERAL_EXPANSION_BONUS
+			var normalized: float = minf(horiz_dist / float(SimParams.MAX_GALLERY_RADIUS), 1.0)
+			score += SimParams.HORIZONTAL_WEIGHT * normalized * 4.0
+		if shaft_deep_enough and horiz_dist >= float(SimParams.NEST_LATERAL_MIN_AXIS_DIST):
+			score += SimParams.NEST_LATERAL_EXPANSION_BONUS
 		## Discourage further deepening **along the narrow shaft** once the nest is already deep.
-		if shaft_deep_enough and horiz_dist < float(_Const.NEST_SHAFT_AXIS_RADIUS_VOX) and v.y < _deepest_air_y():
-			score -= _Const.NEST_DEEPEN_BELOW_DEEPEST_PENALTY
+		if shaft_deep_enough and horiz_dist < float(SimParams.NEST_SHAFT_AXIS_RADIUS_VOX) and v.y < _deepest_air_y():
+			score -= SimParams.NEST_DEEPEN_BELOW_DEEPEST_PENALTY
 		# Same-depth bonus: prefer voxels at chamber depth (± 2 voxels).
 		if shaft_deep_enough:
 			var dy_from_chamber: int = absi(v.y - queen_chamber.y)
@@ -134,16 +133,16 @@ func get_dig_target(ant: Node3D) -> Variant:
 		# Tunnel continuation: reward extending existing tunnels.
 		var air_count: int = 0
 		for offset in [Vector3i(1,0,0), Vector3i(-1,0,0), Vector3i(0,0,1), Vector3i(0,0,-1)]:
-			if _world.get_block(v.x + offset.x, v.y + offset.y, v.z + offset.z) == _Const.BLOCK_AIR:
+			if _world.get_block(v.x + offset.x, v.y + offset.y, v.z + offset.z) == SimParams.BLOCK_AIR:
 				air_count += 1
 		if air_count <= 1:
-			score += _Const.TUNNEL_CONTINUE_BONUS
+			score += SimParams.TUNNEL_CONTINUE_BONUS
 		# After shaft is deep enough, strongly prefer horizontal extension.
 		if shaft_deep_enough and air_count <= 1:
-			score += _Const.TUNNEL_EXTEND_BIAS
-		score += _rng.randf_range(-_Const.NOISE_AMPLITUDE, _Const.NOISE_AMPLITUDE)
+			score += SimParams.TUNNEL_EXTEND_BIAS
+		score += _rng.randf_range(-SimParams.NOISE_AMPLITUDE, SimParams.NOISE_AMPLITUDE)
 		if shaft_deep_enough:
-			score += _rng.randf_range(0.0, _Const.NEST_GALLERY_BRANCH_NOISE)
+			score += _rng.randf_range(0.0, SimParams.NEST_GALLERY_BRANCH_NOISE)
 		if shaft_deep_enough and _nest_builder and _nest_builder.has_method("score_blueprint_lead"):
 			score += float(_nest_builder.call("score_blueprint_lead", v))
 		if score > best_score:
@@ -184,15 +183,15 @@ func choose_deposit_position(entrance: Vector3i) -> Vector3i:
 	## the same high-pheromone columns (previous max-pheromone scoring produced 1×1 “skyscrapers”).
 	var best_sy: int = 999999
 	var best_pos: Vector3i = Vector3i(entrance.x + 3, entrance.y, entrance.z)
-	var radius: int = _Const.SPOIL_DEPOSIT_RADIUS
+	var radius: int = SimParams.SPOIL_DEPOSIT_RADIUS
 	for _i in range(48):
-		var off: Vector2i = _SpoilDeposit.random_offset_disk(_rng, radius, _Const.SPOIL_DEPOSIT_INNER_CLEAR)
+		var off: Vector2i = _SpoilDeposit.random_offset_disk(_rng, radius, SimParams.SPOIL_DEPOSIT_INNER_CLEAR)
 		var wx: int = entrance.x + off.x
 		var wz: int = entrance.z + off.y
 		var sy: int = _SurfaceQuery.surface_block_y(_world, wx, wz)
 		if sy < 0:
 			continue
-		if sy - _TerrainGen.SURFACE_BASE > _Const.MAX_SPOIL_HEIGHT:
+		if sy - _TerrainGen.SURFACE_BASE > SimParams.MAX_SPOIL_HEIGHT:
 			continue
 		var score: float = float(sy) + _rng.randf_range(0.0, 0.15)
 		if score < float(best_sy):
@@ -206,7 +205,7 @@ func get_path_to_surface(from: Vector3i) -> Array[Vector3i]:
 	var current: Vector3i = from
 	var surface_y: int = _TerrainGen.SURFACE_BASE + 5
 	var visited: Dictionary = {}
-	for _step in range(_Const.PATH_TO_SURFACE_MAX_STEPS):
+	for _step in range(SimParams.PATH_TO_SURFACE_MAX_STEPS):
 		if current.y >= surface_y:
 			break
 		visited[current] = true
@@ -216,7 +215,7 @@ func get_path_to_surface(from: Vector3i) -> Array[Vector3i]:
 			var n: Vector3i = current + offset
 			if visited.has(n):
 				continue
-			if _world.get_block(n.x, n.y, n.z) == _Const.BLOCK_AIR:
+			if _world.get_block(n.x, n.y, n.z) == SimParams.BLOCK_AIR:
 				if n.y > best_y or (n.y == best_y and _rng.randf() < 0.3):
 					best_y = n.y
 					best = n
@@ -228,10 +227,10 @@ func get_path_to_surface(from: Vector3i) -> Array[Vector3i]:
 
 
 func dig_duration_for(block_type: int) -> int:
-	if block_type == _Const.BLOCK_PACKED_SAND:
-		return _Const.DIG_ACT_DURATION_TICKS * _Const.PACKED_SAND_DIG_MULTIPLIER
-	elif block_type == _Const.BLOCK_SAND:
-		return _Const.DIG_ACT_DURATION_TICKS
+	if block_type == SimParams.BLOCK_PACKED_SAND:
+		return SimParams.DIG_ACT_DURATION_TICKS * SimParams.PACKED_SAND_DIG_MULTIPLIER
+	elif block_type == SimParams.BLOCK_SAND:
+		return SimParams.DIG_ACT_DURATION_TICKS
 	return 0
 
 
@@ -246,11 +245,11 @@ func _nest_substrate_hash(v: Vector3i) -> int:
 ## Apply spatial **substrate hardness** on top of block type (loose vs packed).
 func dig_duration_at(v: Vector3i, block_type: int) -> int:
 	var base: int = dig_duration_for(block_type)
-	if block_type != _Const.BLOCK_SAND and block_type != _Const.BLOCK_PACKED_SAND:
+	if block_type != SimParams.BLOCK_SAND and block_type != SimParams.BLOCK_PACKED_SAND:
 		return base
 	var h: int = _nest_substrate_hash(v)
 	var t: float = float(h % 1000) / 1000.0
-	var m: float = lerpf(_Const.NEST_SUBSTRATE_HARDNESS_MIN, _Const.NEST_SUBSTRATE_HARDNESS_MAX, t)
+	var m: float = lerpf(SimParams.NEST_SUBSTRATE_HARDNESS_MIN, SimParams.NEST_SUBSTRATE_HARDNESS_MAX, t)
 	return maxi(1, int(round(float(base) * m)))
 
 
@@ -263,7 +262,7 @@ func _rebuild_dig_front() -> void:
 	visited[queen_chamber] = true
 	while not queue.is_empty():
 		var pos: Vector3i = queue.pop_front()
-		if _world.get_block(pos.x, pos.y, pos.z) != _Const.BLOCK_AIR:
+		if _world.get_block(pos.x, pos.y, pos.z) != SimParams.BLOCK_AIR:
 			continue
 		_nest_air_volume += 1
 		for offset in [Vector3i(1,0,0), Vector3i(-1,0,0), Vector3i(0,1,0), Vector3i(0,-1,0), Vector3i(0,0,1), Vector3i(0,0,-1)]:
@@ -272,9 +271,9 @@ func _rebuild_dig_front() -> void:
 				continue
 			visited[n] = true
 			var bt: int = _world.get_block(n.x, n.y, n.z)
-			if bt == _Const.BLOCK_AIR:
+			if bt == SimParams.BLOCK_AIR:
 				queue.append(n)
-			elif (bt == _Const.BLOCK_SAND or bt == _Const.BLOCK_PACKED_SAND) and not _dig_front_set.has(n):
-				if n.y >= (_TerrainGen.SURFACE_BASE - _Const.MAX_DIG_DEPTH):
+			elif (bt == SimParams.BLOCK_SAND or bt == SimParams.BLOCK_PACKED_SAND) and not _dig_front_set.has(n):
+				if n.y >= (_TerrainGen.SURFACE_BASE - SimParams.MAX_DIG_DEPTH):
 					_dig_front.append(n)
 					_dig_front_set[n] = true

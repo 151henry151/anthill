@@ -1,7 +1,6 @@
 extends RefCounted
 class_name SandStep
 
-const _Const := preload("res://scripts/constants.gd")
 const _Chunk := preload("res://scripts/world/chunk_data.gd")
 const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
 
@@ -29,17 +28,17 @@ func step(world: Node) -> void:
 		var x: int = xz.x
 		var z: int = xz.y
 		for y in range(y_lo, y_hi):
-			if world.get_block(x, y, z) == _Const.BLOCK_SAND:
-				if world.get_block(x, y - 1, z) == _Const.BLOCK_AIR:
+			if world.get_block(x, y, z) == SimParams.BLOCK_SAND:
+				if world.get_block(x, y - 1, z) == SimParams.BLOCK_AIR:
 					moves.append(Vector3i(x, y, z))
 	moves.shuffle()
 	for p in moves:
-		if world.get_block(p.x, p.y, p.z) != _Const.BLOCK_SAND:
+		if world.get_block(p.x, p.y, p.z) != SimParams.BLOCK_SAND:
 			continue
-		if world.get_block(p.x, p.y - 1, p.z) != _Const.BLOCK_AIR:
+		if world.get_block(p.x, p.y - 1, p.z) != SimParams.BLOCK_AIR:
 			continue
-		world.set_block(p.x, p.y, p.z, _Const.BLOCK_AIR)
-		world.set_block(p.x, p.y - 1, p.z, _Const.BLOCK_SAND)
+		world.set_block(p.x, p.y, p.z, SimParams.BLOCK_AIR)
+		world.set_block(p.x, p.y - 1, p.z, SimParams.BLOCK_SAND)
 	for xz in cols_spill:
 		_try_lateral_spill_column(world, xz.x, xz.y, y_lo, y_hi)
 
@@ -50,7 +49,7 @@ func _try_lateral_spill_column(world: Node, wx: int, wz: int, y_lo: int, y_hi: i
 		return
 	var y_top: int = -1
 	for y in range(y_hi - 1, y_lo - 1, -1):
-		if world.get_block(wx, y, wz) == _Const.BLOCK_SAND and world.get_block(wx, y + 1, wz) == _Const.BLOCK_AIR:
+		if world.get_block(wx, y, wz) == SimParams.BLOCK_SAND and world.get_block(wx, y + 1, wz) == SimParams.BLOCK_AIR:
 			y_top = y
 			break
 	if y_top < 0:
@@ -58,11 +57,11 @@ func _try_lateral_spill_column(world: Node, wx: int, wz: int, y_lo: int, y_hi: i
 	var h: int = 0
 	var yy: int = y_top
 	while yy >= y_lo:
-		if world.get_block(wx, yy, wz) != _Const.BLOCK_SAND:
+		if world.get_block(wx, yy, wz) != SimParams.BLOCK_SAND:
 			break
 		h += 1
 		yy -= 1
-	if h <= _Const.SAND_LATERAL_SPILL_STACK_LIMIT:
+	if h <= SimParams.SAND_LATERAL_SPILL_STACK_LIMIT:
 		return
 	var cx: Variant = world.get("chunks_x")
 	var cz: Variant = world.get("chunks_z")
@@ -91,7 +90,7 @@ func _try_lateral_spill_column(world: Node, wx: int, wz: int, y_lo: int, y_hi: i
 		var py: int = sy + 1
 		if py > y_top:
 			continue
-		if world.get_block(nx, py, nz) != _Const.BLOCK_AIR:
+		if world.get_block(nx, py, nz) != SimParams.BLOCK_AIR:
 			continue
 		if py < best_py:
 			best_py = py
@@ -100,8 +99,8 @@ func _try_lateral_spill_column(world: Node, wx: int, wz: int, y_lo: int, y_hi: i
 			found = true
 	if not found:
 		return
-	world.set_block(wx, y_top, wz, _Const.BLOCK_AIR)
-	world.set_block(best_nx, best_py, best_nz, _Const.BLOCK_SAND)
+	world.set_block(wx, y_top, wz, SimParams.BLOCK_AIR)
+	world.set_block(best_nx, best_py, best_nz, SimParams.BLOCK_SAND)
 
 
 func _nest_spill_dest_forbidden(world: Node, nx: int, nz: int) -> bool:
@@ -109,7 +108,7 @@ func _nest_spill_dest_forbidden(world: Node, nx: int, nz: int) -> bool:
 	if v == null:
 		return false
 	var c: Vector2i = v as Vector2i
-	var r: int = _Const.NEST_SPILL_LATERAL_EXCLUDE_RADIUS
+	var r: int = SimParams.NEST_SPILL_LATERAL_EXCLUDE_RADIUS
 	var dx: int = nx - c.x
 	var dz: int = nz - c.y
 	return dx * dx + dz * dz <= r * r

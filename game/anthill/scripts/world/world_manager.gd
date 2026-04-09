@@ -1,7 +1,6 @@
 extends Node
 class_name WorldManager
 
-const _Const := preload("res://scripts/constants.gd")
 const _Chunk := preload("res://scripts/world/chunk_data.gd")
 const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
 
@@ -55,16 +54,16 @@ func _init_bounds() -> void:
 
 func get_block(wx: int, wy: int, wz: int) -> int:
 	if wy < 0:
-		return _Const.BLOCK_STONE
+		return SimParams.BLOCK_STONE
 	if wy >= _Chunk.SIZE_Y:
-		return _Const.BLOCK_AIR
+		return SimParams.BLOCK_AIR
 	if wx < 0 or wz < 0 or wx >= _max_wx or wz >= _max_wz:
-		return _Const.BLOCK_AIR
+		return SimParams.BLOCK_AIR
 	var cx: int = wx >> _SHIFT_X
 	var cz: int = wz >> _SHIFT_Z
 	var ch = _chunks.get(Vector2i(cx, cz))
 	if ch == null:
-		return _Const.BLOCK_AIR
+		return SimParams.BLOCK_AIR
 	return ch.data[(wx & _MASK_X) + wy * _Chunk.SIZE_X + (wz & _MASK_Z) * _Chunk.SIZE_X * _Chunk.SIZE_Y]
 
 
@@ -86,7 +85,7 @@ func set_block(wx: int, wy: int, wz: int, id: int) -> void:
 	_mesh_dirty = true
 	_dirty_chunks[ck] = true
 	_surface_cache.erase(Vector2i(wx, wz))
-	if id == _Const.BLOCK_SAND or id == _Const.BLOCK_AIR:
+	if id == SimParams.BLOCK_SAND or id == SimParams.BLOCK_AIR:
 		sand_idle = false
 		_mark_sand_column_wx_wz(wx, wz)
 
@@ -133,11 +132,11 @@ func get_surface_y(wx: int, wz: int) -> int:
 	var ceiling: int = mini(_Chunk.SIZE_Y - 2, _TerrainGen.SURFACE_BASE + 28)
 	var floor_y: int = maxi(1, _TerrainGen.SURFACE_BASE - 80)
 	for y in range(ceiling, floor_y - 1, -1):
-		if get_block(wx, y, wz) != _Const.BLOCK_AIR and get_block(wx, y + 1, wz) == _Const.BLOCK_AIR:
+		if get_block(wx, y, wz) != SimParams.BLOCK_AIR and get_block(wx, y + 1, wz) == SimParams.BLOCK_AIR:
 			_surface_cache[key] = y
 			return y
 	for y in range(floor_y - 1, -1, -1):
-		if get_block(wx, y, wz) != _Const.BLOCK_AIR and get_block(wx, y + 1, wz) == _Const.BLOCK_AIR:
+		if get_block(wx, y, wz) != SimParams.BLOCK_AIR and get_block(wx, y + 1, wz) == SimParams.BLOCK_AIR:
 			_surface_cache[key] = y
 			return y
 	_surface_cache[key] = -1

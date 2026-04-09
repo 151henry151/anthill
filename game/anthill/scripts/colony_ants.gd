@@ -1,13 +1,12 @@
 extends Node3D
 ## Worker ants with task-based state machine. Spawns new workers from brood eclosion.
 
-const _Const := preload("res://scripts/constants.gd")
 const _Chunk := preload("res://scripts/world/chunk_data.gd")
 const _AntModelScript = preload("res://scripts/colony_ant_model.gd")
 const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
 const _SurfaceQuery := preload("res://scripts/world/surface_query.gd")
 
-@export var move_interval: float = _Const.WORKER_MOVE_INTERVAL
+@export var move_interval: float = SimParams.WORKER_MOVE_INTERVAL
 const _ANT_LOCAL_Y_MIN: float = -0.28
 
 @onready var world: Node = $"../WorldManager"
@@ -51,7 +50,7 @@ func _ready() -> void:
 
 func spawn_worker(pos: Vector3, is_nanitic: bool) -> void:
 	var ant: Node3D = _ant_builder.build_ant()
-	var sc: float = _Const.NANITIC_VISUAL_SCALE if is_nanitic else _Const.WORKER_VISUAL_SCALE
+	var sc: float = SimParams.NANITIC_VISUAL_SCALE if is_nanitic else SimParams.WORKER_VISUAL_SCALE
 	ant.scale = Vector3.ONE * sc
 	ant.rotation_degrees.y = _rng.randf_range(0.0, 360.0)
 	add_child(ant)
@@ -109,7 +108,7 @@ func spawn_worker(pos: Vector3, is_nanitic: bool) -> void:
 		"memory_quality": 0.0,
 		"last_food_quality": 1.0,
 		"is_experienced_forager": false,
-		"move_interval_eff": _Const.WORKER_MOVE_INTERVAL,
+		"move_interval_eff": SimParams.WORKER_MOVE_INTERVAL,
 	})
 	_next_worker_sim_id += 1
 
@@ -117,11 +116,11 @@ func spawn_worker(pos: Vector3, is_nanitic: bool) -> void:
 func _is_substrate_home_range_marked(wx: int, wz: int) -> bool:
 	if footprint_field == null:
 		return false
-	return footprint_field.sample(wx, wz) >= _Const.HOME_RANGE_FOOTPRINT_THRESHOLD
+	return footprint_field.sample(wx, wz) >= SimParams.HOME_RANGE_FOOTPRINT_THRESHOLD
 
 
 func _refresh_move_interval(a: Dictionary) -> void:
-	var base: float = _Const.WORKER_MOVE_INTERVAL
+	var base: float = SimParams.WORKER_MOVE_INTERVAL
 	var st: int = int(a["state"])
 	if st != 5 and st != 6:
 		a["move_interval_eff"] = base
@@ -132,9 +131,9 @@ func _refresh_move_interval(a: Dictionary) -> void:
 	var exp: bool = bool(a.get("is_experienced_forager", false))
 	var eff: float = base
 	if marked:
-		eff *= _Const.FORAGING_MARKED_INTERVAL_MULT
+		eff *= SimParams.FORAGING_MARKED_INTERVAL_MULT
 	if not exp and not marked:
-		eff *= _rng.randf_range(_Const.NAIVE_ZIGZAG_INTERVAL_MIN, _Const.NAIVE_ZIGZAG_INTERVAL_MAX)
+		eff *= _rng.randf_range(SimParams.NAIVE_ZIGZAG_INTERVAL_MIN, SimParams.NAIVE_ZIGZAG_INTERVAL_MAX)
 	a["move_interval_eff"] = eff
 
 
@@ -154,7 +153,7 @@ func set_sim_substeps_per_frame(n: int) -> void:
 
 func _physics_process(delta: float) -> void:
 	var t0 := Time.get_ticks_usec()
-	var sim_steps: int = maxi(1, mini(int(round(Engine.time_scale)), _Const.FAST_FORWARD_SIM_STEPS_CAP))
+	var sim_steps: int = maxi(1, mini(int(round(Engine.time_scale)), SimParams.FAST_FORWARD_SIM_STEPS_CAP))
 	if _sim_substeps_frame > 0:
 		sim_steps = _sim_substeps_frame
 	_task_assign_timer += sim_steps
@@ -180,7 +179,7 @@ func _assign_tasks() -> void:
 		for a in _ants:
 			if int(a["state"]) != 1:
 				continue
-			if _dist_to(a, nest_entrance) >= _Const.WORKER_ENTRANCE_CLEAR_ENGAGE_DIST:
+			if _dist_to(a, nest_entrance) >= SimParams.WORKER_ENTRANCE_CLEAR_ENGAGE_DIST:
 				continue
 			a["entrance_clear"] = true
 			a["post_entrance_state"] = 1
@@ -195,29 +194,29 @@ func _assign_tasks() -> void:
 	var need_diggers: bool = false
 	if nest_manager:
 		var vol: int = nest_manager.get_nest_air_volume()
-		var target: int = _ants.size() * _Const.VOLUME_PER_WORKER
-		need_diggers = vol < target and _digger_count < _Const.MAX_NEST_BUILDERS
+		var target: int = _ants.size() * SimParams.VOLUME_PER_WORKER
+		need_diggers = vol < target and _digger_count < SimParams.MAX_NEST_BUILDERS
 	var young_idle: Array[Dictionary] = []
 	var old_idle: Array[Dictionary] = []
 	for a in _ants:
 		var st: int = int(a["state"])
 		var age: int = int(a["age_ticks"])
 		if st == 0 or st == 1:
-			if age < _Const.YOUNG_WORKER_AGE_THRESHOLD:
+			if age < SimParams.YOUNG_WORKER_AGE_THRESHOLD:
 				young_idle.append(a)
 			else:
 				old_idle.append(a)
-		elif st == 2 and age >= _Const.YOUNG_WORKER_AGE_THRESHOLD:
+		elif st == 2 and age >= SimParams.YOUNG_WORKER_AGE_THRESHOLD:
 			# Brood-care workers past the “young” window must be eligible for foraging / dig / rest.
 			old_idle.append(a)
 	for a in young_idle:
 		a["state"] = 2  # BROOD_CARE
 	var sugar_level: float = food_store.sugar if food_store else 0.0
 	var protein_level: float = food_store.protein if food_store else 0.0
-	var sugar_deficit: float = maxf(0.0, _Const.FOOD_STORE_TARGET_SUGAR - sugar_level)
-	var protein_deficit: float = maxf(0.0, _Const.FOOD_STORE_TARGET_PROTEIN - protein_level)
-	var food_urgency: float = clampf((sugar_deficit + protein_deficit) / _Const.FOOD_STORE_TARGET_SUGAR, 0.0, 1.0)
-	var forage_prob: float = lerpf(_Const.MIN_FORAGER_FRACTION, 0.65, food_urgency)
+	var sugar_deficit: float = maxf(0.0, SimParams.FOOD_STORE_TARGET_SUGAR - sugar_level)
+	var protein_deficit: float = maxf(0.0, SimParams.FOOD_STORE_TARGET_PROTEIN - protein_level)
+	var food_urgency: float = clampf((sugar_deficit + protein_deficit) / SimParams.FOOD_STORE_TARGET_SUGAR, 0.0, 1.0)
+	var forage_prob: float = lerpf(SimParams.MIN_FORAGER_FRACTION, 0.65, food_urgency)
 	var dig_prob: float = 0.0
 	if need_diggers and food_urgency < 0.5:
 		dig_prob = 0.35
@@ -225,7 +224,7 @@ func _assign_tasks() -> void:
 		dig_prob = 0.15
 	for a in old_idle:
 		var roll: float = _rng.randf()
-		if roll < dig_prob and _digger_count < _Const.MAX_NEST_BUILDERS:
+		if roll < dig_prob and _digger_count < SimParams.MAX_NEST_BUILDERS:
 			a["state"] = 11  # DIGGING_APPROACH
 			_digger_count += 1
 		elif roll < dig_prob + forage_prob:
@@ -282,7 +281,7 @@ func _step_resting(_a: Dictionary) -> void:
 
 
 func _step_brood_care(a: Dictionary) -> void:
-	if nest_manager and _entrance_needs_clearing() and _dist_to(a, nest_entrance) < _Const.WORKER_ENTRANCE_CLEAR_ENGAGE_DIST:
+	if nest_manager and _entrance_needs_clearing() and _dist_to(a, nest_entrance) < SimParams.WORKER_ENTRANCE_CLEAR_ENGAGE_DIST:
 		a["entrance_clear"] = true
 		a["post_entrance_state"] = 2
 		a["dig_target"] = Vector3i.ZERO
@@ -309,7 +308,7 @@ func _step_foraging_scout(a: Dictionary) -> void:
 	if _detect_trail(a):
 		a["state"] = 6
 		return
-	if _rng.randf() < _Const.SCOUT_SEARCH_STOP_PROBABILITY:
+	if _rng.randf() < SimParams.SCOUT_SEARCH_STOP_PROBABILITY:
 		return
 	_moore_exploration_step(a)
 	if _detect_trail(a):
@@ -339,8 +338,8 @@ func _moore_exploration_step(a: Dictionary) -> void:
 				continue
 			var t_nb: float = pheromone_field.sample(nwx, nwz) if pheromone_field else 0.0
 			var fp_nb: float = footprint_field.sample(nwx, nwz)
-			var w: float = _Const.FOOTPRINT_SCOUT_BASE_WEIGHT
-			w += _Const.FOOTPRINT_SCOUT_REPULSION_MULT * _Const.FOOTPRINT_REPULSION_WEIGHT * maxf(0.0, fp_here - fp_nb)
+			var w: float = SimParams.FOOTPRINT_SCOUT_BASE_WEIGHT
+			w += SimParams.FOOTPRINT_SCOUT_REPULSION_MULT * SimParams.FOOTPRINT_REPULSION_WEIGHT * maxf(0.0, fp_here - fp_nb)
 			w += maxf(0.0, t_nb - t_here)
 			weights.append(w)
 			dirs.append(Vector2i(ox, oz))
@@ -382,7 +381,7 @@ func _step_foraging_recruit(a: Dictionary) -> void:
 	var wx: int = int(a["wx"])
 	var wz: int = int(a["wz"])
 	var here: float = pheromone_field.sample(wx, wz)
-	if here < _Const.PHEROMONE_RECRUIT_THRESHOLD * 0.3:
+	if here < SimParams.PHEROMONE_RECRUIT_THRESHOLD * 0.3:
 		a["state"] = 5
 		return
 	_step_tropotaxis_moore(a)
@@ -399,7 +398,7 @@ func _step_tropotaxis_moore(a: Dictionary) -> void:
 	var fp_here: float = footprint_field.sample(wx, wz) if footprint_field else 0.0
 	var weights: Array[float] = []
 	var dirs: Array[Vector2i] = []
-	var eps: float = _Const.TROPOTAXIS_RATIO_EPS
+	var eps: float = SimParams.TROPOTAXIS_RATIO_EPS
 	for ox in range(-1, 2):
 		for oz in range(-1, 2):
 			if ox == 0 and oz == 0:
@@ -410,12 +409,12 @@ func _step_tropotaxis_moore(a: Dictionary) -> void:
 				continue
 			var c_nb: float = pheromone_field.sample(nwx, nwz)
 			var fp_nb: float = footprint_field.sample(nwx, nwz) if footprint_field else 0.0
-			var hc_sum: float = _Const.TROPOTAXIS_HC_DENOM_SCALE * (fp_nb + fp_here * 0.5)
-			var crowd_n: float = _Const.TROPOTAXIS_CROWD_PER_ANT * float(_count_workers_near_patch(nwx, nwz, 1))
+			var hc_sum: float = SimParams.TROPOTAXIS_HC_DENOM_SCALE * (fp_nb + fp_here * 0.5)
+			var crowd_n: float = SimParams.TROPOTAXIS_CROWD_PER_ANT * float(_count_workers_near_patch(nwx, nwz, 1))
 			var denom: float = maxf(eps, hc_sum + crowd_n + eps)
 			var ratio_core: float = (c_nb + eps) / denom
-			var w: float = _Const.PHEROMONE_TROPOTAXIS_FLOOR + _Const.TROPOTAXIS_RATIO_GAIN * ratio_core
-			if bool(a.get("knows_food_site", false)) and here < _Const.FORAGING_MEMORY_TRAIL_WEAK:
+			var w: float = SimParams.PHEROMONE_TROPOTAXIS_FLOOR + SimParams.TROPOTAXIS_RATIO_GAIN * ratio_core
+			if bool(a.get("knows_food_site", false)) and here < SimParams.FORAGING_MEMORY_TRAIL_WEAK:
 				var mx: int = int(a.get("memory_wx", 0))
 				var mz: int = int(a.get("memory_wz", 0))
 				if mx != 0 or mz != 0:
@@ -426,7 +425,7 @@ func _step_tropotaxis_moore(a: Dictionary) -> void:
 						mem_align += 0.55
 					if tdz != 0 and oz == tdz:
 						mem_align += 0.55
-					w += _Const.FORAGING_MEMORY_BIAS_WEIGHT * float(a.get("memory_quality", 0.5)) * mem_align
+					w += SimParams.FORAGING_MEMORY_BIAS_WEIGHT * float(a.get("memory_quality", 0.5)) * mem_align
 			weights.append(w)
 			dirs.append(Vector2i(ox, oz))
 	if dirs.is_empty():
@@ -449,7 +448,7 @@ func _step_tropotaxis_moore(a: Dictionary) -> void:
 
 func _step_returning(a: Dictionary) -> void:
 	var d: float = _dist_to(a, nest_entrance)
-	if nest_manager and _entrance_needs_clearing() and d < _Const.WORKER_ENTRANCE_CLEAR_ENGAGE_DIST:
+	if nest_manager and _entrance_needs_clearing() and d < SimParams.WORKER_ENTRANCE_CLEAR_ENGAGE_DIST:
 		a["entrance_clear"] = true
 		a["post_entrance_state"] = 7
 		a["dig_target"] = Vector3i.ZERO
@@ -476,15 +475,15 @@ func _step_returning(a: Dictionary) -> void:
 		var d_to_food: float = sqrt(float((wx - fsx) * (wx - fsx) + (wz - fsz) * (wz - fsz)))
 		var q: float = float(a.get("last_food_quality", 1.0))
 		var base_amt: float = (
-			_Const.PHEROMONE_BASE_DEPOSIT
+			SimParams.PHEROMONE_BASE_DEPOSIT
 			* q
 			* _recruit_trail_food_proximity_multiplier(d_to_food)
 		)
 		_maybe_deposit_recruitment_spot(a, wx, wz, base_amt)
 	d = _dist_to(a, nest_entrance)
-	if d < _Const.WORKER_NEST_ARRIVAL_MAX_DIST:
+	if d < SimParams.WORKER_NEST_ARRIVAL_MAX_DIST:
 		if food_store and bool(a.get("carrying_food", false)):
-			food_store.add_food(String(a["food_type"]), _Const.FOOD_CARRY_AMOUNT)
+			food_store.add_food(String(a["food_type"]), SimParams.FOOD_CARRY_AMOUNT)
 			a["is_experienced_forager"] = true
 		a["carrying_food"] = false
 		a["food_type"] = ""
@@ -542,7 +541,7 @@ func _step_digging_approach(a: Dictionary) -> void:
 func _step_digging_act(a: Dictionary) -> void:
 	var target: Vector3i = a["dig_target"] as Vector3i
 	var bt: int = world.get_block(target.x, target.y, target.z)
-	if bt == _Const.BLOCK_AIR:
+	if bt == SimParams.BLOCK_AIR:
 		nest_manager.release_voxel(target)
 		a["dig_target"] = Vector3i.ZERO
 		a["state"] = 11
@@ -550,7 +549,7 @@ func _step_digging_act(a: Dictionary) -> void:
 	var duration: int = nest_manager.dig_duration_at(target, bt)
 	a["dig_ticks"] = int(a["dig_ticks"]) + 1
 	if int(a["dig_ticks"]) >= duration:
-		world.set_block(target.x, target.y, target.z, _Const.BLOCK_AIR)
+		world.set_block(target.x, target.y, target.z, SimParams.BLOCK_AIR)
 		nest_manager.on_voxel_removed(target)
 		nest_manager.release_voxel(target)
 		a["dig_target"] = Vector3i.ZERO
@@ -577,7 +576,7 @@ func _step_carrying_to_surface(a: Dictionary) -> void:
 	a["wx"] = next_pos.x
 	a["wz"] = next_pos.z
 	var ant: Node3D = a["node"]
-	var sc: float = float(a.get("scale", _Const.WORKER_VISUAL_SCALE))
+	var sc: float = float(a.get("scale", SimParams.WORKER_VISUAL_SCALE))
 	ant.position = Vector3(float(next_pos.x) + 0.5, float(next_pos.y) + 0.5, float(next_pos.z) + 0.5)
 	a["path_idx"] = idx + 1
 	if idx + 1 >= path.size():
@@ -589,9 +588,9 @@ func _step_depositing(a: Dictionary) -> void:
 		a["state"] = 1
 		return
 	var deposit_pos: Vector3i = nest_manager.choose_deposit_position(nest_entrance)
-	world.set_block(deposit_pos.x, deposit_pos.y, deposit_pos.z, _Const.BLOCK_SAND)
+	world.set_block(deposit_pos.x, deposit_pos.y, deposit_pos.z, SimParams.BLOCK_SAND)
 	if building_pheromone:
-		building_pheromone.add_build_pheromone(deposit_pos, _Const.BUILD_PHEROMONE_DEPOSIT_AMOUNT)
+		building_pheromone.add_build_pheromone(deposit_pos, SimParams.BUILD_PHEROMONE_DEPOSIT_AMOUNT)
 	nest_manager.on_voxel_placed(deposit_pos)
 	a["carrying_voxel"] = false
 	var cv: MeshInstance3D = a.get("carry_visual") as MeshInstance3D
@@ -600,7 +599,7 @@ func _step_depositing(a: Dictionary) -> void:
 	var sy: int = _surface_y(int(a["wx"]), int(a["wz"]))
 	if sy >= 0:
 		var ant: Node3D = a["node"]
-		var sc: float = float(a.get("scale", _Const.WORKER_VISUAL_SCALE))
+		var sc: float = float(a.get("scale", SimParams.WORKER_VISUAL_SCALE))
 		ant.position = _ant_pos(int(a["wx"]), sy, int(a["wz"]), sc)
 	a["state"] = 11
 
@@ -610,10 +609,10 @@ func _detect_trail(a: Dictionary) -> bool:
 		return false
 	var wx: int = int(a["wx"])
 	var wz: int = int(a["wz"])
-	var r: int = _Const.PHEROMONE_SENSE_RADIUS
+	var r: int = SimParams.PHEROMONE_SENSE_RADIUS
 	for dx in range(-r, r + 1, 2):
 		for dz in range(-r, r + 1, 2):
-			if pheromone_field.sample(wx + dx, wz + dz) >= _Const.PHEROMONE_RECRUIT_THRESHOLD:
+			if pheromone_field.sample(wx + dx, wz + dz) >= SimParams.PHEROMONE_RECRUIT_THRESHOLD:
 				return true
 	return false
 
@@ -648,10 +647,10 @@ func _check_food_nearby(a: Dictionary) -> void:
 		var dx: int = absi(fs.wx - wx)
 		var dz: int = absi(fs.wz - wz)
 		if dx <= 2 and dz <= 2:
-			var crowd: int = _count_workers_near_patch(fs.wx, fs.wz, _Const.FEEDER_CROWD_RADIUS)
-			if crowd >= _Const.FEEDER_CROWD_MAX_WORKERS and _rng.randf() > _Const.FEEDER_CROWD_OVERFLOW_ATTEMPT_PROB:
+			var crowd: int = _count_workers_near_patch(fs.wx, fs.wz, SimParams.FEEDER_CROWD_RADIUS)
+			if crowd >= SimParams.FEEDER_CROWD_MAX_WORKERS and _rng.randf() > SimParams.FEEDER_CROWD_OVERFLOW_ATTEMPT_PROB:
 				continue
-			var taken: float = fs.collect(_Const.FOOD_CARRY_AMOUNT)
+			var taken: float = fs.collect(SimParams.FOOD_CARRY_AMOUNT)
 			if taken > 0.0:
 				a["carrying_food"] = true
 				a["food_type"] = fs.food_type
@@ -671,9 +670,9 @@ func _check_food_nearby(a: Dictionary) -> void:
 				a["trail_spot_dist_accum"] = 0.0
 				a["trail_next_spot_vox"] = _random_trail_spot_spacing_voxels()
 				# **Recruitment** burst at source: Bernoulli × saturation (no spot spacing — first mark at resource).
-				if pheromone_field and _rng.randf() < _Const.TRAIL_SATIATED_DEPOSIT_PROBABILITY:
+				if pheromone_field and _rng.randf() < SimParams.TRAIL_SATIATED_DEPOSIT_PROBABILITY:
 					var burst: float = (
-						_Const.PHEROMONE_DEPOSIT_AMOUNT * 2.0 * float(a.get("last_food_quality", 1.0)) * _trail_saturation_multiplier(wx, wz)
+						SimParams.PHEROMONE_DEPOSIT_AMOUNT * 2.0 * float(a.get("last_food_quality", 1.0)) * _trail_saturation_multiplier(wx, wz)
 					)
 					pheromone_field.deposit(wx, wz, burst)
 			return
@@ -725,7 +724,7 @@ func _get_entrance_dig_target() -> Vector3i:
 		return Vector3i.ZERO
 	var best_y: int = -999999
 	var best: Vector3i = Vector3i.ZERO
-	var hw: int = _Const.FOUNDING_SHAFT_WIDTH / 2
+	var hw: int = SimParams.FOUNDING_SHAFT_WIDTH / 2
 	var y_floor: int = maxi(1, nest_chamber.y - 24)
 	for dx in range(-hw, hw + 1):
 		for dz in range(-hw, hw + 1):
@@ -736,9 +735,9 @@ func _get_entrance_dig_target() -> Vector3i:
 				continue
 			for y in range(sy, y_floor - 1, -1):
 				var bt: int = world.get_block(wx, y, wz)
-				if bt == _Const.BLOCK_AIR:
+				if bt == SimParams.BLOCK_AIR:
 					continue
-				if bt == _Const.BLOCK_SAND or bt == _Const.BLOCK_PACKED_SAND:
+				if bt == SimParams.BLOCK_SAND or bt == SimParams.BLOCK_PACKED_SAND:
 					if y > best_y:
 						best_y = y
 						best = Vector3i(wx, y, wz)
@@ -763,7 +762,7 @@ func _step_random_walk(a: Dictionary) -> void:
 			a,
 			wx_rw,
 			wz_rw,
-			_Const.PHEROMONE_DEPOSIT_AMOUNT * 0.5 * float(a.get("last_food_quality", 1.0)) * _recruit_trail_food_proximity_multiplier(d_f_rw)
+			SimParams.PHEROMONE_DEPOSIT_AMOUNT * 0.5 * float(a.get("last_food_quality", 1.0)) * _recruit_trail_food_proximity_multiplier(d_f_rw)
 		)
 
 
@@ -780,19 +779,19 @@ func _apply_step_to(a: Dictionary, nwx: int, nwz: int, face_dx: int, face_dz: in
 	a["wx"] = nwx
 	a["wz"] = nwz
 	var ant: Node3D = a["node"]
-	var sc: float = float(a.get("scale", _Const.WORKER_VISUAL_SCALE))
+	var sc: float = float(a.get("scale", SimParams.WORKER_VISUAL_SCALE))
 	ant.position = _ant_pos(nwx, wy, nwz, sc)
 	if face_dx != 0 or face_dz != 0:
 		ant.rotation.y = atan2(float(face_dx), float(face_dz))
 	if footprint_field and footprint_field.has_method("deposit"):
-		footprint_field.deposit(nwx, nwz, _Const.FOOTPRINT_DEPOSIT_PER_STEP)
+		footprint_field.deposit(nwx, nwz, SimParams.FOOTPRINT_DEPOSIT_PER_STEP)
 
 
 ## Per-deposit multiplier for ant-laid recruitment: high when the carrier is near the remembered patch (d→0), exponential falloff in mm; does not add pheromone without a deposit call.
 func _recruit_trail_food_proximity_multiplier(d_to_food: float) -> float:
-	var d_mm: float = d_to_food * _Const.MM_PER_UNIT
-	var decay: float = maxf(_Const.RECRUIT_TRAIL_BEACON_DECAY_MM, 0.001)
-	return _Const.RECRUIT_TRAIL_BEACON_FLOOR + _Const.RECRUIT_TRAIL_BEACON_EXTRA_MULT * exp(-d_mm / decay)
+	var d_mm: float = d_to_food * SimParams.MM_PER_UNIT
+	var decay: float = maxf(SimParams.RECRUIT_TRAIL_BEACON_DECAY_MM, 0.001)
+	return SimParams.RECRUIT_TRAIL_BEACON_FLOOR + SimParams.RECRUIT_TRAIL_BEACON_EXTRA_MULT * exp(-d_mm / decay)
 
 
 func _recruit_trail_food_proximity_multiplier_for_ant(a: Dictionary) -> float:
@@ -807,8 +806,8 @@ func _recruit_trail_food_proximity_multiplier_for_ant(a: Dictionary) -> float:
 
 
 func _random_trail_spot_spacing_voxels() -> int:
-	var vmin: float = _Const.TRAIL_SPOT_MIN_MM / _Const.MM_PER_UNIT
-	var vmax: float = _Const.TRAIL_SPOT_MAX_MM / _Const.MM_PER_UNIT
+	var vmin: float = SimParams.TRAIL_SPOT_MIN_MM / SimParams.MM_PER_UNIT
+	var vmax: float = SimParams.TRAIL_SPOT_MAX_MM / SimParams.MM_PER_UNIT
 	return maxi(1, int(round(_rng.randf_range(vmin, vmax))))
 
 
@@ -821,7 +820,7 @@ func _maybe_deposit_recruitment_spot(a: Dictionary, wx: int, wz: int, base_unsca
 		return
 	a["trail_spot_dist_accum"] = 0.0
 	a["trail_next_spot_vox"] = _random_trail_spot_spacing_voxels()
-	if _rng.randf() > _Const.TRAIL_SATIATED_DEPOSIT_PROBABILITY:
+	if _rng.randf() > SimParams.TRAIL_SATIATED_DEPOSIT_PROBABILITY:
 		return
 	var deposit_amt: float = base_unscaled * _trail_saturation_multiplier(wx, wz)
 	pheromone_field.deposit(wx, wz, deposit_amt)
@@ -832,11 +831,11 @@ func _trail_saturation_multiplier(wx: int, wz: int) -> float:
 	if pheromone_field == null:
 		return 1.0
 	var c: float = pheromone_field.sample(wx, wz)
-	var s0: float = _Const.TRAIL_SATURATION_START
+	var s0: float = SimParams.TRAIL_SATURATION_START
 	if c <= s0:
 		return 1.0
 	var t: float = clampf((c - s0) / maxf(1e-6, 1.0 - s0), 0.0, 1.0)
-	return lerpf(1.0, _Const.TRAIL_SATURATION_MIN_DEPOSIT_SCALE, t)
+	return lerpf(1.0, SimParams.TRAIL_SATURATION_MIN_DEPOSIT_SCALE, t)
 
 
 func _try_apply_if_walkable(a: Dictionary, nwx: int, nwz: int, face_dx: int, face_dz: int) -> bool:
@@ -981,7 +980,7 @@ func get_ant_inspector_snapshot(a: Dictionary) -> Dictionary:
 		"wx": wx,
 		"wz": wz,
 		"age_ticks": age,
-		"age_ant_days": float(age) / float(_Const.TICKS_PER_ANT_DAY),
+		"age_ant_days": float(age) / float(SimParams.TICKS_PER_ANT_DAY),
 		"is_nanitic": bool(a.get("is_nanitic", false)),
 		"carrying_food": bool(a.get("carrying_food", false)),
 		"food_type": String(a.get("food_type", "")),
@@ -999,7 +998,7 @@ func get_ant_inspector_snapshot(a: Dictionary) -> Dictionary:
 		"memory_quality": float(a.get("memory_quality", 0.0)),
 		"last_food_quality": float(a.get("last_food_quality", 1.0)),
 		"is_experienced_forager": bool(a.get("is_experienced_forager", false)),
-		"move_interval_eff": float(a.get("move_interval_eff", _Const.WORKER_MOVE_INTERVAL)),
+		"move_interval_eff": float(a.get("move_interval_eff", SimParams.WORKER_MOVE_INTERVAL)),
 		"recruit_deposit_proximity_mult": _recruit_trail_food_proximity_multiplier_for_ant(a),
 	}
 

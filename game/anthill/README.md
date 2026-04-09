@@ -13,17 +13,18 @@ This directory is the **Godot 4.2+** project for **Anthill**, a **voxel-resolved
 
 3. **Run Project** (**F5**). The startup sequence is:
    - **`scenes/intro_video.tscn`** — full-screen **Ogg Theora** clip (`assets/intro/intro.ogv`; **any key**, mouse button, gamepad button, or touch to skip);
+   - **`scenes/simulation_settings.tscn`** — scrollable form of all **`SimParams`** (mutable mirrors of **`scripts/constants.gd`**); **Reset to defaults** or edit fields, then **Start simulation**;
    - **`scenes/loading_screen.tscn`** — threaded load of **`scenes/main.tscn`** with a progress bar;
    - **`scenes/main.tscn`** — colony, terrain, and UI layers.
 
-Opening **`main.tscn`** directly in the editor still loads the colony scene for inspection without the intro.
+Opening **`main.tscn`** directly in the editor still loads the colony scene for inspection without the intro or parameter screen.
 
 ## Observation and analysis UI
 
 - **HUD** (top-left): colony stage, **ant-day** clock, queen energy reserve, colony food stores (carbohydrate vs protein mass vs soft targets), worker and brood counts, **simulation tick**, brood stage breakdown, nest entrance coordinates, active food patches, pheromone grid statistics, grain-scale note.
 - **[P]**: Toggle **pheromone field** overlay — **recruitment trail**, **CHC footprint**, **alarm** (Dufour-type), and **nest-construction** channels at distinct false-color heights; a **legend** lists channels.
 - **Right-click** a worker: **inspector** (bottom-right) — behavioral state, age (ticks and ant-days), caste, metabolic placeholders, crop load, heading, distance to nest, local **trail / footprint / alarm** samples. **Escape** clears selection.
-- **Validation export:** When **`VALIDATION_EXPORT_ENABLED`** is set in **`scripts/constants.gd`**, the simulation appends **`user://validation/colony_ticks.csv`** and **`user://validation/workers_sample.csv`** at **`VALIDATION_EXPORT_INTERVAL_TICKS`** for offline analysis (paths are under Godot’s per-user data directory).
+- **Validation export:** When **`VALIDATION_EXPORT_ENABLED`** is set in **`SimParams`** (defaults in **`scripts/constants.gd`**), the simulation appends **`user://validation/colony_ticks.csv`** and **`user://validation/workers_sample.csv`** at **`VALIDATION_EXPORT_INTERVAL_TICKS`** for offline analysis (paths are under Godot’s per-user data directory).
 - **[F]**: Cycles **fast-forward** multipliers (`Engine.time_scale`); simulation **ticks** advance **multiple sub-steps per frame** so ant-days remain consistent (see **`main_controller.gd`**).
 
 ## Layout (selected paths)
@@ -39,7 +40,7 @@ Opening **`main.tscn`** directly in the editor still loads the colony scene for 
 | `scripts/nest_builder.gd` | Blueprint galleries (exposed voxels only); used before organic **`nest_manager`** dig scoring |
 | `scripts/nest_manager.gd` | Dig front, reservations, spoil, **`get_dig_target`** scoring |
 | `scripts/perf_trace.gd` | Optional autoload timing log (**`ANTHILL_PERF_TRACE=0`** to disable) |
-| `scenes/intro_video.tscn` | Intro playback; skip → loading screen |
+| `scenes/intro_video.tscn` | Intro playback; skip → simulation settings |
 | `assets/intro/` | **`intro.ogv`** (runtime), **`Isolating_the_Negative_Feedback_Loop_in_Ant_Foraging.mp4`** (source for transcoding) |
 | `tools/generate_splash_assets.py` | Regenerate `assets/splash/*.png` (**Pillow** required) |
 

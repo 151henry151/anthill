@@ -1,7 +1,6 @@
 extends RefCounted
 class_name VoxelMeshBuilder
 
-const _Const := preload("res://scripts/constants.gd")
 const _Chunk := preload("res://scripts/world/chunk_data.gd")
 const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
 
@@ -37,7 +36,7 @@ static func build_chunk_mesh(world: Node, chunk: RefCounted) -> ArrayMesh:
 	var data: PackedByteArray = chunk.data
 	var stride_y: int = sx
 	var stride_z: int = sx * sy
-	var inv_depth: float = 1.0 / _Const.XRAY_DEPTH_FADE_RANGE
+	var inv_depth: float = 1.0 / SimParams.XRAY_DEPTH_FADE_RANGE
 	var surface_base: int = _TerrainGen.SURFACE_BASE
 	# Pass 1: bounding box of non-air in the mesh band (skip empty chunks; narrow loops for sparse tunnels).
 	var min_lx: int = sx
@@ -52,7 +51,7 @@ static func build_chunk_mesh(world: Node, chunk: RefCounted) -> ArrayMesh:
 			var yz_off: int = z_off + ly * stride_y
 			for lx in range(sx):
 				var id_a: int = data[yz_off + lx]
-				if id_a == _Const.BLOCK_AIR:
+				if id_a == SimParams.BLOCK_AIR:
 					continue
 				min_lx = mini(min_lx, lx)
 				max_lx = maxi(max_lx, lx)
@@ -74,15 +73,15 @@ static func build_chunk_mesh(world: Node, chunk: RefCounted) -> ArrayMesh:
 			var yz_off: int = z_off + ly * stride_y
 			for lx in range(bx0, bx1 + 1):
 				var id: int = data[yz_off + lx]
-				if id == _Const.BLOCK_AIR:
+				if id == SimParams.BLOCK_AIR:
 					continue
 				var wx: int = ox + lx
 				var wy: int = ly
 				var wz: int = oz + lz
 				var col: Color
-				if id == _Const.BLOCK_SAND:
+				if id == SimParams.BLOCK_SAND:
 					col = COL_SAND
-				elif id == _Const.BLOCK_PACKED_SAND:
+				elif id == SimParams.BLOCK_PACKED_SAND:
 					col = COL_PACKED_SAND
 				else:
 					col = COL_STONE
@@ -95,42 +94,42 @@ static func build_chunk_mesh(world: Node, chunk: RefCounted) -> ArrayMesh:
 					n_px = data[yz_off + lx + 1]
 				else:
 					n_px = world.get_block(wx + 1, wy, wz)
-				if n_px == _Const.BLOCK_AIR:
+				if n_px == SimParams.BLOCK_AIR:
 					_add_quad(st, base + Vector3(1,0,1), base + Vector3(1,1,1), base + Vector3(1,1,0), base + Vector3(1,0,0), Vector3.RIGHT, col)
 				var n_nx: int
 				if lx > 0:
 					n_nx = data[yz_off + lx - 1]
 				else:
 					n_nx = world.get_block(wx - 1, wy, wz)
-				if n_nx == _Const.BLOCK_AIR:
+				if n_nx == SimParams.BLOCK_AIR:
 					_add_quad(st, base + Vector3(0,0,0), base + Vector3(0,1,0), base + Vector3(0,1,1), base + Vector3(0,0,1), Vector3.LEFT, col)
 				var n_py: int
 				if ly < sy - 1:
 					n_py = data[z_off + (ly + 1) * stride_y + lx]
 				else:
-					n_py = _Const.BLOCK_AIR
-				if n_py == _Const.BLOCK_AIR:
+					n_py = SimParams.BLOCK_AIR
+				if n_py == SimParams.BLOCK_AIR:
 					_add_quad(st, base + Vector3(0,1,0), base + Vector3(1,1,0), base + Vector3(1,1,1), base + Vector3(0,1,1), Vector3.UP, col)
 				var n_ny: int
 				if ly > 0:
 					n_ny = data[z_off + (ly - 1) * stride_y + lx]
 				else:
 					n_ny = world.get_block(wx, wy - 1, wz)
-				if n_ny == _Const.BLOCK_AIR:
+				if n_ny == SimParams.BLOCK_AIR:
 					_add_quad(st, base + Vector3(0,0,1), base + Vector3(1,0,1), base + Vector3(1,0,0), base + Vector3(0,0,0), Vector3.DOWN, col)
 				var n_pz: int
 				if lz < sz - 1:
 					n_pz = data[(lz + 1) * stride_z + ly * stride_y + lx]
 				else:
 					n_pz = world.get_block(wx, wy, wz + 1)
-				if n_pz == _Const.BLOCK_AIR:
+				if n_pz == SimParams.BLOCK_AIR:
 					_add_quad(st, base + Vector3(0,0,1), base + Vector3(0,1,1), base + Vector3(1,1,1), base + Vector3(1,0,1), Vector3.BACK, col)
 				var n_nz: int
 				if lz > 0:
 					n_nz = data[(lz - 1) * stride_z + ly * stride_y + lx]
 				else:
 					n_nz = world.get_block(wx, wy, wz - 1)
-				if n_nz == _Const.BLOCK_AIR:
+				if n_nz == SimParams.BLOCK_AIR:
 					_add_quad(st, base + Vector3(1,0,0), base + Vector3(1,1,0), base + Vector3(0,1,0), base + Vector3(0,0,0), Vector3.FORWARD, col)
 	var mesh: ArrayMesh = st.commit()
 	return mesh

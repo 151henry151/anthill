@@ -1,7 +1,6 @@
 extends Node
 ## 2D grid overlay of trail pheromone concentration on the world XZ plane. **Diffusion** between cells each update models spreading chemical; **evaporation** removes it.
 
-const _Const := preload("res://scripts/constants.gd")
 
 var _trail_grid: Dictionary = {}
 var _evap_timer: int = 0
@@ -24,7 +23,7 @@ func sample(wx: int, wz: int) -> float:
 
 func sample_directional(wx: int, wz: int, heading_rad: float) -> Array[float]:
 	var samples: Array[float] = []
-	var cs: int = _Const.PHEROMONE_CELL_SIZE
+	var cs: int = SimParams.PHEROMONE_CELL_SIZE
 	for angle_off in [-0.5, 0.0, 0.5]:
 		var a: float = heading_rad + angle_off
 		var sx: int = wx + int(round(cos(a) * float(cs * 2)))
@@ -40,8 +39,8 @@ func tick() -> void:
 func _one_evaporation_pass() -> void:
 	var to_remove: Array[Vector2i] = []
 	for cell in _trail_grid:
-		_trail_grid[cell] = float(_trail_grid[cell]) * _Const.PHEROMONE_EVAPORATION_RATE
-		if float(_trail_grid[cell]) < _Const.PHEROMONE_MINIMUM_THRESHOLD:
+		_trail_grid[cell] = float(_trail_grid[cell]) * SimParams.PHEROMONE_EVAPORATION_RATE
+		if float(_trail_grid[cell]) < SimParams.PHEROMONE_MINIMUM_THRESHOLD:
 			to_remove.append(cell)
 	for cell in to_remove:
 		_trail_grid.erase(cell)
@@ -52,20 +51,20 @@ func advance_ticks(steps: int) -> void:
 	if steps < 1:
 		return
 	_evap_timer += steps
-	var interval: int = _Const.PHEROMONE_EVAPORATION_INTERVAL_TICKS
+	var interval: int = SimParams.PHEROMONE_EVAPORATION_INTERVAL_TICKS
 	var due: int = _evap_timer / interval
 	if due < 1:
 		return
 	_evap_timer %= interval
-	var max_d: int = _Const.PHEROMONE_MAX_DIFFUSION_PASSES_PER_FRAME
+	var max_d: int = SimParams.PHEROMONE_MAX_DIFFUSION_PASSES_PER_FRAME
 	var diffuse_runs: int = mini(due, max_d)
 	for _i in range(diffuse_runs):
 		_diffuse_laplacian_4()
 		_one_evaporation_pass()
 	var evap_only: int = due - diffuse_runs
 	if evap_only > 0:
-		var factor: float = pow(float(_Const.PHEROMONE_EVAPORATION_RATE), float(evap_only))
-		var thr: float = _Const.PHEROMONE_MINIMUM_THRESHOLD
+		var factor: float = pow(float(SimParams.PHEROMONE_EVAPORATION_RATE), float(evap_only))
+		var thr: float = SimParams.PHEROMONE_MINIMUM_THRESHOLD
 		var keys: Array = _trail_grid.keys()
 		for k in keys:
 			if not _trail_grid.has(k):
@@ -78,7 +77,7 @@ func advance_ticks(steps: int) -> void:
 
 
 func _diffuse_laplacian_4() -> void:
-	var lam: float = _Const.PHEROMONE_DIFFUSION_LAMBDA
+	var lam: float = SimParams.PHEROMONE_DIFFUSION_LAMBDA
 	if lam <= 0.0 or _trail_grid.is_empty():
 		return
 	var old: Dictionary = _trail_grid.duplicate(true)
@@ -94,7 +93,7 @@ func _diffuse_laplacian_4() -> void:
 		for d in _card4:
 			sum_nb += float(old.get(c + d, 0.0))
 		var vn: float = (1.0 - 4.0 * lam) * v + lam * sum_nb
-		if vn >= _Const.PHEROMONE_MINIMUM_THRESHOLD * 0.5:
+		if vn >= SimParams.PHEROMONE_MINIMUM_THRESHOLD * 0.5:
 			new_grid[c] = minf(vn, 1.0)
 	_trail_grid = new_grid
 
@@ -108,5 +107,5 @@ func get_grid() -> Dictionary:
 
 
 func _to_cell(wx: int, wz: int) -> Vector2i:
-	var cs: int = _Const.PHEROMONE_CELL_SIZE
+	var cs: int = SimParams.PHEROMONE_CELL_SIZE
 	return Vector2i(int(floor(float(wx) / float(cs))), int(floor(float(wz) / float(cs))))

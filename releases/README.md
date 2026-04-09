@@ -9,8 +9,8 @@ Self-contained **Godot 4.2** export (game data embedded in the executable with d
 **Run:**
 
 ```bash
-chmod +x anthill-0.7.11-linux.x86_64
-./anthill-0.7.11-linux.x86_64
+chmod +x anthill-0.7.12-linux.x86_64
+./anthill-0.7.12-linux.x86_64
 ```
 
 **Rebuild** (from repository root; requires **Godot 4.2.x** matching the project and **export templates** installed for that exact version, e.g. under `~/.local/share/godot/export_templates/<version>/`):

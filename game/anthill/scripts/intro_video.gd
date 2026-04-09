@@ -2,7 +2,7 @@ extends Control
 ## Plays the intro **Ogg Theora** clip (transcoded from **`res://assets/intro/Isolating_the_Negative_Feedback_Loop_in_Ant_Foraging.mp4`**; Godot plays **.ogv** only).
 ## Skips to **`loading_screen.tscn`** on any key, mouse button, gamepad button, or touch.
 
-const LOADING_SCENE := "res://scenes/loading_screen.tscn"
+const NEXT_SCENE := "res://scenes/simulation_settings.tscn"
 const INTRO_STREAM := "res://assets/intro/intro.ogv"
 
 @onready var _player: VideoStreamPlayer = $VideoStreamPlayer
@@ -46,6 +46,6 @@ func _go_to_loading() -> void:
 		_player.stop()
 	if not is_inside_tree():
 		return
-	var err := get_tree().change_scene_to_file(LOADING_SCENE)
+	var err := get_tree().change_scene_to_file(NEXT_SCENE)
 	if err != OK:
-		push_error("intro_video: failed to load %s (err %s)" % [LOADING_SCENE, err])
+		push_error("intro_video: failed to load %s (err %s)" % [NEXT_SCENE, err])

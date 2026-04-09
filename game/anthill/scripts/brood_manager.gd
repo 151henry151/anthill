@@ -1,7 +1,6 @@
 extends Node
 ## Tracks all eggs, larvae, and pupae. Emits signals when brood develops.
 
-const _Const := preload("res://scripts/constants.gd")
 
 signal ant_eclosed(caste_destiny: String, position: Vector3)
 signal brood_changed()
@@ -67,7 +66,7 @@ func tick() -> void:
 		b["age_ticks"] = int(b["age_ticks"]) + 1
 		var btype: String = b["type"]
 		var age: int = int(b["age_ticks"])
-		if btype == "egg" and age >= _Const.EGG_DURATION_TICKS:
+		if btype == "egg" and age >= SimParams.EGG_DURATION_TICKS:
 			if bool(b["is_trophic"]):
 				to_remove.append(idx)
 			else:
@@ -81,11 +80,11 @@ func tick() -> void:
 			b["nutrition"] = maxf(nutr, 0.0)
 			if nutr <= 0.0:
 				to_remove.append(idx)
-			elif age >= _Const.LARVA_DURATION_TICKS and nutr > 0.2:
+			elif age >= SimParams.LARVA_DURATION_TICKS and nutr > 0.2:
 				b["type"] = "pupa"
 				b["age_ticks"] = 0
 				b["position"] = b["position"] + Vector3(0.0, 0.06, 0.0)
-		elif btype == "pupa" and age >= _Const.PUPA_DURATION_TICKS:
+		elif btype == "pupa" and age >= SimParams.PUPA_DURATION_TICKS:
 			ant_eclosed.emit(String(b["caste_destiny"]), b["position"] as Vector3)
 			to_remove.append(idx)
 		idx += 1

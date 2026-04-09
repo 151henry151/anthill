@@ -1,7 +1,6 @@
 extends Node3D
 ## Surface food patch: sugar (aphid / seed) or protein (carcass). Finite supply, **spoils** over time, visuals scale with remaining food.
 
-const _Const := preload("res://scripts/constants.gd")
 
 var food_type: String = "sugar"
 ## For carbohydrate sources: modeled **sucrose molarity** (0.1–1.0 M fiction) for trail strength scaling.
@@ -31,15 +30,15 @@ func setup(p_source_type: String, p_wx: int, p_wz: int, surface_y: int, rng: Ran
 	match source_type:
 		"aphid_colony":
 			food_type = "sugar"
-			max_supply_initial = rng.randf_range(_Const.FOOD_APHID_SUPPLY_MIN, _Const.FOOD_APHID_SUPPLY_MAX)
+			max_supply_initial = rng.randf_range(SimParams.FOOD_APHID_SUPPLY_MIN, SimParams.FOOD_APHID_SUPPLY_MAX)
 			sucrose_molarity = rng.randf_range(0.1, 1.0)
 		"dead_insect":
 			food_type = "protein"
-			max_supply_initial = rng.randf_range(_Const.FOOD_INSECT_SUPPLY_MIN, _Const.FOOD_INSECT_SUPPLY_MAX)
+			max_supply_initial = rng.randf_range(SimParams.FOOD_INSECT_SUPPLY_MIN, SimParams.FOOD_INSECT_SUPPLY_MAX)
 			sucrose_molarity = 0.0
 		"seed_cache":
 			food_type = "sugar"
-			max_supply_initial = rng.randf_range(_Const.FOOD_SEED_SUPPLY_MIN, _Const.FOOD_SEED_SUPPLY_MAX)
+			max_supply_initial = rng.randf_range(SimParams.FOOD_SEED_SUPPLY_MIN, SimParams.FOOD_SEED_SUPPLY_MAX)
 			sucrose_molarity = rng.randf_range(0.1, 1.0)
 		_:
 			food_type = "sugar"
@@ -49,7 +48,7 @@ func setup(p_source_type: String, p_wx: int, p_wz: int, surface_y: int, rng: Ran
 	position = Vector3(float(wx) + 0.5, float(surface_y) + 1.0, float(wz) + 0.5)
 	_visual_root = Node3D.new()
 	add_child(_visual_root)
-	_base_scale = rng.randf_range(_Const.FOOD_VISUAL_BASE_SCALE_MIN, _Const.FOOD_VISUAL_BASE_SCALE_MAX)
+	_base_scale = rng.randf_range(SimParams.FOOD_VISUAL_BASE_SCALE_MIN, SimParams.FOOD_VISUAL_BASE_SCALE_MAX)
 	_build_mesh(rng)
 	_refresh_visual()
 
@@ -174,7 +173,7 @@ func _refresh_visual() -> void:
 	if max_supply_initial > 0.0001:
 		ratio = clampf(supply / max_supply_initial, 0.0, 1.0)
 	var size_mix: float = sqrt(ratio)
-	var s: float = _base_scale * lerpf(_Const.FOOD_VISUAL_MIN_SCALE_RATIO, 1.0, size_mix)
+	var s: float = _base_scale * lerpf(SimParams.FOOD_VISUAL_MIN_SCALE_RATIO, 1.0, size_mix)
 	_visual_root.scale = Vector3(s, s, s)
 	var spoil_t: float = 1.0 - ratio
 	var spoil_color := Color(0.42, 0.32, 0.22)

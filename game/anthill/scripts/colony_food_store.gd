@@ -1,7 +1,6 @@
 extends Node
 ## Colony-level food resource tracker: sugar and protein reserves.
 
-const _Const := preload("res://scripts/constants.gd")
 
 signal food_critical(food_type: String)
 signal food_changed()
@@ -31,9 +30,9 @@ func consume(food_type: String, amount: float) -> float:
 
 
 func _check_critical() -> void:
-	if sugar < _Const.FOOD_CRITICAL_THRESHOLD:
+	if sugar < SimParams.FOOD_CRITICAL_THRESHOLD:
 		food_critical.emit("sugar")
-	if protein < _Const.FOOD_CRITICAL_THRESHOLD:
+	if protein < SimParams.FOOD_CRITICAL_THRESHOLD:
 		food_critical.emit("protein")
 
 

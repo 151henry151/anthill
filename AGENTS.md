@@ -44,6 +44,8 @@ godot4 --path game/anthill --import
 |---|---|
 | `game/anthill/project.godot` | Godot project file (entry point) |
 | `game/anthill/scenes/main.tscn` | Main colony scene |
+| `game/anthill/scenes/simulation_settings.tscn` | Pre-run UI to edit autoload **`SimParams`** (`simulation_parameters.gd`) |
+| `game/anthill/scripts/simulation_parameters.gd` | Autoload **`SimParams`**: mutable simulation parameters (defaults from **`constants.gd`**) |
 | `game/anthill/scripts/` | GDScript simulation logic |
 | `docs/reference/` | Bibliography, specification, briefing, **`architecture_of_emergence.txt`** (not loaded at runtime) |
 | `scripts/install-godot4.sh` | Installs Godot 4.2.2 to `/usr/local/bin/godot4` |

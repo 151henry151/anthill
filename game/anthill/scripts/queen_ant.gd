@@ -1,7 +1,6 @@
 extends Node3D
 ## Queen ant for Lasius niger: opening cinematic (fly-in, wing shed, search, dig, claustral) and ongoing lifecycle.
 
-const _Const := preload("res://scripts/constants.gd")
 const _Chunk := preload("res://scripts/world/chunk_data.gd")
 const _AntModelScript = preload("res://scripts/colony_ant_model.gd")
 const _TerrainGen := preload("res://scripts/world/terrain_gen.gd")
@@ -97,12 +96,12 @@ func set_sim_substeps_per_frame(n: int) -> void:
 
 ## Inclusive range [lo, hi) for shaft dx/dz so an even `FOUNDING_SHAFT_WIDTH` is centered on `(_wx, _wz)`.
 func _founding_shaft_lo() -> int:
-	var w: int = _Const.FOUNDING_SHAFT_WIDTH
+	var w: int = SimParams.FOUNDING_SHAFT_WIDTH
 	return -w / 2 + 1
 
 
 func _founding_shaft_hi() -> int:
-	var w: int = _Const.FOUNDING_SHAFT_WIDTH
+	var w: int = SimParams.FOUNDING_SHAFT_WIDTH
 	return w / 2 + 1
 
 
@@ -114,18 +113,18 @@ func setup(world: Node, nest_manager: Node = null, brood_manager: Node = null) -
 	_rng = RandomNumberGenerator.new()
 	_rng.randomize()
 	_ant_builder = _AntModelScript.new() as RefCounted
-	_search_duration = _rng.randf_range(_Const.QUEEN_SEARCH_DURATION_MIN, _Const.QUEEN_SEARCH_DURATION_MAX)
+	_search_duration = _rng.randf_range(SimParams.QUEEN_SEARCH_DURATION_MIN, SimParams.QUEEN_SEARCH_DURATION_MAX)
 	_build_queen_mesh()
 	_setup_fly_in()
 
 
 func _build_queen_mesh() -> void:
 	_ant_mesh = _ant_builder.build_ant()
-	_ant_mesh.scale = Vector3.ONE * _Const.QUEEN_VISUAL_SCALE
+	_ant_mesh.scale = Vector3.ONE * SimParams.QUEEN_VISUAL_SCALE
 	add_child(_ant_mesh)
 	_carry_visual = MeshInstance3D.new()
 	var carry_mesh := BoxMesh.new()
-	var inv_scale: float = 1.0 / _Const.QUEEN_VISUAL_SCALE
+	var inv_scale: float = 1.0 / SimParams.QUEEN_VISUAL_SCALE
 	carry_mesh.size = Vector3.ONE * inv_scale
 	_carry_visual.mesh = carry_mesh
 	var carry_mat := StandardMaterial3D.new()
@@ -170,7 +169,7 @@ func _setup_fly_in() -> void:
 	if sy < 0:
 		sy = _TerrainGen.SURFACE_BASE
 	var surface_top: float = float(sy) + 1.0
-	_fly_end_pos = Vector3(float(_wx) + 0.5, surface_top - _ANT_LOCAL_Y_MIN * _Const.QUEEN_VISUAL_SCALE, float(_wz) + 0.5)
+	_fly_end_pos = Vector3(float(_wx) + 0.5, surface_top - _ANT_LOCAL_Y_MIN * SimParams.QUEEN_VISUAL_SCALE, float(_wz) + 0.5)
 	_fly_start_pos = _fly_end_pos + Vector3(_rng.randf_range(-80.0, 80.0), 120.0, _rng.randf_range(-80.0, 80.0))
 	position = _fly_start_pos
 	_fly_elapsed = 0.0
@@ -189,7 +188,7 @@ func sand_physics_suppressed() -> bool:
 
 func _physics_process(delta: float) -> void:
 	var t0 := Time.get_ticks_usec()
-	var sim_steps: int = maxi(1, mini(int(round(Engine.time_scale)), _Const.FAST_FORWARD_SIM_STEPS_CAP))
+	var sim_steps: int = maxi(1, mini(int(round(Engine.time_scale)), SimParams.FAST_FORWARD_SIM_STEPS_CAP))
 	if _sim_substeps_frame > 0:
 		sim_steps = _sim_substeps_frame
 	## Physics `delta` is fixed; game ticks use `sim_steps` in `main_controller`. Run fly / search / dig once
@@ -225,7 +224,7 @@ func _set_state(s: int) -> void:
 
 func _process_fly_in(delta: float) -> void:
 	_fly_elapsed += delta
-	var t: float = clampf(_fly_elapsed / _Const.QUEEN_FLY_IN_DURATION, 0.0, 1.0)
+	var t: float = clampf(_fly_elapsed / SimParams.QUEEN_FLY_IN_DURATION, 0.0, 1.0)
 	var ease_t: float = t * t * (3.0 - 2.0 * t)
 	position = _fly_start_pos.lerp(_fly_end_pos, ease_t)
 	if t >= 1.0:
@@ -267,7 +266,7 @@ func _spawn_dust_puff() -> void:
 
 func _process_wing_shed(delta: float) -> void:
 	_fly_elapsed += delta
-	var t: float = clampf(_fly_elapsed / _Const.QUEEN_WING_SHED_DURATION, 0.0, 1.0)
+	var t: float = clampf(_fly_elapsed / SimParams.QUEEN_WING_SHED_DURATION, 0.0, 1.0)
 	for w in _wing_meshes:
 		if is_instance_valid(w):
 			w.position.y -= delta * 0.04
@@ -291,7 +290,7 @@ func _process_searching(delta: float) -> void:
 		_begin_digging()
 		return
 	_dig_timer += delta
-	if _dig_timer < _Const.QUEEN_SEARCH_MOVE_INTERVAL:
+	if _dig_timer < SimParams.QUEEN_SEARCH_MOVE_INTERVAL:
 		return
 	_dig_timer = 0.0
 	if _rng.randf() < 0.3:
@@ -317,7 +316,7 @@ func _process_searching(delta: float) -> void:
 
 func _place_on_surface(sy: int) -> void:
 	var surface_top: float = float(sy) + 1.0
-	position = Vector3(float(_wx) + 0.5, surface_top - _ANT_LOCAL_Y_MIN * _Const.QUEEN_VISUAL_SCALE, float(_wz) + 0.5)
+	position = Vector3(float(_wx) + 0.5, surface_top - _ANT_LOCAL_Y_MIN * SimParams.QUEEN_VISUAL_SCALE, float(_wz) + 0.5)
 	if _ant_mesh:
 		_ant_mesh.rotation.y = atan2(_search_dir.x, _search_dir.y)
 
@@ -347,19 +346,19 @@ func _process_digging(delta: float) -> void:
 	_dig_timer += delta
 	match _dig_sub:
 		_QueenDigSub.APPROACH:
-			if _dig_timer < _Const.WORKER_MOVE_INTERVAL:
+			if _dig_timer < SimParams.WORKER_MOVE_INTERVAL:
 				return
 			_dig_timer = 0.0
 			_step_approach()
 		_QueenDigSub.DIG_ACT:
-			if _dig_timer < _Const.QUEEN_DIG_ACT_TICK_INTERVAL:
+			if _dig_timer < SimParams.QUEEN_DIG_ACT_TICK_INTERVAL:
 				return
 			_dig_timer = 0.0
 			_dig_act_ticks += 1
 			if _dig_act_ticks >= _dig_act_max_ticks:
 				_complete_dig_act()
 		_QueenDigSub.CARRY_UP:
-			if _dig_timer < _Const.WORKER_MOVE_INTERVAL:
+			if _dig_timer < SimParams.WORKER_MOVE_INTERVAL:
 				return
 			_dig_timer = 0.0
 			_step_carry_up()
@@ -370,7 +369,7 @@ func _start_dig_cycle(v: Vector3i) -> void:
 	var goals: Dictionary = {}
 	for off in _NEIGH6:
 		var n: Vector3i = v + off
-		if _world.get_block(n.x, n.y, n.z) == _Const.BLOCK_AIR:
+		if _world.get_block(n.x, n.y, n.z) == SimParams.BLOCK_AIR:
 			goals[n] = true
 	if goals.is_empty():
 		_dig_sub = _QueenDigSub.DIG_ACT
@@ -394,7 +393,7 @@ func _start_dig_cycle(v: Vector3i) -> void:
 	_dig_path = path
 	_dig_path_idx = 0
 	_dig_sub = _QueenDigSub.APPROACH
-	_dig_timer = _Const.WORKER_MOVE_INTERVAL
+	_dig_timer = SimParams.WORKER_MOVE_INTERVAL
 
 
 func _step_approach() -> void:
@@ -417,18 +416,18 @@ func _step_approach() -> void:
 
 func _begin_dig_act_ticks() -> void:
 	_dig_act_ticks = 0
-	_dig_timer = _Const.QUEEN_DIG_ACT_TICK_INTERVAL
+	_dig_timer = SimParams.QUEEN_DIG_ACT_TICK_INTERVAL
 	var bt: int = _world.get_block(_pending_voxel.x, _pending_voxel.y, _pending_voxel.z)
 	if _nest_manager:
 		_dig_act_max_ticks = maxi(1, _nest_manager.dig_duration_at(_pending_voxel, bt))
 	else:
-		_dig_act_max_ticks = maxi(1, _Const.DIG_ACT_DURATION_TICKS)
+		_dig_act_max_ticks = maxi(1, SimParams.DIG_ACT_DURATION_TICKS)
 
 
 func _complete_dig_act() -> void:
 	var v: Vector3i = _pending_voxel
-	if _world.get_block(v.x, v.y, v.z) != _Const.BLOCK_AIR:
-		_world.set_block(v.x, v.y, v.z, _Const.BLOCK_AIR)
+	if _world.get_block(v.x, v.y, v.z) != SimParams.BLOCK_AIR:
+		_world.set_block(v.x, v.y, v.z, SimParams.BLOCK_AIR)
 		if _nest_manager:
 			_nest_manager.on_voxel_removed(v)
 	if _carry_visual:
@@ -445,7 +444,7 @@ func _start_carry_up(from_air: Vector3i) -> void:
 		_dig_path = []
 	_dig_path_idx = 0
 	_dig_sub = _QueenDigSub.CARRY_UP
-	_dig_timer = _Const.WORKER_MOVE_INTERVAL
+	_dig_timer = SimParams.WORKER_MOVE_INTERVAL
 	if _dig_path.is_empty():
 		_deposit_and_continue()
 
@@ -467,8 +466,8 @@ func _step_carry_up() -> void:
 
 func _deposit_and_continue() -> void:
 	var dep: Vector3i = _choose_queen_deposit_pos()
-	if _world.get_block(dep.x, dep.y, dep.z) == _Const.BLOCK_AIR:
-		_world.set_block(dep.x, dep.y, dep.z, _Const.BLOCK_SAND)
+	if _world.get_block(dep.x, dep.y, dep.z) == SimParams.BLOCK_AIR:
+		_world.set_block(dep.x, dep.y, dep.z, SimParams.BLOCK_SAND)
 	if _carry_visual:
 		_carry_visual.visible = false
 	var sy: int = _surface_y(dep.x, dep.z)
@@ -483,19 +482,19 @@ func _deposit_and_continue() -> void:
 
 
 func _choose_queen_deposit_pos() -> Vector3i:
-	var r: int = _Const.SPOIL_DEPOSIT_RADIUS
-	var inner_clear: float = _Const.SPOIL_DEPOSIT_INNER_CLEAR
+	var r: int = SimParams.SPOIL_DEPOSIT_RADIUS
+	var inner_clear: float = SimParams.SPOIL_DEPOSIT_INNER_CLEAR
 	var best_score: float = INF
 	var best: Vector3i = Vector3i.ZERO
 	var found: bool = false
-	for _i in range(_Const.QUEEN_SPOIL_DEPOSIT_SAMPLES):
+	for _i in range(SimParams.QUEEN_SPOIL_DEPOSIT_SAMPLES):
 		var off: Vector2i = _SpoilDeposit.random_offset_disk(_rng, r, inner_clear)
 		var wx: int = _shaft_start_xz.x + off.x
 		var wz: int = _shaft_start_xz.y + off.y
 		var sy: int = _surface_y(wx, wz)
 		if sy < 0:
 			continue
-		if sy - _TerrainGen.SURFACE_BASE > _Const.MAX_SPOIL_HEIGHT:
+		if sy - _TerrainGen.SURFACE_BASE > SimParams.MAX_SPOIL_HEIGHT:
 			continue
 		var score: float = float(sy) + _rng.randf_range(0.0, 0.15)
 		if score < best_score:
@@ -518,7 +517,7 @@ func _apply_queen_cell_pos() -> void:
 	var c: Vector3i = _queen_cell
 	position = Vector3(
 		float(c.x) + 0.5,
-		float(c.y) - _ANT_LOCAL_Y_MIN * _Const.QUEEN_VISUAL_SCALE,
+		float(c.y) - _ANT_LOCAL_Y_MIN * SimParams.QUEEN_VISUAL_SCALE,
 		float(c.z) + 0.5
 	)
 
@@ -533,7 +532,7 @@ func _bfs_path_air(from: Vector3i, goals: Dictionary) -> Array[Vector3i]:
 	var expanded: int = 0
 	while head < q.size():
 		expanded += 1
-		if expanded > _Const.QUEEN_BFS_AIR_MAX_NODES:
+		if expanded > SimParams.QUEEN_BFS_AIR_MAX_NODES:
 			return []
 		var cur: Vector3i = q[head]
 		head += 1
@@ -541,7 +540,7 @@ func _bfs_path_air(from: Vector3i, goals: Dictionary) -> Array[Vector3i]:
 			var n: Vector3i = cur + off
 			if came_from.has(n):
 				continue
-			if _world.get_block(n.x, n.y, n.z) != _Const.BLOCK_AIR:
+			if _world.get_block(n.x, n.y, n.z) != SimParams.BLOCK_AIR:
 				continue
 			came_from[n] = cur
 			if goals.has(n):
@@ -562,7 +561,7 @@ func _reconstruct_bfs_path(came_from: Dictionary, from: Vector3i, to: Vector3i) 
 func _refill_shaft_queue_if_needed() -> void:
 	var lo: int = _founding_shaft_lo()
 	var hi: int = _founding_shaft_hi()
-	while _shaft_layer_queue.is_empty() and _shaft_depth_dug < _Const.FOUNDING_SHAFT_DEPTH:
+	while _shaft_layer_queue.is_empty() and _shaft_depth_dug < SimParams.FOUNDING_SHAFT_DEPTH:
 		var y: int = _shaft_top_y - _shaft_depth_dug
 		if y < 1:
 			_shaft_depth_dug += 1
@@ -570,7 +569,7 @@ func _refill_shaft_queue_if_needed() -> void:
 		for dx in range(lo, hi):
 			for dz in range(lo, hi):
 				var v := Vector3i(_shaft_start_xz.x + dx, y, _shaft_start_xz.y + dz)
-				if _world.get_block(v.x, v.y, v.z) != _Const.BLOCK_AIR:
+				if _world.get_block(v.x, v.y, v.z) != SimParams.BLOCK_AIR:
 					_shaft_layer_queue.append(v)
 		if _shaft_layer_queue.is_empty():
 			_shaft_depth_dug += 1
@@ -594,7 +593,7 @@ func _pop_next_dig_voxel() -> Vector3i:
 		while _chamber_dig_idx < _chamber_voxels_to_dig.size():
 			var c: Vector3i = _chamber_voxels_to_dig[_chamber_dig_idx]
 			_chamber_dig_idx += 1
-			if _world.get_block(c.x, c.y, c.z) != _Const.BLOCK_AIR:
+			if _world.get_block(c.x, c.y, c.z) != SimParams.BLOCK_AIR:
 				return c
 		_dig_phase = 2
 	return _QUEEN_DIG_SENTINEL
@@ -603,7 +602,7 @@ func _pop_next_dig_voxel() -> Vector3i:
 func _prepare_chamber_dig() -> void:
 	var sy: int = _shaft_top_y
 	var shaft_bottom_y: int = sy - _shaft_depth_dug + 1
-	var ch_size: Vector3i = _Const.FOUNDING_CHAMBER_SIZE
+	var ch_size: Vector3i = SimParams.FOUNDING_CHAMBER_SIZE
 	var cx: int = _shaft_start_xz.x - ch_size.x / 2
 	var cy: int = shaft_bottom_y - ch_size.y
 	var cz: int = _shaft_start_xz.y - ch_size.z / 2
@@ -625,8 +624,8 @@ func _seal_entrance() -> void:
 		for dz in range(lo, hi):
 			var wx: int = _shaft_start_xz.x + dx
 			var wz: int = _shaft_start_xz.y + dz
-			if _world.get_block(wx, _shaft_top_y, wz) == _Const.BLOCK_AIR:
-				_world.set_block(wx, _shaft_top_y, wz, _Const.BLOCK_PACKED_SAND)
+			if _world.get_block(wx, _shaft_top_y, wz) == SimParams.BLOCK_AIR:
+				_world.set_block(wx, _shaft_top_y, wz, SimParams.BLOCK_PACKED_SAND)
 				if _nest_manager:
 					_nest_manager.compact_around(Vector3i(wx, _shaft_top_y, wz))
 	## Stand on the **floor** of the founding chamber (lowest air layer), not the bbox center.
@@ -640,23 +639,23 @@ func _seal_entrance() -> void:
 func _process_claustral_step() -> void:
 	if energy_reserve <= 0.0:
 		return
-	energy_reserve -= _Const.QUEEN_CLAUSTRAL_ENERGY_DRAIN_PER_TICK
+	energy_reserve -= SimParams.QUEEN_CLAUSTRAL_ENERGY_DRAIN_PER_TICK
 	if energy_reserve <= 0.0:
 		energy_reserve = 0.0
 		queen_died.emit("Colony failed to establish. 99% of queens never found a colony.")
 		return
 	_egg_timer_ticks += 1
-	if not _first_egg_batch_laid and _egg_timer_ticks >= _Const.TICKS_PER_ANT_DAY:
+	if not _first_egg_batch_laid and _egg_timer_ticks >= SimParams.TICKS_PER_ANT_DAY:
 		_lay_claustral_eggs()
 		_first_egg_batch_laid = true
 		_egg_timer_ticks = 0
-	elif _first_egg_batch_laid and _egg_timer_ticks >= _Const.QUEEN_CLAUSTRAL_EGG_INTERVAL_TICKS:
+	elif _first_egg_batch_laid and _egg_timer_ticks >= SimParams.QUEEN_CLAUSTRAL_EGG_INTERVAL_TICKS:
 		_lay_claustral_eggs()
 		_egg_timer_ticks = 0
 
 
 func _lay_claustral_eggs() -> void:
-	var batch: int = _rng.randi_range(_Const.QUEEN_CLAUSTRAL_EGG_BATCH_MIN, _Const.QUEEN_CLAUSTRAL_EGG_BATCH_MAX)
+	var batch: int = _rng.randi_range(SimParams.QUEEN_CLAUSTRAL_EGG_BATCH_MIN, SimParams.QUEEN_CLAUSTRAL_EGG_BATCH_MAX)
 	var trophic_count: int = maxi(1, batch / 3)
 	var worker_count: int = batch - trophic_count
 	if trophic_count > 0:
@@ -667,7 +666,7 @@ func _lay_claustral_eggs() -> void:
 
 func _process_established_step() -> void:
 	_egg_timer_ticks += 1
-	if _egg_timer_ticks >= _Const.QUEEN_ESTABLISHED_EGG_INTERVAL_TICKS:
+	if _egg_timer_ticks >= SimParams.QUEEN_ESTABLISHED_EGG_INTERVAL_TICKS:
 		var batch: int = _rng.randi_range(4, 10)
 		egg_laid.emit(batch, false)
 		_egg_timer_ticks = 0
@@ -688,13 +687,13 @@ func care_for_brood(worker_count: int) -> void:
 	var n: int = int(_brood_manager.call("count_larvae"))
 	if n <= 0:
 		return
-	var per: float = _Const.QUEEN_LARVA_FEED_PER_TICK
-	var e_cost: float = float(n) * _Const.QUEEN_LARVA_FEED_ENERGY_PER_LARVA_PER_TICK
+	var per: float = SimParams.QUEEN_LARVA_FEED_PER_TICK
+	var e_cost: float = float(n) * SimParams.QUEEN_LARVA_FEED_ENERGY_PER_LARVA_PER_TICK
 	var bites: int = 0
 	while energy_reserve < e_cost and bites < 4:
 		if not bool(_brood_manager.call("consume_trophic_egg")):
 			break
-		energy_reserve = minf(1.0, energy_reserve + _Const.QUEEN_EGG_CANNIBAL_ENERGY_GAIN)
+		energy_reserve = minf(1.0, energy_reserve + SimParams.QUEEN_EGG_CANNIBAL_ENERGY_GAIN)
 		bites += 1
 	if energy_reserve < e_cost:
 		return
@@ -713,12 +712,12 @@ func apply_worker_trophallaxis(food_store: Node, worker_count: int) -> void:
 	if energy_reserve >= 1.0:
 		return
 	var w: float = sqrt(float(max(1, worker_count)))
-	var max_mass: float = _Const.QUEEN_TROPHALLAXIS_BASE_PER_TICK + _Const.QUEEN_TROPHALLAXIS_PER_WORKER_SQRT * w
-	var want_sugar: float = max_mass * _Const.QUEEN_TROPHALLAXIS_SUGAR_FRACTION
-	var want_protein: float = max_mass * _Const.QUEEN_TROPHALLAXIS_PROTEIN_FRACTION
+	var max_mass: float = SimParams.QUEEN_TROPHALLAXIS_BASE_PER_TICK + SimParams.QUEEN_TROPHALLAXIS_PER_WORKER_SQRT * w
+	var want_sugar: float = max_mass * SimParams.QUEEN_TROPHALLAXIS_SUGAR_FRACTION
+	var want_protein: float = max_mass * SimParams.QUEEN_TROPHALLAXIS_PROTEIN_FRACTION
 	var s: float = float(food_store.consume("sugar", want_sugar))
 	var p: float = float(food_store.consume("protein", want_protein))
-	var gain: float = (s + p) * _Const.QUEEN_TROPHALLAXIS_ENERGY_PER_UNIT_FOOD
+	var gain: float = (s + p) * SimParams.QUEEN_TROPHALLAXIS_ENERGY_PER_UNIT_FOOD
 	if gain <= 0.0:
 		return
 	energy_reserve = minf(1.0, energy_reserve + gain)

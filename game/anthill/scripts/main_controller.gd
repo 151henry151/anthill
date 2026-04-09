@@ -1,7 +1,6 @@
 extends Node3D
 ## Scene coordinator: wires up all colony systems, manages game clock, food sources.
 
-const _Const := preload("res://scripts/constants.gd")
 const _Chunk := preload("res://scripts/world/chunk_data.gd")
 const _MeshBuilder := preload("res://scripts/world/mesh_builder.gd")
 const _SandStepScript = preload("res://scripts/world/sand_step.gd")
@@ -99,7 +98,7 @@ func _ready() -> void:
 	_mat_xray.roughness = 0.88
 	_mat_xray.metallic = 0.0
 	_mat_xray.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	_mat_xray.albedo_color = Color(1.0, 1.0, 1.0, _Const.XRAY_SAND_ALPHA)
+	_mat_xray.albedo_color = Color(1.0, 1.0, 1.0, SimParams.XRAY_SAND_ALPHA)
 	_mat_xray.cull_mode = BaseMaterial3D.CULL_DISABLED
 	_mat_xray.render_priority = -1
 	for cz in range(world.chunks_z):
@@ -202,7 +201,7 @@ func _setup_systems() -> void:
 
 func _init_food_spawning() -> void:
 	_food_sources.clear()
-	_next_food_spawn_tick = _rng.randi_range(_Const.FOOD_SPAWN_FIRST_DELAY_MIN, _Const.FOOD_SPAWN_FIRST_DELAY_MAX)
+	_next_food_spawn_tick = _rng.randi_range(SimParams.FOOD_SPAWN_FIRST_DELAY_MIN, SimParams.FOOD_SPAWN_FIRST_DELAY_MAX)
 	colony_ants.food_sources = _food_sources
 
 
@@ -211,13 +210,13 @@ func _food_spawn_ok_xy(wx: int, wz: int) -> bool:
 	if ne != Vector3i.ZERO:
 		var dx: int = wx - ne.x
 		var dz: int = wz - ne.z
-		if dx * dx + dz * dz < _Const.FOOD_SPAWN_MIN_DIST_FROM_NEST * _Const.FOOD_SPAWN_MIN_DIST_FROM_NEST:
+		if dx * dx + dz * dz < SimParams.FOOD_SPAWN_MIN_DIST_FROM_NEST * SimParams.FOOD_SPAWN_MIN_DIST_FROM_NEST:
 			return false
 	return true
 
 
 func _try_spawn_food_source() -> bool:
-	if _food_sources.size() >= _Const.FOOD_MAX_ACTIVE_SOURCES:
+	if _food_sources.size() >= SimParams.FOOD_MAX_ACTIVE_SOURCES:
 		return false
 	var max_x: int = world.chunks_x * _Chunk.SIZE_X
 	var max_z: int = world.chunks_z * _Chunk.SIZE_Z
@@ -240,7 +239,7 @@ func _try_spawn_food_source() -> bool:
 		fs.set_script(load("res://scripts/food_source.gd"))
 		add_child(fs)
 		fs.setup(types[_rng.randi_range(0, types.size() - 1)], wx, wz, sy, _rng)
-		var spoil_dur: int = _rng.randi_range(_Const.FOOD_SPOIL_DURATION_TICKS_MIN, _Const.FOOD_SPOIL_DURATION_TICKS_MAX)
+		var spoil_dur: int = _rng.randi_range(SimParams.FOOD_SPOIL_DURATION_TICKS_MIN, SimParams.FOOD_SPOIL_DURATION_TICKS_MAX)
 		if fs.has_method("begin_life"):
 			fs.begin_life(_game_tick, spoil_dur)
 		_food_sources.append(fs)
@@ -259,9 +258,9 @@ func _update_food_sources_at_tick() -> void:
 		if fs.has_method("is_depleted") and fs.is_depleted():
 			fs.queue_free()
 			_food_sources.remove_at(i)
-	if _food_sources.size() < _Const.FOOD_MAX_ACTIVE_SOURCES and _game_tick >= _next_food_spawn_tick:
+	if _food_sources.size() < SimParams.FOOD_MAX_ACTIVE_SOURCES and _game_tick >= _next_food_spawn_tick:
 		if _try_spawn_food_source():
-			_next_food_spawn_tick = _game_tick + _rng.randi_range(_Const.FOOD_SPAWN_INTERVAL_TICKS_MIN, _Const.FOOD_SPAWN_INTERVAL_TICKS_MAX)
+			_next_food_spawn_tick = _game_tick + _rng.randi_range(SimParams.FOOD_SPAWN_INTERVAL_TICKS_MIN, SimParams.FOOD_SPAWN_INTERVAL_TICKS_MAX)
 		else:
 			_next_food_spawn_tick = _game_tick + 120
 
@@ -315,10 +314,10 @@ func _physics_process(_delta: float) -> void:
 	var sand_us: int = 0
 	## **`Engine.time_scale`** scales **`delta`** for nodes but does **not** add extra physics callbacks per real second, so tick-based sim ( **`_game_tick += 1`** ) must advance **`round(time_scale)`** sub-steps per frame to make **[F]** fast-forward affect ant-days and brood.
 	var sim_steps: int = maxi(1, int(round(Engine.time_scale)))
-	sim_steps = mini(sim_steps, _Const.FAST_FORWARD_SIM_STEPS_CAP)
+	sim_steps = mini(sim_steps, SimParams.FAST_FORWARD_SIM_STEPS_CAP)
 	var wn_throttle: int = colony_ants.get_worker_count() if colony_ants else 0
-	if wn_throttle >= _Const.SIM_SUBSTEP_THROTTLE_MIN_WORKERS:
-		var scaled_steps: int = maxi(_Const.SIM_SUBSTEP_MIN, int(float(_Const.SIM_SUBSTEP_WORKER_BUDGET) / float(wn_throttle)))
+	if wn_throttle >= SimParams.SIM_SUBSTEP_THROTTLE_MIN_WORKERS:
+		var scaled_steps: int = maxi(SimParams.SIM_SUBSTEP_MIN, int(float(SimParams.SIM_SUBSTEP_WORKER_BUDGET) / float(wn_throttle)))
 		sim_steps = mini(sim_steps, scaled_steps)
 	if colony_ants and colony_ants.has_method("set_sim_substeps_per_frame"):
 		colony_ants.set_sim_substeps_per_frame(sim_steps)
@@ -333,18 +332,18 @@ func _physics_process(_delta: float) -> void:
 		_game_tick += 1
 		if _day_night:
 			_day_night.set_game_tick(_game_tick)
-		_game_day = _game_tick / _Const.TICKS_PER_ANT_DAY
+		_game_day = _game_tick / SimParams.TICKS_PER_ANT_DAY
 		var worker_n: int = colony_ants.get_worker_count() if colony_ants else 0
 		if is_instance_valid(_queen) and _queen.has_method("care_for_brood"):
 			_queen.care_for_brood(worker_n)
 		if is_instance_valid(_queen) and _queen.has_method("apply_worker_trophallaxis"):
 			_queen.apply_worker_trophallaxis(_food_store, worker_n)
 		if worker_n > 0 and _brood_manager and _brood_manager.has_method("feed_all_larvae"):
-			_brood_manager.call("feed_all_larvae", _Const.WORKER_BROOD_CARE_PER_TICK)
+			_brood_manager.call("feed_all_larvae", SimParams.WORKER_BROOD_CARE_PER_TICK)
 		if _brood_manager:
 			_brood_manager.tick()
 		_update_food_sources_at_tick()
-		if _Const.VALIDATION_EXPORT_ENABLED and _game_tick % _Const.VALIDATION_EXPORT_INTERVAL_TICKS == 0:
+		if SimParams.VALIDATION_EXPORT_ENABLED and _game_tick % SimParams.VALIDATION_EXPORT_INTERVAL_TICKS == 0:
 			_validation_export_csv()
 	if _pheromone_field and _pheromone_field.has_method("advance_ticks"):
 		_pheromone_field.advance_ticks(sim_steps)
@@ -400,7 +399,7 @@ func _on_food_critical_alarm(_food_type: String) -> void:
 	for _i in range(12):
 		var ox: int = _rng.randi_range(-8, 8)
 		var oz: int = _rng.randi_range(-8, 8)
-		_alarm_field.deposit(ne.x + ox, ne.z + oz, _Const.ALARM_DEPOSIT_ON_CRITICAL * 0.16)
+		_alarm_field.deposit(ne.x + ox, ne.z + oz, SimParams.ALARM_DEPOSIT_ON_CRITICAL * 0.16)
 
 
 func _validation_export_csv() -> void:
@@ -453,7 +452,7 @@ func _update_colony_stage() -> void:
 
 
 func _format_clock_time(tick: int) -> String:
-	var day_len: float = float(_Const.TICKS_PER_ANT_DAY)
+	var day_len: float = float(SimParams.TICKS_PER_ANT_DAY)
 	var t: float = fmod(float(tick), day_len) / day_len
 	var total_min: int = int(round(t * 24.0 * 60.0)) % (24 * 60)
 	var h: int = total_min / 60
@@ -600,7 +599,7 @@ func _ff_time_scale() -> float:
 	if _ff_tier <= 0:
 		return 1.0
 	var i: int = _ff_tier - 1
-	var speeds: Array = _Const.FAST_FORWARD_SPEEDS
+	var speeds: Array = SimParams.FAST_FORWARD_SPEEDS
 	if i >= speeds.size():
 		return 1.0
 	return float(speeds[i])
@@ -617,7 +616,7 @@ func _mesh_rebuild_budget() -> int:
 
 
 func _speed_up() -> void:
-	var max_tier: int = _Const.FAST_FORWARD_SPEEDS.size()
+	var max_tier: int = SimParams.FAST_FORWARD_SPEEDS.size()
 	if _ff_tier < max_tier:
 		_ff_tier += 1
 	Engine.time_scale = _ff_time_scale()
@@ -645,17 +644,17 @@ func _clear_trail_overlay() -> void:
 func _update_trail_overlay() -> void:
 	if not _pheromone_overlay_active:
 		return
-	var overlay_period: int = _Const.TRAIL_OVERLAY_REFRESH_BASE
-	if colony_ants and colony_ants.get_worker_count() > _Const.TRAIL_OVERLAY_THROTTLE_WORKER_THRESHOLD:
-		overlay_period = _Const.TRAIL_OVERLAY_REFRESH_SLOW
+	var overlay_period: int = SimParams.TRAIL_OVERLAY_REFRESH_BASE
+	if colony_ants and colony_ants.get_worker_count() > SimParams.TRAIL_OVERLAY_THROTTLE_WORKER_THRESHOLD:
+		overlay_period = SimParams.TRAIL_OVERLAY_REFRESH_SLOW
 	if Engine.time_scale > 15.0:
-		overlay_period = maxi(overlay_period, _Const.TRAIL_OVERLAY_REFRESH_SLOW)
+		overlay_period = maxi(overlay_period, SimParams.TRAIL_OVERLAY_REFRESH_SLOW)
 	_trail_overlay_timer += 1
 	if _trail_overlay_timer < overlay_period:
 		return
 	_trail_overlay_timer = 0
 	_clear_trail_overlay()
-	var cs: float = float(_Const.PHEROMONE_CELL_SIZE)
+	var cs: float = float(SimParams.PHEROMONE_CELL_SIZE)
 	var quad := PlaneMesh.new()
 	quad.size = Vector2(cs, cs)
 	var mat_base := StandardMaterial3D.new()
@@ -668,7 +667,7 @@ func _update_trail_overlay() -> void:
 	const Y_ALARM: float = 1.14
 	if _pheromone_field:
 		var grid_t: Dictionary = _pheromone_field.get_grid()
-		var base_col: Color = _Const.PHEROMONE_VIS_RECRUITMENT
+		var base_col: Color = SimParams.PHEROMONE_VIS_RECRUITMENT
 		for cell in grid_t:
 			var conc: float = float(grid_t[cell])
 			if conc < 0.008:
@@ -689,10 +688,10 @@ func _update_trail_overlay() -> void:
 			_trail_overlay_meshes.append(mi)
 	if _footprint_field and _footprint_field.has_method("get_grid"):
 		var grid_f: Dictionary = _footprint_field.get_grid()
-		var base_fp: Color = _Const.PHEROMONE_VIS_FOOTPRINT
+		var base_fp: Color = SimParams.PHEROMONE_VIS_FOOTPRINT
 		for cell in grid_f:
 			var conc_f: float = float(grid_f[cell])
-			if conc_f < _Const.FOOTPRINT_OVERLAY_MIN_CONC:
+			if conc_f < SimParams.FOOTPRINT_OVERLAY_MIN_CONC:
 				continue
 			var wx2: float = float(cell.x) * cs + cs * 0.5
 			var wz2: float = float(cell.y) * cs + cs * 0.5
@@ -710,7 +709,7 @@ func _update_trail_overlay() -> void:
 			_trail_overlay_meshes.append(mi2)
 	if _alarm_field and _alarm_field.has_method("get_grid"):
 		var grid_a: Dictionary = _alarm_field.get_grid()
-		var base_al: Color = _Const.PHEROMONE_VIS_ALARM
+		var base_al: Color = SimParams.PHEROMONE_VIS_ALARM
 		for cell in grid_a:
 			var conc_a: float = float(grid_a[cell])
 			if conc_a < 0.006:
@@ -731,12 +730,12 @@ func _update_trail_overlay() -> void:
 			_trail_overlay_meshes.append(mia)
 	if _building_pheromone and _building_pheromone.has_method("get_grid"):
 		var grid_b: Dictionary = _building_pheromone.get_grid()
-		var base_b: Color = _Const.PHEROMONE_VIS_BUILDING
+		var base_b: Color = SimParams.PHEROMONE_VIS_BUILDING
 		var box := BoxMesh.new()
 		box.size = Vector3(0.82, 0.82, 0.82)
 		for pos in grid_b:
 			var cbuild: float = float(grid_b[pos])
-			if cbuild < _Const.BUILD_PHEROMONE_MINIMUM * 0.5:
+			if cbuild < SimParams.BUILD_PHEROMONE_MINIMUM * 0.5:
 				continue
 			var p3: Vector3i = pos as Vector3i
 			var mb := mat_base.duplicate() as StandardMaterial3D
