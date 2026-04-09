@@ -108,7 +108,6 @@ func spawn_worker(pos: Vector3, is_nanitic: bool) -> void:
 		"memory_wz": 0,
 		"memory_quality": 0.0,
 		"last_food_quality": 1.0,
-		"trip_pickup_age": -1,
 		"is_experienced_forager": false,
 		"move_interval_eff": _Const.WORKER_MOVE_INTERVAL,
 	})
@@ -468,20 +467,19 @@ func _step_returning(a: Dictionary) -> void:
 	if dx == 0 and dz == 0:
 		dx = signi(nest_entrance.x - wx)
 	_try_move(a, dx, dz)
-	# **Recruitment trail** (fed return): discrete spots (mm spacing) × Bernoulli **TRAIL_SATIATED_DEPOSIT_PROBABILITY**; amount scales with food proximity and saturation.
+	# **Recruitment trail** (fed return): discrete ant-laid spots (mm spacing) × Bernoulli **TRAIL_SATIATED_DEPOSIT_PROBABILITY**; deposit amount × **distance-to-food** scaling × saturation (emergent bright end near patch after many trips).
 	if pheromone_field and bool(a.get("carrying_food", false)):
 		wx = int(a["wx"])
 		wz = int(a["wz"])
 		var fsx: int = int(a.get("food_source_wx", wx))
 		var fsz: int = int(a.get("food_source_wz", wz))
 		var d_to_food: float = sqrt(float((wx - fsx) * (wx - fsx) + (wz - fsz) * (wz - fsz)))
-		var d_to_nest: float = _dist_to(a, nest_entrance)
-		var total_path: float = d_to_food + d_to_nest
-		if total_path < 1.0:
-			total_path = 1.0
-		var food_proximity: float = clampf(1.0 - d_to_food / total_path, 0.0, 1.0)
 		var q: float = float(a.get("last_food_quality", 1.0))
-		var base_amt: float = (_Const.PHEROMONE_BASE_DEPOSIT + _Const.PHEROMONE_DISTANCE_BONUS * food_proximity) * q * _foraging_rtt_multiplier(a)
+		var base_amt: float = (
+			_Const.PHEROMONE_BASE_DEPOSIT
+			* q
+			* _recruit_trail_food_proximity_multiplier(d_to_food)
+		)
 		_maybe_deposit_recruitment_spot(a, wx, wz, base_amt)
 	d = _dist_to(a, nest_entrance)
 	if d < _Const.WORKER_NEST_ARRIVAL_MAX_DIST:
@@ -490,7 +488,6 @@ func _step_returning(a: Dictionary) -> void:
 			a["is_experienced_forager"] = true
 		a["carrying_food"] = false
 		a["food_type"] = ""
-		a["trip_pickup_age"] = -1
 		a["return_stuck"] = 0
 		a["state"] = 8
 		return
@@ -673,7 +670,6 @@ func _check_food_nearby(a: Dictionary) -> void:
 				a["return_stuck"] = 0
 				a["trail_spot_dist_accum"] = 0.0
 				a["trail_next_spot_vox"] = _random_trail_spot_spacing_voxels()
-				a["trip_pickup_age"] = int(a["age_ticks"])
 				# **Recruitment** burst at source: Bernoulli × saturation (no spot spacing — first mark at resource).
 				if pheromone_field and _rng.randf() < _Const.TRAIL_SATIATED_DEPOSIT_PROBABILITY:
 					var burst: float = (
@@ -758,11 +754,16 @@ func _step_random_walk(a: Dictionary) -> void:
 		dx = 1 if _rng.randf() > 0.5 else -1
 	_try_move(a, dx, dz)
 	if bool(a.get("carrying_food", false)) and pheromone_field:
+		var wx_rw: int = int(a["wx"])
+		var wz_rw: int = int(a["wz"])
+		var fsx_rw: int = int(a.get("food_source_wx", wx_rw))
+		var fsz_rw: int = int(a.get("food_source_wz", wz_rw))
+		var d_f_rw: float = sqrt(float((wx_rw - fsx_rw) * (wx_rw - fsx_rw) + (wz_rw - fsz_rw) * (wz_rw - fsz_rw)))
 		_maybe_deposit_recruitment_spot(
 			a,
-			int(a["wx"]),
-			int(a["wz"]),
-			_Const.PHEROMONE_DEPOSIT_AMOUNT * 0.5 * float(a.get("last_food_quality", 1.0)) * _foraging_rtt_multiplier(a)
+			wx_rw,
+			wz_rw,
+			_Const.PHEROMONE_DEPOSIT_AMOUNT * 0.5 * float(a.get("last_food_quality", 1.0)) * _recruit_trail_food_proximity_multiplier(d_f_rw)
 		)
 
 
@@ -787,18 +788,22 @@ func _apply_step_to(a: Dictionary, nwx: int, nwz: int, face_dx: int, face_dz: in
 		footprint_field.deposit(nwx, nwz, _Const.FOOTPRINT_DEPOSIT_PER_STEP)
 
 
-## Shorter **return segments** (fewer ticks since pickup) ⇒ higher multiplier on recruitment deposits (capped).
-func _foraging_rtt_multiplier(a: Dictionary) -> float:
+## Per-deposit multiplier for ant-laid recruitment: high when the carrier is near the remembered patch (d→0), exponential falloff in mm; does not add pheromone without a deposit call.
+func _recruit_trail_food_proximity_multiplier(d_to_food: float) -> float:
+	var d_mm: float = d_to_food * _Const.MM_PER_UNIT
+	var decay: float = maxf(_Const.RECRUIT_TRAIL_BEACON_DECAY_MM, 0.001)
+	return _Const.RECRUIT_TRAIL_BEACON_FLOOR + _Const.RECRUIT_TRAIL_BEACON_EXTRA_MULT * exp(-d_mm / decay)
+
+
+func _recruit_trail_food_proximity_multiplier_for_ant(a: Dictionary) -> float:
 	if not bool(a.get("carrying_food", false)):
 		return 1.0
-	var t0: int = int(a.get("trip_pickup_age", -1))
-	if t0 < 0:
-		return 1.0
-	var seg: int = int(a.get("age_ticks", 0)) - t0
-	if seg < 1:
-		return 1.0
-	var ref: float = float(_Const.FORAGING_RTT_REFERENCE_TICKS)
-	return clampf(ref / float(seg), _Const.FORAGING_RTT_SCALE_MIN, _Const.FORAGING_RTT_SCALE_MAX)
+	var wx: int = int(a["wx"])
+	var wz: int = int(a["wz"])
+	var fsx: int = int(a.get("food_source_wx", wx))
+	var fsz: int = int(a.get("food_source_wz", wz))
+	var d_to_food: float = sqrt(float((wx - fsx) * (wx - fsx) + (wz - fsz) * (wz - fsz)))
+	return _recruit_trail_food_proximity_multiplier(d_to_food)
 
 
 func _random_trail_spot_spacing_voxels() -> int:
@@ -995,7 +1000,7 @@ func get_ant_inspector_snapshot(a: Dictionary) -> Dictionary:
 		"last_food_quality": float(a.get("last_food_quality", 1.0)),
 		"is_experienced_forager": bool(a.get("is_experienced_forager", false)),
 		"move_interval_eff": float(a.get("move_interval_eff", _Const.WORKER_MOVE_INTERVAL)),
-		"rtt_multiplier": _foraging_rtt_multiplier(a),
+		"recruit_deposit_proximity_mult": _recruit_trail_food_proximity_multiplier_for_ant(a),
 	}
 
 

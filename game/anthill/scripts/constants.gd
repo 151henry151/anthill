@@ -99,10 +99,8 @@ const CALLOW_DARKEN_TICKS := 3 * TICKS_PER_ANT_DAY
 # ---------------------------------------------------------------------------
 ## Each pheromone cell covers this many voxels on a side.
 const PHEROMONE_CELL_SIZE := 2
-## Base deposit per step while RETURNING with food.
+## Base amount for each ant-laid recruitment spot while RETURNING with food (then multiplied by **`RECRUIT_TRAIL_BEACON_*`** distance scaling and saturation).
 const PHEROMONE_BASE_DEPOSIT := 0.175
-## Extra deposit amount close to food source.
-const PHEROMONE_DISTANCE_BONUS := 0.26
 ## Legacy single-event deposit (food pickup burst).
 const PHEROMONE_DEPOSIT_AMOUNT := 0.21
 ## Multiplicative factor applied every evaporation tick (closer to 1.0 = slower evaporation).
@@ -144,10 +142,12 @@ const TROPOTAXIS_RATIO_GAIN := 0.26
 const TROPOTAXIS_HC_DENOM_SCALE := 1.12
 ## Per-worker crowding weight in the ratio **denominator** (neighbor patch).
 const TROPOTAXIS_CROWD_PER_ANT := 0.38
-## Reference **return-segment** length (ticks) for recruitment deposit scaling (**shorter** segment ⇒ higher multiplier, capped).
-const FORAGING_RTT_REFERENCE_TICKS := 420
-const FORAGING_RTT_SCALE_MIN := 0.42
-const FORAGING_RTT_SCALE_MAX := 1.85
+## Extra multiplier on each **worker deposit** at the food (d→0); with **`RECRUIT_TRAIL_BEACON_FLOOR`** yields strong marking near the patch and weak far away (literature: much higher deposition within ~1–10 cm of food than near the nest). Pheromone is still laid only where ants walk.
+const RECRUIT_TRAIL_BEACON_EXTRA_MULT := 18.0
+## e-fold falloff distance (mm) from the food patch center for scaling those ant-laid deposits.
+const RECRUIT_TRAIL_BEACON_DECAY_MM := 20.0
+## Multiplier floor far from the food source (keeps a weak ant-laid trail for tropotaxis).
+const RECRUIT_TRAIL_BEACON_FLOOR := 1.0
 ## Footprint ≥ this ⇒ **home-range** / well-trodden substrate (**faster** steps during scout/recruit).
 const HOME_RANGE_FOOTPRINT_THRESHOLD := 0.032
 ## Multiply move interval on **marked** substrate (**< 1** ⇒ faster movement).

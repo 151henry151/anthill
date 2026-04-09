@@ -53,7 +53,7 @@ godot4 --path game/anthill --import
 
 **`docs/reference/architecture_of_emergence.txt`** summarizes positive feedback (mass recruitment, stigmergy), negative feedback (footprint hydrocarbons), and *Lasius niger* vs *Monomorium pharaonis* contrasts. When changing foraging or chemical fields, treat it as **intent**, not a checklist of implemented features.
 
-**Implemented in spirit:** recruitment **trail** pheromone with stigmergic deposit and diffusion/evaporation; **CHC footprint** field with passive deposit, negative chemotaxis, and tropotaxis that combines trail attraction with footprint/crowding in the denominator; **RTT-scaled** return deposits; **feeder crowding**; **alarm** field (Dufour-type framing, not literal undecane chemistry).
+**Implemented in spirit:** recruitment **trail** pheromone with stigmergic deposit and diffusion/evaporation; **CHC footprint** field with passive deposit, negative chemotaxis, and tropotaxis that combines trail attraction with footprint/crowding in the denominator; **food-proximity–scaled** per-step return deposits (workers only—no automatic pheromone at the patch); **feeder crowding**; **alarm** field (Dufour-type framing, not literal undecane chemistry).
 
 **Not implemented:** second-species (*M. pharaonis*) rules; **volatile short-half-life** repellent as a separate mechanism; **physical interaction** at bifurcations (ants pushing nestmates); **visual landmarks**; a built-in **pheromone-only vs dual-signal** A/B experiment in the executable.
 

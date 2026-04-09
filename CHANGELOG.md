@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **`scripts/constants.gd`**: replace **`FORAGING_RTT_*`** and **`PHEROMONE_DISTANCE_BONUS`** with **`RECRUIT_TRAIL_BEACON_*`** (exponential falloff in mm from the food patch for recruitment deposits).
+- **`scripts/colony_ants.gd`**: scale return-path and random-walk recruitment deposits by **`_recruit_trail_food_proximity_multiplier`** (distance to **`food_source_*`**); remove **`trip_pickup_age`** and RTT-based multiplier.
+- **`scripts/colony_hud.gd`**: inspector shows **`recruit_deposit_proximity_mult`** (HUD: recruit deposit proximity) instead of **`rtt_multiplier`**.
+- **`README.md`**, **`AGENTS.md`**: describe food-proximity-scaled return deposits instead of RTT scaling.
+- **`docs/reference/technical_specification.txt`**: align recruitment optimization text with proximity-scaled ant-laid deposits vs RTT-based per-step scaling.
+- **`README.md`**, **`AGENTS.md`**, **`docs/reference/technical_specification.txt`**, **`scripts/constants.gd`**, **`scripts/colony_ants.gd`**: clarify that recruitment pheromone is **ant-laid** (stigmergy); distance scaling only weights each deposit.
+
 ## [0.7.11] - 2026-04-04
 
 ### Added
