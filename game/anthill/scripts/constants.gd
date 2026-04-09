@@ -101,14 +101,14 @@ const CALLOW_DARKEN_TICKS := 3 * TICKS_PER_ANT_DAY
 # ---------------------------------------------------------------------------
 ## Each pheromone cell covers this many voxels on a side.
 const PHEROMONE_CELL_SIZE := 2
-## Base amount for each ant-laid recruitment spot while RETURNING with food (then multiplied by **`RECRUIT_TRAIL_BEACON_*`** distance scaling and saturation).
+## Base scale for ant-laid recruitment while RETURNING with food (**`RECRUIT_TRAIL_PER_STEP_FRACTION`** applied each step); multiplied by **`RECRUIT_TRAIL_BEACON_*`** and saturation.
 const PHEROMONE_BASE_DEPOSIT := 0.32
 ## Legacy single-event deposit (food pickup burst).
 const PHEROMONE_DEPOSIT_AMOUNT := 0.34
 ## Multiplicative factor applied every evaporation tick (closer to 1.0 = slower evaporation).
 const PHEROMONE_EVAPORATION_RATE := 0.996
 ## Explicit Laplacian diffusion step on the trail grid each evaporation interval (**< 0.25** for 4-neighbor stability).
-const PHEROMONE_DIFFUSION_LAMBDA := 0.09
+const PHEROMONE_DIFFUSION_LAMBDA := 0.15
 ## Physics ticks between evaporation / diffusion chemistry passes (larger ⇒ trails persist longer).
 const PHEROMONE_EVAPORATION_INTERVAL_TICKS := 72
 ## Min concentration to trigger trail-following mode.
@@ -119,11 +119,14 @@ const PHEROMONE_MINIMUM_THRESHOLD := 0.0012
 const PHEROMONE_SENSE_RADIUS := 4
 ## Minimum roulette weight for tropotaxis (flat field → near-uniform random walk among walkable Moore neighbors).
 const PHEROMONE_TROPOTAXIS_FLOOR := 0.001
-## Bernoulli probability that a **satiated** returning forager deposits recruitment pheromone at each **spot** opportunity (spec ~1/3).
-const TRAIL_SATIATED_DEPOSIT_PROBABILITY := 0.5
-## Laboratory spacing of discrete trail **spots** along the return path (mm); converted to voxels via **`MM_PER_UNIT`**.
-const TRAIL_SPOT_MIN_MM := 16.0
-const TRAIL_SPOT_MAX_MM := 32.0
+## Bernoulli probability for the **pickup burst** at the food patch (not used for the continuous return trail).
+const TRAIL_SATIATED_DEPOSIT_PROBABILITY := 0.55
+## Each **return** step while carrying food: multiply beacon-scaled base by this to lay a continuous path (replaces discrete spaced spots).
+const RECRUIT_TRAIL_PER_STEP_FRACTION := 0.16
+## **Chebyshev** radius (voxels) to max-sample trail when deciding if recruit mode should drop to scout (bridges gaps between pheromone cells).
+const RECRUIT_TRAIL_FOLLOW_LOCAL_RADIUS := 3
+## Exit recruit mode when **local max** trail falls below **`PHEROMONE_RECRUIT_THRESHOLD` ×** this (lower ⇒ tolerate weaker gaps).
+const RECRUIT_TRAIL_EXIT_SCOUT_FACTOR := 0.32
 ## Below this local trail concentration, CHC footprint uses **search-phase** weak attraction to explored substrate; at or above, **exploitation-phase** repellent term applies.
 const PHEROMONE_EXPLOITATION_THRESHOLD := 0.015
 ## Weight on **`max(0, f_nb − f_here)`** in **search** phase (positive chemotaxis to recent exploration).
@@ -140,7 +143,7 @@ const FORAGING_MEMORY_TRAIL_WEAK := 0.009
 const FORAGING_MEMORY_BIAS_WEIGHT := 1.8
 ## Bifurcation-style weight: **`P ∝ (trail + ε) / (HC·(f_nb+f_here) + crowding + ε)`** on each Moore neighbor.
 const TROPOTAXIS_RATIO_EPS := 0.012
-const TROPOTAXIS_RATIO_GAIN := 0.26
+const TROPOTAXIS_RATIO_GAIN := 0.34
 const TROPOTAXIS_HC_DENOM_SCALE := 1.12
 ## Per-worker crowding weight in the ratio **denominator** (neighbor patch).
 const TROPOTAXIS_CROWD_PER_ANT := 0.38

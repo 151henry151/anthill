@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.14] - 2026-04-09
+
+### Changed
+
+- **`game/anthill/scripts/colony_ants.gd`**: deposit recruitment pheromone every step along the return path scaled by **`RECRUIT_TRAIL_PER_STEP_FRACTION`** instead of discrete spaced spots; retain recruit mode when **local max** trail in a small neighborhood stays above a fraction of the recruit threshold; sample **`_detect_trail`** on a dense voxel grid; strengthen tropotaxis ratio gain; apply memory bias using the larger of footprint-cell trail and immediate-neighborhood max when trail is patchy; align random-walk carrying deposits with the per-step model.
+- **`game/anthill/scripts/constants.gd`**, **`game/anthill/scripts/simulation_parameters.gd`**: add **`RECRUIT_TRAIL_PER_STEP_FRACTION`**, **`RECRUIT_TRAIL_FOLLOW_LOCAL_RADIUS`**, **`RECRUIT_TRAIL_EXIT_SCOUT_FACTOR`**; remove **`TRAIL_SPOT_MIN_MM`** / **`TRAIL_SPOT_MAX_MM`**; raise **`PHEROMONE_DIFFUSION_LAMBDA`**, **`TROPOTAXIS_RATIO_GAIN`**, and pickup **`TRAIL_SATIATED_DEPOSIT_PROBABILITY`**.
+- **`game/anthill/project.godot`**: set **`config/version`** to **0.7.14**.
+
 ## [0.7.13] - 2026-04-09
 
 ### Added

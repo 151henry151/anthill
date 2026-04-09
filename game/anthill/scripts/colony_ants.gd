@@ -100,8 +100,6 @@ func spawn_worker(pos: Vector3, is_nanitic: bool) -> void:
 		"food_source_wx": 0,
 		"food_source_wz": 0,
 		"heading_rad": _rng.randf_range(0.0, TAU),
-		"trail_spot_dist_accum": 0.0,
-		"trail_next_spot_vox": 8,
 		"knows_food_site": false,
 		"memory_wx": 0,
 		"memory_wz": 0,
@@ -380,8 +378,8 @@ func _step_foraging_recruit(a: Dictionary) -> void:
 		return
 	var wx: int = int(a["wx"])
 	var wz: int = int(a["wz"])
-	var here: float = pheromone_field.sample(wx, wz)
-	if here < SimParams.PHEROMONE_RECRUIT_THRESHOLD * 0.3:
+	var local_max: float = _recruit_trail_local_max(wx, wz, SimParams.RECRUIT_TRAIL_FOLLOW_LOCAL_RADIUS)
+	if local_max < SimParams.PHEROMONE_RECRUIT_THRESHOLD * SimParams.RECRUIT_TRAIL_EXIT_SCOUT_FACTOR:
 		a["state"] = 5
 		return
 	_step_tropotaxis_moore(a)
@@ -395,6 +393,7 @@ func _step_tropotaxis_moore(a: Dictionary) -> void:
 	var wx: int = int(a["wx"])
 	var wz: int = int(a["wz"])
 	var here: float = pheromone_field.sample(wx, wz)
+	var trail_mem: float = maxf(here, _recruit_trail_local_max(wx, wz, 1))
 	var fp_here: float = footprint_field.sample(wx, wz) if footprint_field else 0.0
 	var weights: Array[float] = []
 	var dirs: Array[Vector2i] = []
@@ -414,7 +413,7 @@ func _step_tropotaxis_moore(a: Dictionary) -> void:
 			var denom: float = maxf(eps, hc_sum + crowd_n + eps)
 			var ratio_core: float = (c_nb + eps) / denom
 			var w: float = SimParams.PHEROMONE_TROPOTAXIS_FLOOR + SimParams.TROPOTAXIS_RATIO_GAIN * ratio_core
-			if bool(a.get("knows_food_site", false)) and here < SimParams.FORAGING_MEMORY_TRAIL_WEAK:
+			if bool(a.get("knows_food_site", false)) and trail_mem < SimParams.FORAGING_MEMORY_TRAIL_WEAK:
 				var mx: int = int(a.get("memory_wx", 0))
 				var mz: int = int(a.get("memory_wz", 0))
 				if mx != 0 or mz != 0:
@@ -466,7 +465,7 @@ func _step_returning(a: Dictionary) -> void:
 	if dx == 0 and dz == 0:
 		dx = signi(nest_entrance.x - wx)
 	_try_move(a, dx, dz)
-	# **Recruitment trail** (fed return): discrete ant-laid spots (mm spacing) × Bernoulli **TRAIL_SATIATED_DEPOSIT_PROBABILITY**; deposit amount × **distance-to-food** scaling × saturation (emergent bright end near patch after many trips).
+	# **Recruitment trail** (fed return): deposit every step along the walked path × **`RECRUIT_TRAIL_PER_STEP_FRACTION`** × food-proximity beacon × saturation.
 	if pheromone_field and bool(a.get("carrying_food", false)):
 		wx = int(a["wx"])
 		wz = int(a["wz"])
@@ -478,8 +477,10 @@ func _step_returning(a: Dictionary) -> void:
 			SimParams.PHEROMONE_BASE_DEPOSIT
 			* q
 			* _recruit_trail_food_proximity_multiplier(d_to_food)
+			* SimParams.RECRUIT_TRAIL_PER_STEP_FRACTION
 		)
-		_maybe_deposit_recruitment_spot(a, wx, wz, base_amt)
+		var deposit_amt: float = base_amt * _trail_saturation_multiplier(wx, wz)
+		pheromone_field.deposit(wx, wz, deposit_amt)
 	d = _dist_to(a, nest_entrance)
 	if d < SimParams.WORKER_NEST_ARRIVAL_MAX_DIST:
 		if food_store and bool(a.get("carrying_food", false)):
@@ -610,9 +611,10 @@ func _detect_trail(a: Dictionary) -> bool:
 	var wx: int = int(a["wx"])
 	var wz: int = int(a["wz"])
 	var r: int = SimParams.PHEROMONE_SENSE_RADIUS
-	for dx in range(-r, r + 1, 2):
-		for dz in range(-r, r + 1, 2):
-			if pheromone_field.sample(wx + dx, wz + dz) >= SimParams.PHEROMONE_RECRUIT_THRESHOLD:
+	var thr: float = SimParams.PHEROMONE_RECRUIT_THRESHOLD
+	for dx in range(-r, r + 1):
+		for dz in range(-r, r + 1):
+			if pheromone_field.sample(wx + dx, wz + dz) >= thr:
 				return true
 	return false
 
@@ -667,9 +669,7 @@ func _check_food_nearby(a: Dictionary) -> void:
 				fs.is_known_to_colony = true
 				a["state"] = 7  # RETURNING
 				a["return_stuck"] = 0
-				a["trail_spot_dist_accum"] = 0.0
-				a["trail_next_spot_vox"] = _random_trail_spot_spacing_voxels()
-				# **Recruitment** burst at source: Bernoulli × saturation (no spot spacing — first mark at resource).
+				# **Recruitment** burst at source: Bernoulli × saturation (first mark at resource).
 				if pheromone_field and _rng.randf() < SimParams.TRAIL_SATIATED_DEPOSIT_PROBABILITY:
 					var burst: float = (
 						SimParams.PHEROMONE_DEPOSIT_AMOUNT * 2.0 * float(a.get("last_food_quality", 1.0)) * _trail_saturation_multiplier(wx, wz)
@@ -758,12 +758,13 @@ func _step_random_walk(a: Dictionary) -> void:
 		var fsx_rw: int = int(a.get("food_source_wx", wx_rw))
 		var fsz_rw: int = int(a.get("food_source_wz", wz_rw))
 		var d_f_rw: float = sqrt(float((wx_rw - fsx_rw) * (wx_rw - fsx_rw) + (wz_rw - fsz_rw) * (wz_rw - fsz_rw)))
-		_maybe_deposit_recruitment_spot(
-			a,
-			wx_rw,
-			wz_rw,
-			SimParams.PHEROMONE_DEPOSIT_AMOUNT * 0.5 * float(a.get("last_food_quality", 1.0)) * _recruit_trail_food_proximity_multiplier(d_f_rw)
+		var base_rw: float = (
+			SimParams.PHEROMONE_DEPOSIT_AMOUNT * 0.5
+			* float(a.get("last_food_quality", 1.0))
+			* _recruit_trail_food_proximity_multiplier(d_f_rw)
+			* SimParams.RECRUIT_TRAIL_PER_STEP_FRACTION
 		)
+		pheromone_field.deposit(wx_rw, wz_rw, base_rw * _trail_saturation_multiplier(wx_rw, wz_rw))
 
 
 func _cell_walkable(nwx: int, nwz: int) -> bool:
@@ -805,25 +806,15 @@ func _recruit_trail_food_proximity_multiplier_for_ant(a: Dictionary) -> float:
 	return _recruit_trail_food_proximity_multiplier(d_to_food)
 
 
-func _random_trail_spot_spacing_voxels() -> int:
-	var vmin: float = SimParams.TRAIL_SPOT_MIN_MM / SimParams.MM_PER_UNIT
-	var vmax: float = SimParams.TRAIL_SPOT_MAX_MM / SimParams.MM_PER_UNIT
-	return maxi(1, int(round(_rng.randf_range(vmin, vmax))))
-
-
-## Discrete **spots** along return path (voxel steps) × **`TRAIL_SATIATED_DEPOSIT_PROBABILITY`**.
-func _maybe_deposit_recruitment_spot(a: Dictionary, wx: int, wz: int, base_unscaled: float) -> void:
+## Max recruitment concentration in a **Chebyshev** neighborhood (voxels); bridges single-cell gaps for behavior thresholds.
+func _recruit_trail_local_max(wx: int, wz: int, rad: int) -> float:
 	if pheromone_field == null:
-		return
-	a["trail_spot_dist_accum"] = float(a.get("trail_spot_dist_accum", 0.0)) + 1.0
-	if float(a["trail_spot_dist_accum"]) < float(a.get("trail_next_spot_vox", 8)):
-		return
-	a["trail_spot_dist_accum"] = 0.0
-	a["trail_next_spot_vox"] = _random_trail_spot_spacing_voxels()
-	if _rng.randf() > SimParams.TRAIL_SATIATED_DEPOSIT_PROBABILITY:
-		return
-	var deposit_amt: float = base_unscaled * _trail_saturation_multiplier(wx, wz)
-	pheromone_field.deposit(wx, wz, deposit_amt)
+		return 0.0
+	var best: float = 0.0
+	for dx in range(-rad, rad + 1):
+		for dz in range(-rad, rad + 1):
+			best = maxf(best, pheromone_field.sample(wx + dx, wz + dz))
+	return best
 
 
 ## Scale **recruitment** deposit when local trail concentration is high (**Lasius niger**-style negative feedback on runaway attraction).
