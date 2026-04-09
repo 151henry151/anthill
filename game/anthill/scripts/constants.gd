@@ -102,28 +102,28 @@ const CALLOW_DARKEN_TICKS := 3 * TICKS_PER_ANT_DAY
 ## Each pheromone cell covers this many voxels on a side.
 const PHEROMONE_CELL_SIZE := 2
 ## Base amount for each ant-laid recruitment spot while RETURNING with food (then multiplied by **`RECRUIT_TRAIL_BEACON_*`** distance scaling and saturation).
-const PHEROMONE_BASE_DEPOSIT := 0.175
+const PHEROMONE_BASE_DEPOSIT := 0.32
 ## Legacy single-event deposit (food pickup burst).
-const PHEROMONE_DEPOSIT_AMOUNT := 0.21
+const PHEROMONE_DEPOSIT_AMOUNT := 0.34
 ## Multiplicative factor applied every evaporation tick (closer to 1.0 = slower evaporation).
-const PHEROMONE_EVAPORATION_RATE := 0.992
+const PHEROMONE_EVAPORATION_RATE := 0.996
 ## Explicit Laplacian diffusion step on the trail grid each evaporation interval (**< 0.25** for 4-neighbor stability).
-const PHEROMONE_DIFFUSION_LAMBDA := 0.12
+const PHEROMONE_DIFFUSION_LAMBDA := 0.09
 ## Physics ticks between evaporation / diffusion chemistry passes (larger ⇒ trails persist longer).
-const PHEROMONE_EVAPORATION_INTERVAL_TICKS := 44
+const PHEROMONE_EVAPORATION_INTERVAL_TICKS := 72
 ## Min concentration to trigger trail-following mode.
-const PHEROMONE_RECRUIT_THRESHOLD := 0.016
+const PHEROMONE_RECRUIT_THRESHOLD := 0.011
 ## Cells below this are removed.
-const PHEROMONE_MINIMUM_THRESHOLD := 0.003
+const PHEROMONE_MINIMUM_THRESHOLD := 0.0012
 ## Voxels ahead an ant can sense trail.
 const PHEROMONE_SENSE_RADIUS := 4
 ## Minimum roulette weight for tropotaxis (flat field → near-uniform random walk among walkable Moore neighbors).
 const PHEROMONE_TROPOTAXIS_FLOOR := 0.001
 ## Bernoulli probability that a **satiated** returning forager deposits recruitment pheromone at each **spot** opportunity (spec ~1/3).
-const TRAIL_SATIATED_DEPOSIT_PROBABILITY := 0.333333
+const TRAIL_SATIATED_DEPOSIT_PROBABILITY := 0.5
 ## Laboratory spacing of discrete trail **spots** along the return path (mm); converted to voxels via **`MM_PER_UNIT`**.
-const TRAIL_SPOT_MIN_MM := 20.0
-const TRAIL_SPOT_MAX_MM := 40.0
+const TRAIL_SPOT_MIN_MM := 16.0
+const TRAIL_SPOT_MAX_MM := 32.0
 ## Below this local trail concentration, CHC footprint uses **search-phase** weak attraction to explored substrate; at or above, **exploitation-phase** repellent term applies.
 const PHEROMONE_EXPLOITATION_THRESHOLD := 0.015
 ## Weight on **`max(0, f_nb − f_here)`** in **search** phase (positive chemotaxis to recent exploration).
@@ -135,7 +135,7 @@ const FEEDER_CROWD_MAX_WORKERS := 4
 ## Probability to **still** attempt pickup when at or over crowding (search elsewhere).
 const FEEDER_CROWD_OVERFLOW_ATTEMPT_PROB := 0.12
 ## Local trail below this triggers **memory**-biased movement for experienced foragers.
-const FORAGING_MEMORY_TRAIL_WEAK := 0.012
+const FORAGING_MEMORY_TRAIL_WEAK := 0.009
 ## Weight on steps that align with remembered food coordinates when trail is weak.
 const FORAGING_MEMORY_BIAS_WEIGHT := 1.8
 ## Bifurcation-style weight: **`P ∝ (trail + ε) / (HC·(f_nb+f_here) + crowding + ε)`** on each Moore neighbor.
@@ -145,11 +145,11 @@ const TROPOTAXIS_HC_DENOM_SCALE := 1.12
 ## Per-worker crowding weight in the ratio **denominator** (neighbor patch).
 const TROPOTAXIS_CROWD_PER_ANT := 0.38
 ## Extra multiplier on each **worker deposit** at the food (d→0); with **`RECRUIT_TRAIL_BEACON_FLOOR`** yields strong marking near the patch and weak far away (literature: much higher deposition within ~1–10 cm of food than near the nest). Pheromone is still laid only where ants walk.
-const RECRUIT_TRAIL_BEACON_EXTRA_MULT := 18.0
+const RECRUIT_TRAIL_BEACON_EXTRA_MULT := 22.0
 ## e-fold falloff distance (mm) from the food patch center for scaling those ant-laid deposits.
-const RECRUIT_TRAIL_BEACON_DECAY_MM := 20.0
+const RECRUIT_TRAIL_BEACON_DECAY_MM := 28.0
 ## Multiplier floor far from the food source (keeps a weak ant-laid trail for tropotaxis).
-const RECRUIT_TRAIL_BEACON_FLOOR := 1.0
+const RECRUIT_TRAIL_BEACON_FLOOR := 1.85
 ## Footprint ≥ this ⇒ **home-range** / well-trodden substrate (**faster** steps during scout/recruit).
 const HOME_RANGE_FOOTPRINT_THRESHOLD := 0.032
 ## Multiply move interval on **marked** substrate (**< 1** ⇒ faster movement).

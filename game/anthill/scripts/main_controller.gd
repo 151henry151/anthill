@@ -670,7 +670,7 @@ func _update_trail_overlay() -> void:
 		var base_col: Color = SimParams.PHEROMONE_VIS_RECRUITMENT
 		for cell in grid_t:
 			var conc: float = float(grid_t[cell])
-			if conc < 0.008:
+			if conc < 0.004:
 				continue
 			var wx: float = float(cell.x) * cs + cs * 0.5
 			var wz: float = float(cell.y) * cs + cs * 0.5
@@ -680,7 +680,7 @@ func _update_trail_overlay() -> void:
 			var mi := MeshInstance3D.new()
 			mi.mesh = quad
 			var m := mat_base.duplicate() as StandardMaterial3D
-			var alpha: float = clampf(conc * 2.0, 0.08, 0.72)
+			var alpha: float = clampf(conc * 3.2, 0.1, 0.85)
 			m.albedo_color = Color(base_col.r, base_col.g, base_col.b, alpha)
 			mi.material_override = m
 			mi.position = Vector3(wx, float(sy) + Y_RECRUIT, wz)

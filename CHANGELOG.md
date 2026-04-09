@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.13] - 2026-04-09
+
 ### Added
 
 - **`scripts/build-linux-appimage.sh`**: package the Linux Godot export into **`releases/anthill-<version>-x86_64.AppImage`** (desktop entry, **`anthill.png`** icon, **`AppRun`**); use **`appimagetool`** from **`PATH`**, **`APPIMAGETOOL`**, or download to **`.cache/anthill-build/`**; support **`SKIP_LINUX_EXPORT=1`** when the `.x86_64` binary already exists.
@@ -14,8 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`game/anthill/scripts/constants.gd`**, **`game/anthill/scripts/simulation_parameters.gd`**: increase recruitment deposit strength, slow trail evaporation, lengthen evaporation interval, lower trail cell removal threshold, tighten spot spacing, raise satiated spot deposit probability, strengthen food-proximity beacon floor and falloff, lower recruit and memory weak-trail thresholds, slightly reduce trail diffusion.
+- **`game/anthill/scripts/main_controller.gd`**: draw recruitment overlay quads at lower concentration and with higher alpha cap so green trails read more clearly.
 - **`releases/README.md`**: document standalone Windows/Linux exports and Linux AppImage; note that exports embed the Godot runtime and PCK.
 - **`.gitignore`**: ignore **`.cache/`** (downloaded **appimagetool**).
+- **`game/anthill/project.godot`**: set **`config/version`** to **0.7.13**.
 
 ## [0.7.12] - 2026-04-04
 
