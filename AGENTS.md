@@ -50,6 +50,7 @@ godot4 --path game/anthill --import
 | `docs/reference/` | Bibliography, specification, briefing, **`architecture_of_emergence.txt`** (not loaded at runtime) |
 | `scripts/install-godot4.sh` | Installs Godot 4.2.2 to `/usr/local/bin/godot4` |
 | `scripts/install-anthill.sh` | System install: project under `/usr/local/share/anthill/`, launcher **`anthill`** in `/usr/local/bin/` (run with **`sudo`**) |
+| `scripts/build-release-binaries.sh` | Linux `.x86_64`, Windows `.exe`, Linux AppImage into **`releases/`** (needs Godot export templates) |
 
 ### Reference document vs code (`architecture_of_emergence.txt`)
 

@@ -2,36 +2,39 @@
 
 This directory holds **distribution artifacts** for the repository tree.
 
-## Linux binary (`anthill-<version>-linux.x86_64`)
+All **Godot release exports** below embed the **engine runtime and game data** in one file (`binary_format/embed_pck=true`). Users do **not** install a separate Godot build; the artifact is the full runnable game.
 
-Self-contained **Godot 4.2** export (game data embedded in the executable with default preset settings). **x86_64** GNU/Linux (glibc); requires a normal desktop stack (X11/Wayland, OpenGL).
+## Windows (`anthill-<version>-windows.exe`)
 
-**Run:**
-
-```bash
-chmod +x anthill-0.7.12-linux.x86_64
-./anthill-0.7.12-linux.x86_64
-```
-
-**Rebuild** (from repository root; requires **Godot 4.2.x** matching the project and **export templates** installed for that exact version, e.g. under `~/.local/share/godot/export_templates/<version>/`):
-
-```bash
-./scripts/export-linux.sh
-```
-
-The output path is derived from **`game/anthill/project.godot`** **`config/version`**. Export preset: **`game/anthill/export_presets.cfg`** (preset name **`Linux`**).
-
-## Windows executable (`anthill-<version>-windows.exe`)
-
-**x86_64** Windows build (embedded PCK), produced with the same Godot version as the project. Can be built **from Linux** with matching export templates (no **rcedit** required; **`application/modify_resources`** is off in the preset so EXE metadata is not patched on cross-export).
-
-**Rebuild** (from repository root):
+**x86_64** Windows PE, built from the **`Windows`** export preset. Can be produced **from Linux** with matching export templates (no **rcedit** in preset).
 
 ```bash
 ./scripts/export-windows.sh
 ```
 
-Export preset: **`game/anthill/export_presets.cfg`** (preset name **`Windows`**). To customize icon / version resource on Windows, enable **`application/modify_resources`** in that preset and configure **rcedit** in the editor.
+## Linux x86_64 binary (`anthill-<version>-linux.x86_64`)
+
+Single self-contained ELF (Godot **4.2** Linux export template + embedded PCK). Requires typical desktop GL stack (X11/Wayland).
+
+```bash
+./scripts/export-linux.sh
+```
+
+## Linux AppImage (`anthill-<version>-x86_64.AppImage`)
+
+Same embedded export as the `.x86_64` binary, packaged as a **portable AppImage** (desktop entry + icon + `AppRun`). Suitable for publishing on GitHub Releases; users `chmod +x` and run. Building uses **`appimagetool`** from `PATH`, **`APPIMAGETOOL`** to a local binary, or a one-time download to **`.cache/anthill-build/`** (see script).
+
+```bash
+./scripts/build-linux-appimage.sh
+```
+
+## Build everything (current `config/version`)
+
+```bash
+./scripts/build-release-binaries.sh
+```
+
+Requires **Godot 4.2.x** on `PATH` (`godot4` or `godot`) and **export templates** for that exact engine version under `~/.local/share/godot/export_templates/<version>/`.
 
 ## `anthill` (shell launcher)
 

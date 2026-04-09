@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`scripts/build-linux-appimage.sh`**: package the Linux Godot export into **`releases/anthill-<version>-x86_64.AppImage`** (desktop entry, **`anthill.png`** icon, **`AppRun`**); use **`appimagetool`** from **`PATH`**, **`APPIMAGETOOL`**, or download to **`.cache/anthill-build/`**; support **`SKIP_LINUX_EXPORT=1`** when the `.x86_64` binary already exists.
+- **`scripts/build-release-binaries.sh`**: run Linux export, Windows export, then AppImage (single Linux export).
+
+### Changed
+
+- **`releases/README.md`**: document standalone Windows/Linux exports and Linux AppImage; note that exports embed the Godot runtime and PCK.
+- **`.gitignore`**: ignore **`.cache/`** (downloaded **appimagetool**).
+
 ## [0.7.12] - 2026-04-04
 
 ### Added
